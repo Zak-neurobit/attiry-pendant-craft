@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,7 +30,7 @@ export const useFavourites = create<FavouritesState>()(
           if (user) {
             const { error } = await supabase
               .from('profiles')
-              .update({ favourites: newFavourites })
+              .update({ favourites: newFavourites } as any)
               .eq('user_id', user.id);
             
             if (error) {
@@ -55,7 +56,7 @@ export const useFavourites = create<FavouritesState>()(
           if (user) {
             const { error } = await supabase
               .from('profiles')
-              .update({ favourites: newFavourites })
+              .update({ favourites: newFavourites } as any)
               .eq('user_id', user.id);
             
             if (error) {
@@ -87,7 +88,8 @@ export const useFavourites = create<FavouritesState>()(
               .single();
             
             if (data && !error) {
-              set({ favourites: data.favourites || [] });
+              const favourites = (data as any).favourites || [];
+              set({ favourites });
             }
           }
         } catch (error) {
