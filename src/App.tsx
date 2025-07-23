@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import Index from '@/pages/Index';
+import Home from '@/pages/Home';
 import { Shop } from '@/pages/Shop';
 import { About } from '@/pages/About';
 import { Terms } from '@/pages/Terms';
@@ -39,6 +40,7 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Index />} />
+              <Route path="/home" element={<Home />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/about" element={<About />} />
               <Route path="/terms" element={<Terms />} />

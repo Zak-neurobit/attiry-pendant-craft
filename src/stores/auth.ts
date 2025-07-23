@@ -67,12 +67,14 @@ export const useAuth = create<AuthState>((set, get) => ({
 
 // Listen for auth changes
 supabase.auth.onAuthStateChange(async (event, session) => {
+  const { initialize } = useAuth.getState();
+  
   if (event === 'SIGNED_OUT') {
-    set({ user: null, isAdmin: false, loading: false });
+    useAuth.setState({ user: null, isAdmin: false, loading: false });
   } else if (event === 'SIGNED_IN' && session) {
     // Defer the initialization to avoid blocking the auth state change
     setTimeout(() => {
-      get().initialize();
+      initialize();
     }, 0);
   }
 });
