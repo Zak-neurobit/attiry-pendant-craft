@@ -29,6 +29,12 @@ export const AdminSetup = () => {
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            first_name: 'Admin',
+            last_name: 'User',
+          },
+        },
       });
 
       if (signUpError && signUpError.message !== 'User already registered') {

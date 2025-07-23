@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useCart } from '@/stores/cart';
@@ -10,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { ShoppingBag, CreditCard, MapPin, Truck } from 'lucide-react';
+import { RazorpayPayment } from '@/components/RazorpayPayment';
+import { useNavigate } from 'react-router-dom';
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -26,8 +27,9 @@ const shippingMethods = [
 ];
 
 export const Checkout = () => {
-  const { items, getSubtotal } = useCart();
+  const { items, getSubtotal, clearCart } = useCart();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -91,6 +93,19 @@ export const Checkout = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handlePaymentSuccess = (orderId: string) => {
+    clearCart();
+    navigate(`/order-confirmation/${orderId}`);
+  };
+
+  const handlePaymentError = (error: string) => {
+    toast({
+      title: 'Payment Failed',
+      description: error,
+      variant: 'destructive',
+    });
   };
 
   if (items.length === 0) {
@@ -327,16 +342,26 @@ export const Checkout = () => {
                     </div>
                   </div>
 
-                  {/* Place Order Button */}
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    size="lg"
-                    disabled={isSubmitting || !formData.shippingMethod}
-                    onClick={handleSubmit}
-                  >
-                    {isSubmitting ? 'Processing...' : `Place Order • ${formatPrice(total)}`}
-                  </Button>
+                  {/* Razorpay Payment Button */}
+                  <RazorpayPayment
+                    orderData={{
+                      items,
+                      customerInfo: {
+                        firstName: formData.firstName,
+                        lastName: formData.lastName,
+                        email: formData.email,
+                        street: formData.street,
+                        city: formData.city,
+                        state: formData.state,
+                        zip: formData.zip,
+                        country: formData.country,
+                      },
+                      total: subtotal * 0.75 + shippingCost,
+                      shippingCost,
+                    }}
+                    onSuccess={handlePaymentSuccess}
+                    onError={handlePaymentError}
+                  />
 
                   <p className="text-xs text-muted-foreground text-center">
                     By placing your order, you agree to our terms and conditions.

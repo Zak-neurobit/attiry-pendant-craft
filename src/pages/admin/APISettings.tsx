@@ -330,26 +330,26 @@ export const APISettings = () => {
                 <h4>Products</h4>
                 <ul>
                   <li><code>GET /products</code> - List all products</li>
-                  <li><code>GET /products/{id}</code> - Get single product</li>
+                  <li><code>GET /products/[product-id]</code> - Get single product</li>
                   <li><code>POST /products</code> - Create product</li>
-                  <li><code>PUT /products/{id}</code> - Update product</li>
-                  <li><code>DELETE /products/{id}</code> - Delete product</li>
+                  <li><code>PUT /products/[product-id]</code> - Update product</li>
+                  <li><code>DELETE /products/[product-id]</code> - Delete product</li>
                 </ul>
                 
                 <h4>Orders</h4>
                 <ul>
                   <li><code>GET /orders</code> - List all orders</li>
-                  <li><code>GET /orders/{id}</code> - Get order details</li>
+                  <li><code>GET /orders/[order-id]</code> - Get order details</li>
                   <li><code>POST /orders</code> - Create order</li>
-                  <li><code>PUT /orders/{id}</code> - Update order status</li>
+                  <li><code>PUT /orders/[order-id]</code> - Update order status</li>
                 </ul>
                 
                 <h4>Customers</h4>
                 <ul>
                   <li><code>GET /customers</code> - List customers</li>
-                  <li><code>GET /customers/{id}</code> - Get customer details</li>
+                  <li><code>GET /customers/[customer-id]</code> - Get customer details</li>
                   <li><code>POST /customers</code> - Create customer</li>
-                  <li><code>PUT /customers/{id}</code> - Update customer</li>
+                  <li><code>PUT /customers/[customer-id]</code> - Update customer</li>
                 </ul>
                 
                 <h4>Analytics</h4>
@@ -363,7 +363,7 @@ export const APISettings = () => {
                 <h4>Inventory</h4>
                 <ul>
                   <li><code>GET /inventory</code> - Stock levels</li>
-                  <li><code>PUT /inventory/{id}</code> - Update stock</li>
+                  <li><code>PUT /inventory/[product-id]</code> - Update stock</li>
                 </ul>
               </div>
             </CardContent>

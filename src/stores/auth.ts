@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { authService, type AuthUser } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,10 +66,13 @@ export const useAuth = create<AuthState>((set, get) => ({
 }));
 
 // Listen for auth changes
-supabase.auth.onAuthStateChange((event, session) => {
+supabase.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_OUT') {
-    useAuth.getState().initialize();
-  } else if (event === 'SIGNED_IN') {
-    useAuth.getState().initialize();
+    set({ user: null, isAdmin: false, loading: false });
+  } else if (event === 'SIGNED_IN' && session) {
+    // Defer the initialization to avoid blocking the auth state change
+    setTimeout(() => {
+      get().initialize();
+    }, 0);
   }
 });
