@@ -1,10 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import ProductCard from '@/components/ProductCard';
 
 interface Product {
   id: string;
@@ -27,25 +26,12 @@ const container = {
   },
 };
 
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 },
-};
-
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: 0,
-  }).format(price);
+const formatSlug = (title: string) => {
+  return title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 };
 
 const getSalePrice = (originalPrice: number) => {
   return originalPrice * 0.75; // 25% off
-};
-
-const formatSlug = (title: string) => {
-  return title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 };
 
 export const Shop = () => {
@@ -117,72 +103,19 @@ export const Shop = () => {
             const slug = formatSlug(product.title);
 
             return (
-              <motion.div key={product.id} variants={item}>
-                <Link to={`/product/${slug}`} state={{ product }}>
-                  <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-border bg-card">
-                    <div className="relative overflow-hidden">
-                      <img
-                        src={product.image_urls[0]}
-                        alt={product.title}
-                        className="w-full h-48 md:h-56 object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                      <div className="absolute top-3 left-3">
-                        <Badge className="bg-accent text-accent-foreground font-medium">
-                          25% OFF
-                        </Badge>
-                      </div>
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-heading font-semibold text-foreground mb-2 line-clamp-2">
-                        {product.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                        {product.description}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-muted-foreground line-through">
-                              {formatPrice(originalPrice)}
-                            </span>
-                            <span className="font-bold text-foreground">
-                              {formatPrice(salePrice)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex space-x-1">
-                          {product.color_variants.slice(0, 3).map((color, index) => (
-                            <div
-                              key={color}
-                              className={`w-3 h-3 rounded-full border border-border ${
-                                color === 'gold'
-                                  ? 'bg-yellow-400'
-                                  : color === 'rose_gold'
-                                  ? 'bg-rose-400'
-                                  : color === 'silver'
-                                  ? 'bg-gray-300'
-                                  : color === 'matte_gold'
-                                  ? 'bg-yellow-600'
-                                  : color === 'matte_silver'
-                                  ? 'bg-gray-400'
-                                  : color === 'vintage_copper'
-                                  ? 'bg-orange-600'
-                                  : 'bg-gray-800'
-                              }`}
-                            />
-                          ))}
-                          {product.color_variants.length > 3 && (
-                            <div className="w-3 h-3 rounded-full border border-border bg-muted flex items-center justify-center">
-                              <span className="text-xs text-muted-foreground">+</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.div>
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                name={product.title}
+                price={salePrice}
+                originalPrice={originalPrice}
+                image={product.image_urls[0]}
+                rating={5}
+                reviewCount={Math.floor(Math.random() * 200) + 50}
+                isNew={Math.random() > 0.7}
+                colors={product.color_variants || ['gold', 'rose-gold', 'silver']}
+                slug={slug}
+              />
             );
           })}
         </motion.div>

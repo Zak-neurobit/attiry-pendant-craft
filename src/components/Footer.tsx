@@ -1,3 +1,4 @@
+
 import { Heart, Instagram, Facebook, Twitter, Mail, Phone, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -18,7 +19,7 @@ const Footer = () => {
             </div>
             <p className="text-primary-foreground/80 leading-relaxed">
               Crafting luxury custom name pendants with premium materials and 
-              precision engraving since 2020.
+              precision engraving since 1984.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-primary-foreground/70 hover:text-accent transition-colors">
@@ -43,11 +44,11 @@ const Footer = () => {
               <Link to="/about" className="text-primary-foreground/80 hover:text-accent transition-colors">
                 About Us
               </Link>
-              <Link to="/blog" className="text-primary-foreground/80 hover:text-accent transition-colors">
-                Blog
+              <Link to="/terms" className="text-primary-foreground/80 hover:text-accent transition-colors">
+                Terms & Conditions
               </Link>
-              <Link to="/contact" className="text-primary-foreground/80 hover:text-accent transition-colors">
-                Contact
+              <Link to="/faq" className="text-primary-foreground/80 hover:text-accent transition-colors">
+                FAQ
               </Link>
             </nav>
           </div>
@@ -65,8 +66,8 @@ const Footer = () => {
               <Link to="/size-guide" className="text-primary-foreground/80 hover:text-accent transition-colors">
                 Size Guide
               </Link>
-              <Link to="/faq" className="text-primary-foreground/80 hover:text-accent transition-colors">
-                FAQ
+              <Link to="/contact" className="text-primary-foreground/80 hover:text-accent transition-colors">
+                Contact
               </Link>
             </nav>
           </div>
@@ -85,7 +86,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-3 text-primary-foreground/80">
                 <MapPin className="h-4 w-4" />
-                <span>New York, NY</span>
+                <span>Mumbai, India</span>
               </div>
             </div>
           </div>
@@ -127,7 +128,7 @@ const Footer = () => {
           <div className="flex items-center space-x-2 mt-4 md:mt-0 text-primary-foreground/70 text-sm">
             <span>Made with</span>
             <Heart className="h-4 w-4 text-red-500 fill-current" />
-            <span>in NYC</span>
+            <span>in India</span>
           </div>
         </div>
       </div>

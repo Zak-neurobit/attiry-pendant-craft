@@ -1,6 +1,10 @@
+
 import { Heart, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import { useFavourites } from '@/stores/favourites';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProductCardProps {
   id: string;
@@ -11,8 +15,8 @@ interface ProductCardProps {
   rating?: number;
   reviewCount?: number;
   isNew?: boolean;
-  isFavorite?: boolean;
   colors?: string[];
+  slug?: string;
 }
 
 const ProductCard = ({ 
@@ -24,14 +28,56 @@ const ProductCard = ({
   rating = 5, 
   reviewCount = 0,
   isNew = false,
-  isFavorite = false,
-  colors = ['gold', 'rose-gold', 'silver']
+  colors = ['gold', 'rose-gold', 'silver'],
+  slug
 }: ProductCardProps) => {
+  const { isFavourite, addToFavourites, removeFromFavourites } = useFavourites();
+  const { toast } = useToast();
+  const isProductFavourite = isFavourite(id);
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      if (isProductFavourite) {
+        await removeFromFavourites(id);
+        toast({
+          title: "Removed from favorites",
+          description: `${name} has been removed from your favorites.`,
+        });
+      } else {
+        await addToFavourites(id);
+        toast({
+          title: "Added to favorites",
+          description: `${name} has been added to your favorites.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update favorites. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const productSlug = slug || (id === '1' ? 'custom-gold-name-pendant' : 
+                                id === '2' ? 'rose-gold-script-pendant' : 
+                                id === '3' ? 'classic-silver-nameplate' : 
+                                'vintage-copper-pendant');
+
   return (
-    <div className="card-luxury p-0 overflow-hidden group">
+    <motion.div 
+      className="bg-card rounded-lg shadow-soft overflow-hidden border hover:shadow-lg transition-all duration-300 group"
+      whileHover={{ y: -4 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Product Image */}
       <div className="relative overflow-hidden aspect-square">
-        <Link to={`/product/${id === '1' ? 'custom-gold-name-pendant' : id === '2' ? 'rose-gold-script-pendant' : id === '3' ? 'classic-silver-nameplate' : 'vintage-copper-pendant'}`}>
+        <Link to={`/product/${productSlug}`}>
           <img 
             src={image} 
             alt={name}
@@ -54,9 +100,20 @@ const ProductCard = ({
         </div>
 
         {/* Favorite Button */}
-        <button className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors">
-          <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
-        </button>
+        <motion.button 
+          onClick={handleFavoriteClick}
+          className="absolute top-3 right-3 p-2 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          <Heart 
+            className={`h-4 w-4 transition-colors ${
+              isProductFavourite 
+                ? 'fill-red-500 text-red-500' 
+                : 'text-muted-foreground hover:text-red-500'
+            }`} 
+          />
+        </motion.button>
 
         {/* Quick Add Button - appears on hover */}
         <div className="absolute bottom-3 left-3 right-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
@@ -82,7 +139,7 @@ const ProductCard = ({
         </div>
 
         {/* Product Name */}
-        <Link to={`/product/${id === '1' ? 'custom-gold-name-pendant' : id === '2' ? 'rose-gold-script-pendant' : id === '3' ? 'classic-silver-nameplate' : 'vintage-copper-pendant'}`}>
+        <Link to={`/product/${productSlug}`}>
           <h3 className="font-medium text-foreground hover:text-accent transition-colors mb-2 line-clamp-2">
             {name}
           </h3>
@@ -94,10 +151,10 @@ const ProductCard = ({
             <div 
               key={color}
               className={`w-4 h-4 rounded-full border border-border cursor-pointer hover:scale-110 transition-transform ${
-                color === 'gold' ? 'bg-gold' :
-                color === 'rose-gold' ? 'bg-rose-gold' :
-                color === 'silver' ? 'bg-silver' :
-                color === 'copper' ? 'bg-copper' :
+                color === 'gold' ? 'bg-yellow-400' :
+                color === 'rose-gold' ? 'bg-rose-400' :
+                color === 'silver' ? 'bg-gray-300' :
+                color === 'copper' ? 'bg-orange-600' :
                 'bg-muted'
               }`}
             />
@@ -119,7 +176,7 @@ const ProductCard = ({
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

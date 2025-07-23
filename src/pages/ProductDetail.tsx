@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,7 +11,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCart } from '@/stores/cart';
 import { useToast } from '@/hooks/use-toast';
-import { ShoppingCart, ArrowLeft, Clock } from 'lucide-react';
+import { useFavourites } from '@/stores/favourites';
+import { ShoppingCart, ArrowLeft, Clock, Heart } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -34,17 +36,17 @@ const colorNames: Record<string, string> = {
 };
 
 const fontOptions = [
-  'Classic Script',
-  'Minimal Sans',
-  'Elegant Serif',
-  'Bold Gothic',
-  'Handwritten Chic',
+  { value: 'Great Vibes', label: 'Great Vibes', className: 'font-greatvibes' },
+  { value: 'Allura', label: 'Allura', className: 'font-allura' },
+  { value: 'Alex Brush', label: 'Alex Brush', className: 'font-alexbrush' },
+  { value: 'Dancing Script', label: 'Dancing Script', className: 'font-dancingscript' },
+  { value: 'Playfair Display', label: 'Playfair Display', className: 'font-playfair-italic' },
 ];
 
 const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('en-IN', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'INR',
+    currency: 'USD',
     minimumFractionDigits: 0,
   }).format(price);
 };
@@ -59,8 +61,8 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { addItem, openCart } = useCart();
   const { toast } = useToast();
+  const { isFavourite, addToFavourites, removeFromFavourites } = useFavourites();
 
-  // Get product from navigation state or fetch from API
   const [product, setProduct] = useState<Product | null>(location.state?.product || null);
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [selectedFont, setSelectedFont] = useState<string>('');
@@ -68,14 +70,42 @@ const ProductDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [textError, setTextError] = useState<string>('');
 
+  const isProductFavourite = product ? isFavourite(product.id) : false;
+
   useEffect(() => {
     if (product && product.color_variants.length > 0) {
       setSelectedColor(product.color_variants[0]);
     }
     if (fontOptions.length > 0) {
-      setSelectedFont(fontOptions[0]);
+      setSelectedFont(fontOptions[0].value);
     }
   }, [product]);
+
+  const handleFavoriteClick = async () => {
+    if (!product) return;
+    
+    try {
+      if (isProductFavourite) {
+        await removeFromFavourites(product.id);
+        toast({
+          title: "Removed from favorites",
+          description: `${product.title} has been removed from your favorites.`,
+        });
+      } else {
+        await addToFavourites(product.id);
+        toast({
+          title: "Added to favorites",
+          description: `${product.title} has been added to your favorites.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update favorites. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const validateCustomText = (text: string) => {
     const nameRegex = /^[A-Za-z ]{0,12}$/;
@@ -99,6 +129,11 @@ const ProductDetail = () => {
     } else {
       setTextError('');
     }
+  };
+
+  const getFontClass = (fontValue: string) => {
+    const font = fontOptions.find(f => f.value === fontValue);
+    return font ? font.className : 'font-greatvibes';
   };
 
   const handleAddToCart = () => {
@@ -127,16 +162,6 @@ const ProductDetail = () => {
       title: 'Added to cart!',
       description: `${product.title} with "${customText}" has been added to your cart.`,
     });
-
-    // Announce to screen readers
-    const announcement = `Added ${product.title} with custom text ${customText} to cart`;
-    const ariaLive = document.createElement('div');
-    ariaLive.setAttribute('aria-live', 'polite');
-    ariaLive.setAttribute('aria-atomic', 'true');
-    ariaLive.className = 'sr-only';
-    ariaLive.textContent = announcement;
-    document.body.appendChild(ariaLive);
-    setTimeout(() => document.body.removeChild(ariaLive), 1000);
   };
 
   if (!product) {
@@ -188,6 +213,20 @@ const ProductDetail = () => {
                   25% OFF
                 </Badge>
               </div>
+              <motion.button
+                onClick={handleFavoriteClick}
+                className="absolute top-4 right-4 p-2 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <Heart
+                  className={`h-5 w-5 transition-colors ${
+                    isProductFavourite
+                      ? 'fill-red-500 text-red-500'
+                      : 'text-muted-foreground hover:text-red-500'
+                  }`}
+                />
+              </motion.button>
             </div>
 
             {/* Color Variants */}
@@ -204,7 +243,7 @@ const ProductDetail = () => {
                 }}
                 className="flex flex-wrap gap-3"
               >
-                {product.color_variants.map((color, index) => (
+                {product.color_variants.map((color) => (
                   <div key={color} className="flex items-center space-x-2">
                     <RadioGroupItem
                       value={color}
@@ -292,8 +331,8 @@ const ProductDetail = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {fontOptions.map((font) => (
-                    <SelectItem key={font} value={font}>
-                      {font}
+                    <SelectItem key={font.value} value={font.value}>
+                      <span className={font.className}>{font.label}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -323,6 +362,30 @@ const ProductDetail = () => {
                 {customText.length}/12 characters • Only letters and spaces allowed
               </p>
             </div>
+
+            {/* Font Preview */}
+            {customText && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Preview</Label>
+                <Card className="border border-muted bg-muted/30">
+                  <CardContent className="p-6 flex items-center justify-center min-h-[100px]">
+                    <motion.div
+                      key={`${customText}-${selectedFont}`}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className={`${getFontClass(selectedFont)} text-foreground text-center`}
+                      style={{
+                        fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+                        lineHeight: '1.2'
+                      }}
+                    >
+                      {customText}
+                    </motion.div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Add to Cart Button */}
             <Button
