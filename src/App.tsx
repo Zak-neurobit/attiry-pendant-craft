@@ -9,6 +9,16 @@ import BirthdayPopup from "./components/BirthdayPopup";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import ProductDetail from "./pages/ProductDetail";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { Dashboard } from "@/pages/admin/Dashboard";
+import { Products } from "@/pages/admin/Products";
+import { Orders } from "@/pages/admin/Orders";
+import { Analytics } from "@/pages/admin/Analytics";
+import { Customers } from "@/pages/admin/Customers";
+import { AISettings } from "@/pages/admin/AISettings";
+import { Settings } from "@/pages/admin/Settings";
 
 const queryClient = new QueryClient();
 
@@ -17,27 +27,106 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <div className="min-h-screen bg-background flex flex-col">
-          <Header />
-          <BirthdayPopup />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/shop" element={<div className="p-8 text-center">Shop page coming soon...</div>} />
-              <Route path="/product/:slug" element={<ProductDetail />} />
-              <Route path="/cart" element={<div className="p-8 text-center">Cart page coming soon...</div>} />
-              <Route path="/checkout" element={<div className="p-8 text-center">Checkout coming soon...</div>} />
-              <Route path="/account" element={<div className="p-8 text-center">Account page coming soon...</div>} />
-              <Route path="/about" element={<div className="p-8 text-center">About page coming soon...</div>} />
-              <Route path="/blog" element={<div className="p-8 text-center">Blog coming soon...</div>} />
-              <Route path="/admin/*" element={<div className="p-8 text-center">Admin panel coming soon...</div>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={
+              <div className="min-h-screen bg-background flex flex-col">
+                <Header />
+                <BirthdayPopup />
+                <main className="flex-1">
+                  <Home />
+                </main>
+                <Footer />
+              </div>
+            } />
+            <Route path="/shop" element={
+              <div className="min-h-screen bg-background flex flex-col">
+                <Header />
+                <main className="flex-1">
+                  <div className="p-8 text-center">Shop page coming soon...</div>
+                </main>
+                <Footer />
+              </div>
+            } />
+            <Route path="/product/:slug" element={
+              <div className="min-h-screen bg-background flex flex-col">
+                <Header />
+                <main className="flex-1">
+                  <ProductDetail />
+                </main>
+                <Footer />
+              </div>
+            } />
+            <Route path="/cart" element={
+              <div className="min-h-screen bg-background flex flex-col">
+                <Header />
+                <main className="flex-1">
+                  <div className="p-8 text-center">Cart page coming soon...</div>
+                </main>
+                <Footer />
+              </div>
+            } />
+            <Route path="/checkout" element={
+              <div className="min-h-screen bg-background flex flex-col">
+                <Header />
+                <main className="flex-1">
+                  <div className="p-8 text-center">Checkout coming soon...</div>
+                </main>
+                <Footer />
+              </div>
+            } />
+            <Route path="/account" element={
+              <div className="min-h-screen bg-background flex flex-col">
+                <Header />
+                <main className="flex-1">
+                  <div className="p-8 text-center">Account page coming soon...</div>
+                </main>
+                <Footer />
+              </div>
+            } />
+            <Route path="/about" element={
+              <div className="min-h-screen bg-background flex flex-col">
+                <Header />
+                <main className="flex-1">
+                  <div className="p-8 text-center">About page coming soon...</div>
+                </main>
+                <Footer />
+              </div>
+            } />
+            <Route path="/blog" element={
+              <div className="min-h-screen bg-background flex flex-col">
+                <Header />
+                <main className="flex-1">
+                  <div className="p-8 text-center">Blog coming soon...</div>
+                </main>
+                <Footer />
+              </div>
+            } />
+            
+            {/* Admin Routes */}
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="products" element={<Products />} />
+              <Route path="orders" element={<Orders />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="customers" element={<Customers />} />
+              <Route path="ai-settings" element={<AISettings />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
