@@ -11,6 +11,9 @@ import Home from "./pages/Home";
 import { Shop } from "./pages/Shop";
 import NotFound from "./pages/NotFound";
 import ProductDetail from "./pages/ProductDetail";
+import { About } from "./pages/About";
+import { Favourites } from "./pages/Favourites";
+import { SearchResults } from "./pages/SearchResults";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -92,7 +95,25 @@ const App = () => (
               <div className="min-h-screen bg-background flex flex-col">
                 <Header />
                 <main className="flex-1">
-                  <div className="p-8 text-center">About page coming soon...</div>
+                  <About />
+                </main>
+                <Footer />
+              </div>
+            } />
+            <Route path="/favourites" element={
+              <div className="min-h-screen bg-background flex flex-col">
+                <Header />
+                <main className="flex-1">
+                  <Favourites />
+                </main>
+                <Footer />
+              </div>
+            } />
+            <Route path="/search" element={
+              <div className="min-h-screen bg-background flex flex-col">
+                <Header />
+                <main className="flex-1">
+                  <SearchResults />
                 </main>
                 <Footer />
               </div>

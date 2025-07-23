@@ -1,12 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, Search, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import atteryLogo from '@/assets/attiry-logo.png';
 import { useCart } from '@/stores/cart';
+import { SearchModal } from '@/components/SearchModal';
 
 const Header = () => {
   const { getTotalItems, openCart } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Keyboard shortcut for search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <header className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
@@ -53,12 +68,20 @@ const Header = () => {
 
           {/* Actions */}
           <div className="flex items-center space-x-4">
-            <button className="p-2 hover:bg-muted rounded-lg transition-colors hidden sm:block">
+            <button 
+              className="p-2 hover:bg-muted rounded-lg transition-colors hidden sm:block"
+              onClick={() => setIsSearchOpen(true)}
+              aria-label="Search products"
+            >
               <Search className="h-5 w-5" />
             </button>
-            <button className="p-2 hover:bg-muted rounded-lg transition-colors hidden sm:block">
+            <Link 
+              to="/favourites" 
+              className="p-2 hover:bg-muted rounded-lg transition-colors hidden sm:block"
+              aria-label="View favourites"
+            >
               <Heart className="h-5 w-5" />
-            </button>
+            </Link>
             <button 
               className="p-2 hover:bg-muted rounded-lg transition-colors relative"
               onClick={openCart}
@@ -117,17 +140,27 @@ const Header = () => {
                 Blog
               </Link>
               <div className="flex items-center space-x-4 pt-4">
-                <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+                <button 
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
+                  onClick={() => setIsSearchOpen(true)}
+                  aria-label="Search products"
+                >
                   <Search className="h-5 w-5" />
                 </button>
-                <button className="p-2 hover:bg-muted rounded-lg transition-colors">
+                <Link 
+                  to="/favourites" 
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
+                  aria-label="View favourites"
+                >
                   <Heart className="h-5 w-5" />
-                </button>
+                </Link>
               </div>
             </nav>
           </div>
         )}
       </div>
+      {/* Search Modal */}
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </header>
   );
 };
