@@ -1,203 +1,357 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
-import { ArrowLeft, Star, Heart, ShoppingBag } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import FontPicker from '@/components/product/FontPicker';
-import NameInput from '@/components/product/NameInput';
-import PreviewName from '@/components/product/PreviewName';
-import ColorPicker from '@/components/product/ColorPicker';
-import { getProduct } from '@/lib/products';
-import { useProductCustomizer } from '@/stores/productCustomizer';
-import { useCartStore } from '@/stores/cart';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCart } from '@/stores/cart';
 import { useToast } from '@/hooks/use-toast';
+import { ShoppingCart, ArrowLeft, Clock } from 'lucide-react';
+
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  image_urls: string[];
+  color_variants: string[];
+  keywords: string[];
+  sku: string;
+}
+
+const colorNames: Record<string, string> = {
+  gold: 'Gold Plated',
+  matte_gold: 'Matte Gold',
+  rose_gold: 'Rose Gold',
+  silver: 'Silver',
+  matte_silver: 'Matte Silver',
+  vintage_copper: 'Vintage Copper',
+  black: 'Black',
+};
+
+const fontOptions = [
+  'Classic Script',
+  'Minimal Sans',
+  'Elegant Serif',
+  'Bold Gothic',
+  'Handwritten Chic',
+];
+
+const formatPrice = (price: number) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0,
+  }).format(price);
+};
+
+const getSalePrice = (originalPrice: number) => {
+  return originalPrice * 0.75; // 25% off
+};
 
 const ProductDetail = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
+  const { addItem, openCart } = useCart();
   const { toast } = useToast();
-  
-  const product = slug ? getProduct(slug) : null;
-  const { customization, reset, isValid } = useProductCustomizer();
-  const { addItem } = useCartStore();
+
+  // Get product from navigation state or fetch from API
+  const [product, setProduct] = useState<Product | null>(location.state?.product || null);
+  const [selectedColor, setSelectedColor] = useState<string>('');
+  const [selectedFont, setSelectedFont] = useState<string>('');
+  const [customText, setCustomText] = useState<string>('');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [textError, setTextError] = useState<string>('');
 
   useEffect(() => {
-    // Reset customization when entering a new product
-    reset();
-  }, [slug, reset]);
+    if (product && product.color_variants.length > 0) {
+      setSelectedColor(product.color_variants[0]);
+    }
+    if (fontOptions.length > 0) {
+      setSelectedFont(fontOptions[0]);
+    }
+  }, [product]);
+
+  const validateCustomText = (text: string) => {
+    const nameRegex = /^[A-Za-z ]{0,12}$/;
+    if (text.length === 0) {
+      setTextError('Please enter a name');
+      return false;
+    }
+    if (!nameRegex.test(text)) {
+      setTextError('Only letters and spaces allowed (max 12 characters)');
+      return false;
+    }
+    setTextError('');
+    return true;
+  };
+
+  const handleCustomTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const text = e.target.value;
+    setCustomText(text);
+    if (text.length > 0) {
+      validateCustomText(text);
+    } else {
+      setTextError('');
+    }
+  };
+
+  const handleAddToCart = () => {
+    if (!product) return;
+
+    if (!validateCustomText(customText)) {
+      return;
+    }
+
+    const cartItem = {
+      productId: product.id,
+      title: product.title,
+      price: getSalePrice(product.price),
+      originalPrice: product.price,
+      color: selectedColor,
+      font: selectedFont,
+      customText,
+      quantity: 1,
+      image: product.image_urls[currentImageIndex],
+    };
+
+    addItem(cartItem);
+    openCart();
+
+    toast({
+      title: 'Added to cart!',
+      description: `${product.title} with "${customText}" has been added to your cart.`,
+    });
+
+    // Announce to screen readers
+    const announcement = `Added ${product.title} with custom text ${customText} to cart`;
+    const ariaLive = document.createElement('div');
+    ariaLive.setAttribute('aria-live', 'polite');
+    ariaLive.setAttribute('aria-atomic', 'true');
+    ariaLive.className = 'sr-only';
+    ariaLive.textContent = announcement;
+    document.body.appendChild(ariaLive);
+    setTimeout(() => document.body.removeChild(ariaLive), 1000);
+  };
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-playfair font-bold text-foreground mb-4">
-            Product Not Found
-          </h1>
-          <Button onClick={() => navigate('/shop')} variant="outline">
-            Return to Shop
-          </Button>
+          <h1 className="text-2xl font-bold mb-4">Product not found</h1>
+          <Button onClick={() => navigate('/shop')}>Back to Shop</Button>
         </div>
       </div>
     );
   }
 
-  const handleAddToCart = () => {
-    if (!isValid()) {
-      toast({
-        title: "Invalid name",
-        description: "Please enter a valid name (1-12 characters, letters and spaces only)",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    addItem({
-      productId: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.images[0],
-      quantity: 1,
-      customization: {
-        font: customization.font,
-        color: customization.color,
-        nameText: customization.nameText,
-      },
-    });
-
-    toast({
-      title: "Added to cart!",
-      description: `${product.name} with "${customization.nameText}" has been added to your cart.`,
-    });
-  };
+  const originalPrice = product.price;
+  const salePrice = getSalePrice(originalPrice);
+  const savings = originalPrice - salePrice;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-8">
+        {/* Back Button */}
         <Button
           variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-6"
+          onClick={() => navigate('/shop')}
+          className="mb-6 -ml-4"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Shop
         </Button>
-      </div>
 
-      {/* Product Content */}
-      <div className="container mx-auto px-4 pb-20">
-        <div className="grid lg:grid-cols-2 gap-12">
-          {/* Left: Image Gallery */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-4"
-          >
-            <div className="aspect-square rounded-2xl overflow-hidden bg-muted">
-              <img
-                src={product.images[0]}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+          {/* Image Gallery */}
+          <div className="space-y-4">
+            <div className="relative overflow-hidden rounded-lg bg-muted">
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={currentImageIndex}
+                  src={product.image_urls[currentImageIndex]}
+                  alt={`${product.title} - ${colorNames[selectedColor]}`}
+                  className="w-full h-96 lg:h-[500px] object-cover"
+                  initial={{ opacity: 0, scale: 1.05 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                />
+              </AnimatePresence>
+              <div className="absolute top-4 left-4">
+                <Badge className="bg-accent text-accent-foreground font-medium">
+                  25% OFF
+                </Badge>
+              </div>
             </div>
-            {product.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
-                {product.images.slice(1).map((image, index) => (
-                  <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted">
-                    <img
-                      src={image}
-                      alt={`${product.name} ${index + 2}`}
-                      className="w-full h-full object-cover"
+
+            {/* Color Variants */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Color Finish</Label>
+              <RadioGroup
+                value={selectedColor}
+                onValueChange={(value) => {
+                  setSelectedColor(value);
+                  const colorIndex = product.color_variants.indexOf(value);
+                  if (colorIndex !== -1) {
+                    setCurrentImageIndex(colorIndex);
+                  }
+                }}
+                className="flex flex-wrap gap-3"
+              >
+                {product.color_variants.map((color, index) => (
+                  <div key={color} className="flex items-center space-x-2">
+                    <RadioGroupItem
+                      value={color}
+                      id={color}
+                      className="sr-only"
                     />
+                    <Label
+                      htmlFor={color}
+                      className={`cursor-pointer flex items-center space-x-2 p-3 rounded-lg border transition-all ${
+                        selectedColor === color
+                          ? 'border-accent bg-accent/10'
+                          : 'border-border hover:border-accent/50'
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded-full border border-border ${
+                          color === 'gold'
+                            ? 'bg-yellow-400'
+                            : color === 'rose_gold'
+                            ? 'bg-rose-400'
+                            : color === 'silver'
+                            ? 'bg-gray-300'
+                            : color === 'matte_gold'
+                            ? 'bg-yellow-600'
+                            : color === 'matte_silver'
+                            ? 'bg-gray-400'
+                            : color === 'vintage_copper'
+                            ? 'bg-orange-600'
+                            : 'bg-gray-800'
+                        }`}
+                      />
+                      <span className="text-sm font-medium">
+                        {colorNames[color]}
+                      </span>
+                    </Label>
                   </div>
                 ))}
-              </div>
-            )}
-          </motion.div>
+              </RadioGroup>
+            </div>
+          </div>
 
-          {/* Right: Product Info & Customization */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="space-y-6"
-          >
-            {/* Product Info */}
+          {/* Product Details */}
+          <div className="space-y-6">
             <div>
-              {product.isNew && (
-                <span className="inline-block bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm font-medium mb-3">
-                  New
-                </span>
-              )}
-              
-              <h1 className="text-3xl md:text-4xl font-playfair font-bold text-foreground mb-4">
-                {product.name}
+              <h1 className="text-3xl lg:text-4xl font-bold font-heading text-foreground mb-3">
+                {product.title}
               </h1>
-              
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`h-4 w-4 ${i < product.rating ? 'fill-accent text-accent' : 'text-muted-foreground/30'}`} 
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  ({product.reviewCount} reviews)
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-2xl font-bold text-foreground">
-                  ${product.price.toFixed(2)}
-                </span>
-                {product.originalPrice && (
-                  <>
-                    <span className="text-lg text-muted-foreground line-through">
-                      ${product.originalPrice.toFixed(2)}
-                    </span>
-                    <span className="bg-destructive text-destructive-foreground px-2 py-1 rounded text-sm font-medium">
-                      25% OFF
-                    </span>
-                  </>
-                )}
-              </div>
-
-              <p className="text-muted-foreground leading-relaxed mb-8">
+              <p className="text-lg text-muted-foreground leading-relaxed">
                 {product.description}
               </p>
             </div>
 
-            {/* Customization Options */}
-            <div className="border-t pt-8">
-              <h2 className="text-xl font-playfair font-semibold text-foreground mb-6">
-                Customize Your Pendant
-              </h2>
-              
-              <FontPicker />
-              <NameInput />
-              <PreviewName />
-              <ColorPicker />
+            {/* Price Section */}
+            <Card className="border border-accent/20 bg-accent/5">
+              <CardContent className="p-6">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-3xl font-bold text-foreground">
+                      {formatPrice(salePrice)}
+                    </span>
+                    <span className="text-lg text-muted-foreground line-through">
+                      {formatPrice(originalPrice)}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="secondary" className="bg-accent text-accent-foreground">
+                      Save {formatPrice(savings)}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      (25% off original price)
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              {/* Add to Cart */}
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleAddToCart}
-                  disabled={!isValid()}
-                  className="flex-1 btn-cta"
-                  size="lg"
-                >
-                  <ShoppingBag className="h-5 w-5 mr-2" />
-                  Add to Cart - ${product.price.toFixed(2)}
-                </Button>
-                <Button variant="outline" size="lg" className="btn-outline-luxury">
-                  <Heart className="h-5 w-5" />
-                </Button>
-              </div>
+            {/* Font Selection */}
+            <div className="space-y-3">
+              <Label htmlFor="font-select" className="text-sm font-medium">
+                Font Style
+              </Label>
+              <Select value={selectedFont} onValueChange={setSelectedFont}>
+                <SelectTrigger id="font-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {fontOptions.map((font) => (
+                    <SelectItem key={font} value={font}>
+                      {font}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </motion.div>
+
+            {/* Custom Text Input */}
+            <div className="space-y-3">
+              <Label htmlFor="custom-text" className="text-sm font-medium">
+                Your Name
+              </Label>
+              <Input
+                id="custom-text"
+                placeholder="Type the name (max 12 chars)"
+                value={customText}
+                onChange={handleCustomTextChange}
+                maxLength={12}
+                className={textError ? 'border-destructive' : ''}
+                aria-describedby={textError ? 'text-error' : undefined}
+              />
+              {textError && (
+                <p id="text-error" className="text-sm text-destructive">
+                  {textError}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {customText.length}/12 characters • Only letters and spaces allowed
+              </p>
+            </div>
+
+            {/* Add to Cart Button */}
+            <Button
+              onClick={handleAddToCart}
+              size="lg"
+              className="w-full"
+              disabled={!customText || !!textError}
+            >
+              <ShoppingCart className="mr-2 h-5 w-5" />
+              Add to Cart - {formatPrice(salePrice)}
+            </Button>
+
+            {/* Upsell Strip */}
+            <Card className="border border-muted bg-muted/50">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3">
+                  <Clock className="h-5 w-5 text-accent flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-foreground">
+                      Need it in a hurry?
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Next-day dispatch available for urgent orders
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

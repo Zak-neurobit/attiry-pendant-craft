@@ -4,15 +4,14 @@ import { persist } from 'zustand/middleware';
 export interface CartItem {
   id: string;
   productId: string;
-  name: string;
+  title: string;
   price: number;
-  image: string;
+  originalPrice: number;
+  color: string;
+  font?: string;
+  customText: string;
   quantity: number;
-  customization?: {
-    font: string;
-    color: string;
-    nameText: string;
-  };
+  image: string;
 }
 
 interface CartState {
@@ -24,50 +23,86 @@ interface CartState {
   clearCart: () => void;
   openCart: () => void;
   closeCart: () => void;
+  getTotalItems: () => number;
+  getSubtotal: () => number;
+  getDiscount: () => number;
   getTotal: () => number;
-  getItemCount: () => number;
 }
 
-export const useCartStore = create<CartState>()(
+export const useCart = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
       isOpen: false,
-      
-      addItem: (item) => {
-        const id = `${item.productId}-${Date.now()}`;
-        const newItem = { ...item, id };
-        
-        set((state) => ({
-          items: [...state.items, newItem],
-        }));
+
+      addItem: (newItem) => {
+        const items = get().items;
+        const existingItemIndex = items.findIndex(
+          (item) =>
+            item.productId === newItem.productId &&
+            item.color === newItem.color &&
+            item.font === newItem.font &&
+            item.customText === newItem.customText
+        );
+
+        if (existingItemIndex > -1) {
+          // Update quantity if item exists
+          const updatedItems = [...items];
+          updatedItems[existingItemIndex].quantity += newItem.quantity;
+          set({ items: updatedItems });
+        } else {
+          // Add new item
+          const id = `${newItem.productId}-${newItem.color}-${newItem.customText}-${Date.now()}`;
+          set({ items: [...items, { ...newItem, id }] });
+        }
       },
-      
-      removeItem: (id) =>
-        set((state) => ({
-          items: state.items.filter((item) => item.id !== id),
-        })),
-        
-      updateQuantity: (id, quantity) =>
-        set((state) => ({
-          items: state.items.map((item) =>
+
+      removeItem: (id) => {
+        set({ items: get().items.filter((item) => item.id !== id) });
+      },
+
+      updateQuantity: (id, quantity) => {
+        if (quantity <= 0) {
+          get().removeItem(id);
+          return;
+        }
+        set({
+          items: get().items.map((item) =>
             item.id === id ? { ...item, quantity } : item
           ),
-        })),
-        
-      clearCart: () => set({ items: [] }),
-      
-      openCart: () => set({ isOpen: true }),
-      closeCart: () => set({ isOpen: false }),
-      
-      getTotal: () => {
-        const { items } = get();
-        return items.reduce((total, item) => total + item.price * item.quantity, 0);
+        });
       },
-      
-      getItemCount: () => {
-        const { items } = get();
-        return items.reduce((count, item) => count + item.quantity, 0);
+
+      clearCart: () => {
+        set({ items: [] });
+      },
+
+      openCart: () => {
+        set({ isOpen: true });
+      },
+
+      closeCart: () => {
+        set({ isOpen: false });
+      },
+
+      getTotalItems: () => {
+        return get().items.reduce((total, item) => total + item.quantity, 0);
+      },
+
+      getSubtotal: () => {
+        return get().items.reduce(
+          (total, item) => total + item.originalPrice * item.quantity,
+          0
+        );
+      },
+
+      getDiscount: () => {
+        // 25% discount on original prices
+        return get().getSubtotal() * 0.25;
+      },
+
+      getTotal: () => {
+        return get().getSubtotal() - get().getDiscount();
       },
     }),
     {

@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Heart, Search, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import atteryLogo from '@/assets/attiry-logo.png';
+import { useCart } from '@/stores/cart';
 
 const Header = () => {
+  const { getTotalItems, openCart } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -57,15 +59,17 @@ const Header = () => {
             <button className="p-2 hover:bg-muted rounded-lg transition-colors hidden sm:block">
               <Heart className="h-5 w-5" />
             </button>
-            <Link 
-              to="/cart" 
+            <button 
               className="p-2 hover:bg-muted rounded-lg transition-colors relative"
+              onClick={openCart}
             >
               <ShoppingBag className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                2
-              </span>
-            </Link>
+              {getTotalItems() > 0 && (
+                <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {getTotalItems()}
+                </span>
+              )}
+            </button>
             <Link to="/account" className="p-2 hover:bg-muted rounded-lg transition-colors">
               <User className="h-5 w-5" />
             </Link>
