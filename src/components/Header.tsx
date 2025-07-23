@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Heart, Search, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import atteryLogo from '@/assets/attiry-logo.png';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -16,12 +17,19 @@ const Header = () => {
         {/* Main header */}
         <div className="flex items-center justify-between py-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="text-2xl font-playfair font-bold text-foreground">
-              Attiry
-            </div>
-            <div className="hidden sm:block text-xs text-muted-foreground uppercase tracking-widest">
-              Custom Pendants
+          <Link to="/" className="flex items-center space-x-3">
+            <img 
+              src={atteryLogo} 
+              alt="Attiry Logo" 
+              className="h-12 w-auto"
+            />
+            <div className="flex flex-col">
+              <div className="text-2xl font-playfair font-bold text-foreground leading-none">
+                Attiry
+              </div>
+              <div className="hidden sm:block text-xs text-muted-foreground uppercase tracking-widest">
+                Custom Pendants
+              </div>
             </div>
           </Link>
 
