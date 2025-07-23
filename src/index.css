@@ -190,6 +190,34 @@ All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
   }
 }
 
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Custom font utilities for pendant fonts */
+  .font-greatvibes {
+    font-family: 'Great Vibes', cursive;
+  }
+  
+  .font-allura {
+    font-family: 'Allura', cursive;
+  }
+  
+  .font-alexbrush {
+    font-family: 'Alex Brush', cursive;
+  }
+  
+  .font-dancingscript {
+    font-family: 'Dancing Script', cursive;
+  }
+  
+  .font-playfair-italic {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

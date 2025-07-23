@@ -8,6 +8,7 @@ import Footer from "./components/Footer";
 import BirthdayPopup from "./components/BirthdayPopup";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
+import ProductDetail from "./pages/ProductDetail";
 
 const queryClient = new QueryClient();
 
@@ -24,7 +25,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/shop" element={<div className="p-8 text-center">Shop page coming soon...</div>} />
-              <Route path="/product/:id" element={<div className="p-8 text-center">Product detail coming soon...</div>} />
+              <Route path="/product/:slug" element={<ProductDetail />} />
               <Route path="/cart" element={<div className="p-8 text-center">Cart page coming soon...</div>} />
               <Route path="/checkout" element={<div className="p-8 text-center">Checkout coming soon...</div>} />
               <Route path="/account" element={<div className="p-8 text-center">Account page coming soon...</div>} />
