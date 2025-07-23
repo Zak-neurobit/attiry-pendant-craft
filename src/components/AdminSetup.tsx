@@ -8,8 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export const AdminSetup = () => {
-  const [email, setEmail] = useState('zak.seid@gmail.com');
-  const [password, setPassword] = useState('Neurobit@123');
+  const [email, setEmail] = useState('zak@gmail.com');
+  const [password, setPassword] = useState('admin@123');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 

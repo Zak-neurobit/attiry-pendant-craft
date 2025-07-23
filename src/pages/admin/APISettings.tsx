@@ -257,18 +257,18 @@ export const APISettings = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {apiKeys.map((apiKey) => (
-                    <TableRow key={apiKey.id}>
-                      <TableCell className="font-medium">{apiKey.name}</TableCell>
+                  {apiKeys.map((key) => (
+                    <TableRow key={key.id}>
+                      <TableCell className="font-medium">{key.name}</TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <code className="text-sm font-mono">
-                            {apiKey.key_preview}
+                            {key.key_preview}
                           </code>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => copyToClipboard(apiKey.key_preview)}
+                            onClick={() => copyToClipboard(key.key_preview)}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
@@ -276,7 +276,7 @@ export const APISettings = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-1">
-                          {apiKey.permissions.map((permission) => (
+                          {key.permissions.map((permission) => (
                             <Badge key={permission} variant="secondary">
                               {permission}
                             </Badge>
@@ -284,18 +284,18 @@ export const APISettings = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {apiKey.last_used ? formatDate(apiKey.last_used) : 'Never'}
+                        {key.last_used ? formatDate(key.last_used) : 'Never'}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={apiKey.is_active ? "default" : "secondary"}>
-                          {apiKey.is_active ? 'Active' : 'Inactive'}
+                        <Badge variant={key.is_active ? "default" : "secondary"}>
+                          {key.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => revokeAPIKey(apiKey.id)}
+                          onClick={() => revokeAPIKey(key.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -330,26 +330,26 @@ export const APISettings = () => {
                 <h4>Products</h4>
                 <ul>
                   <li><code>GET /products</code> - List all products</li>
-                  <li><code>GET /products/{apiKey.id}</code> - Get single product</li>
+                  <li><code>GET /products/{id}</code> - Get single product</li>
                   <li><code>POST /products</code> - Create product</li>
-                  <li><code>PUT /products/{apiKey.id}</code> - Update product</li>
-                  <li><code>DELETE /products/{apiKey.id}</code> - Delete product</li>
+                  <li><code>PUT /products/{id}</code> - Update product</li>
+                  <li><code>DELETE /products/{id}</code> - Delete product</li>
                 </ul>
                 
                 <h4>Orders</h4>
                 <ul>
                   <li><code>GET /orders</code> - List all orders</li>
-                  <li><code>GET /orders/{apiKey.id}</code> - Get order details</li>
+                  <li><code>GET /orders/{id}</code> - Get order details</li>
                   <li><code>POST /orders</code> - Create order</li>
-                  <li><code>PUT /orders/{apiKey.id}</code> - Update order status</li>
+                  <li><code>PUT /orders/{id}</code> - Update order status</li>
                 </ul>
                 
                 <h4>Customers</h4>
                 <ul>
                   <li><code>GET /customers</code> - List customers</li>
-                  <li><code>GET /customers/{apiKey.id}</code> - Get customer details</li>
+                  <li><code>GET /customers/{id}</code> - Get customer details</li>
                   <li><code>POST /customers</code> - Create customer</li>
-                  <li><code>PUT /customers/{apiKey.id}</code> - Update customer</li>
+                  <li><code>PUT /customers/{id}</code> - Update customer</li>
                 </ul>
                 
                 <h4>Analytics</h4>
@@ -363,7 +363,7 @@ export const APISettings = () => {
                 <h4>Inventory</h4>
                 <ul>
                   <li><code>GET /inventory</code> - Stock levels</li>
-                  <li><code>PUT /inventory/{apiKey.id}</code> - Update stock</li>
+                  <li><code>PUT /inventory/{id}</code> - Update stock</li>
                 </ul>
               </div>
             </CardContent>
