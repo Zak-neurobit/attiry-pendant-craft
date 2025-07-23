@@ -1,5 +1,6 @@
+
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/stores/auth';
-import { LoginForm } from '@/components/auth/LoginForm';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -18,18 +19,11 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
   }
 
   if (!user) {
-    return <LoginForm />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   if (requireAdmin && !isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-destructive mb-2">Access Denied</h1>
-          <p className="text-muted-foreground">You don't have admin privileges to access this page.</p>
-        </div>
-      </div>
-    );
+    return <Navigate to="/admin/login" replace />;
   }
 
   return <>{children}</>;
