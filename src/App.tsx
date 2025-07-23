@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,9 +15,11 @@ import ProductDetail from "./pages/ProductDetail";
 import { About } from "./pages/About";
 import { Favourites } from "./pages/Favourites";
 import { SearchResults } from "./pages/SearchResults";
+import { Checkout } from "./pages/Checkout";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminSetup } from "@/components/AdminSetup";
 import { Dashboard } from "@/pages/admin/Dashboard";
 import { Products } from "@/pages/admin/Products";
 import { Orders } from "@/pages/admin/Orders";
@@ -77,7 +80,7 @@ const App = () => (
               <div className="min-h-screen bg-background flex flex-col">
                 <Header />
                 <main className="flex-1">
-                  <div className="p-8 text-center">Checkout coming soon...</div>
+                  <Checkout />
                 </main>
                 <Footer />
               </div>
@@ -114,6 +117,15 @@ const App = () => (
                 <Header />
                 <main className="flex-1">
                   <SearchResults />
+                </main>
+                <Footer />
+              </div>
+            } />
+            <Route path="/admin-setup" element={
+              <div className="min-h-screen bg-background flex flex-col">
+                <Header />
+                <main className="flex-1">
+                  <AdminSetup />
                 </main>
                 <Footer />
               </div>

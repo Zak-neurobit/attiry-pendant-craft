@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import { useAuth } from '@/stores/auth';
 import { authService } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,7 +27,7 @@ export const AdminSetup = () => {
         await authService.createAdminUser(user.id);
         toast({
           title: 'Success',
-          description: 'Admin user created successfully!',
+          description: 'Admin user created successfully! You can now access the admin dashboard.',
         });
       }
     } catch (error: any) {
@@ -35,9 +36,14 @@ export const AdminSetup = () => {
       if (error.message?.includes('already registered')) {
         try {
           await authService.signIn('zak.seid@gmail.com', 'Neurobit@123');
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            // Ensure admin role exists
+            await authService.createAdminUser(user.id);
+          }
           toast({
             title: 'Success',
-            description: 'Admin user signed in successfully!',
+            description: 'Admin user signed in successfully! You can now access the admin dashboard.',
           });
         } catch (signInError: any) {
           toast({
@@ -59,14 +65,24 @@ export const AdminSetup = () => {
   };
 
   return (
-    <div className="p-4">
-      <Button 
-        onClick={createAdminUser} 
-        disabled={isSettingUp}
-        className="w-full"
-      >
-        {isSettingUp ? 'Setting up admin...' : 'Create Admin User (zak.seid@gmail.com)'}
-      </Button>
+    <div className="p-4 max-w-md mx-auto">
+      <div className="text-center space-y-4">
+        <h2 className="text-2xl font-bold">Admin Setup</h2>
+        <p className="text-muted-foreground">
+          Set up the admin account for zak.seid@gmail.com
+        </p>
+        <Button 
+          onClick={createAdminUser} 
+          disabled={isSettingUp}
+          className="w-full"
+          size="lg"
+        >
+          {isSettingUp ? 'Setting up admin...' : 'Setup Admin Account'}
+        </Button>
+        <p className="text-sm text-muted-foreground">
+          This will create an admin account with access to the admin dashboard.
+        </p>
+      </div>
     </div>
   );
 };

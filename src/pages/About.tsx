@@ -1,3 +1,4 @@
+
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -32,12 +33,30 @@ export const About = () => {
   ];
 
   const galleryImages = [
-    { src: '/images/about/team-family.jpg', alt: 'Family team working together' },
-    { src: '/images/about/laser-cut.jpg', alt: 'Precision laser cutting process' },
-    { src: '/images/about/gem-selection.jpg', alt: 'Careful gem selection process' },
-    { src: '/images/about/workbench-tools.jpg', alt: 'Traditional tools on workbench' },
-    { src: '/images/about/casting.jpg', alt: 'Metal casting process' },
-    { src: '/images/about/quality-check.jpg', alt: 'Final quality inspection' },
+    { 
+      src: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&h=400&fit=crop&crop=center&auto=format&q=80', 
+      alt: 'Artisan carefully engraving a custom pendant' 
+    },
+    { 
+      src: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=600&h=400&fit=crop&crop=center&auto=format&q=80', 
+      alt: 'Precision tools and custom jewelry workspace' 
+    },
+    { 
+      src: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=600&h=400&fit=crop&crop=center&auto=format&q=80', 
+      alt: 'Beautiful custom gold pendant being crafted' 
+    },
+    { 
+      src: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&h=400&fit=crop&crop=faces&auto=format&q=80', 
+      alt: 'Happy customer wearing personalized name pendant' 
+    },
+    { 
+      src: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=600&h=400&fit=crop&crop=faces&auto=format&q=80', 
+      alt: 'Skilled craftsman working on jewelry details' 
+    },
+    { 
+      src: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=600&h=400&fit=crop&crop=faces&auto=format&q=80', 
+      alt: 'Final quality inspection of custom jewelry' 
+    },
   ];
 
   const containerVariants = {
@@ -74,8 +93,8 @@ export const About = () => {
       <motion.section variants={itemVariants} className="relative h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
         <div className="absolute inset-0 z-0">
           <img
-            src="/images/about/workshop-1980.jpg"
-            alt="Founder carving a trophy in 1980"
+            src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1920&h=1080&fit=crop&crop=center&auto=format&q=80"
+            alt="Master craftsman creating custom jewelry in workshop"
             className="w-full h-full object-cover opacity-20"
           />
         </div>
@@ -146,8 +165,8 @@ export const About = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <motion.div variants={itemVariants}>
               <img
-                src="/images/about/handcraft.jpg"
-                alt="Artisan soldering a ring with precision"
+                src="https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=800&h=600&fit=crop&crop=center&auto=format&q=80"
+                alt="Precision tools and detailed jewelry crafting process"
                 className="w-full h-96 object-cover rounded-lg shadow-soft"
               />
             </motion.div>
@@ -183,23 +202,78 @@ export const About = () => {
           
           <motion.div
             variants={containerVariants}
-            className="grid grid-cols-2 md:grid-cols-3 gap-4"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             {galleryImages.map((image, index) => (
               <motion.div
                 key={index}
                 variants={itemVariants}
                 transition={{ delay: index * 0.1 }}
-                className="group cursor-pointer"
+                className="group cursor-pointer overflow-hidden rounded-lg shadow-soft"
               >
                 <img
                   src={image.src}
                   alt={image.alt}
-                  className="w-full h-48 md:h-64 object-cover rounded-lg shadow-soft transition-transform duration-300 group-hover:scale-105"
+                  className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110"
                 />
+                <div className="p-4 bg-card">
+                  <p className="text-sm text-muted-foreground">{image.alt}</p>
+                </div>
               </motion.div>
             ))}
           </motion.div>
+        </div>
+      </motion.section>
+
+      {/* Customer Stories Section */}
+      <motion.section variants={itemVariants} className="py-20 bg-muted">
+        <div className="max-w-6xl mx-auto px-6">
+          <motion.h2
+            variants={itemVariants}
+            className="text-3xl md:text-4xl font-serif font-bold text-center mb-16"
+          >
+            Happy Customers
+          </motion.h2>
+          
+          <div className="grid md:grid-cols-2 gap-8">
+            <motion.div variants={itemVariants} className="bg-card p-8 rounded-lg shadow-soft">
+              <div className="flex items-center mb-4">
+                <img
+                  src="https://images.unsplash.com/photo-1494790108755-2616b612b588?w=100&h=100&fit=crop&crop=face&auto=format&q=80"
+                  alt="Happy customer Sarah"
+                  className="w-16 h-16 rounded-full object-cover mr-4"
+                />
+                <div>
+                  <h4 className="font-semibold">Sarah Johnson</h4>
+                  <p className="text-sm text-muted-foreground">New York, NY</p>
+                </div>
+              </div>
+              <p className="text-muted-foreground italic">
+                "The custom pendant with my daughter's name is absolutely beautiful. 
+                The craftsmanship is exceptional, and I wear it every day. It's become 
+                a treasured piece that I'll pass down to her."
+              </p>
+            </motion.div>
+            
+            <motion.div variants={itemVariants} className="bg-card p-8 rounded-lg shadow-soft">
+              <div className="flex items-center mb-4">
+                <img
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face&auto=format&q=80"
+                  alt="Happy customer Michael"
+                  className="w-16 h-16 rounded-full object-cover mr-4"
+                />
+                <div>
+                  <h4 className="font-semibold">Michael Chen</h4>
+                  <p className="text-sm text-muted-foreground">Los Angeles, CA</p>
+                </div>
+              </div>
+              <p className="text-muted-foreground italic">
+                "I ordered matching pendants for my wife and myself for our anniversary. 
+                The attention to detail and quality exceeded my expectations. 
+                Truly a work of art that represents our love story."
+              </p>
+            </motion.div>
+          </div>
         </div>
       </motion.section>
 
