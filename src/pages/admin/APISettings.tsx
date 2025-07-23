@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Copy, Eye, EyeOff, Key, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -15,15 +14,26 @@ import { supabase } from '@/integrations/supabase/client';
 interface APIKey {
   id: string;
   name: string;
-  key: string;
+  key_preview: string;
   permissions: string[];
   last_used: string | null;
   created_at: string;
   is_active: boolean;
 }
 
+interface APIUsageLog {
+  id: string;
+  endpoint: string;
+  method: string;
+  ip_address: string | null;
+  response_status: number | null;
+  response_time_ms: number | null;
+  created_at: string;
+}
+
 export const APISettings = () => {
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+  const [apiLogs, setApiLogs] = useState<APIUsageLog[]>([]);
   const [newKeyName, setNewKeyName] = useState('');
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [isGenerating, setIsGenerating] = useState(false);
@@ -31,33 +41,41 @@ export const APISettings = () => {
 
   useEffect(() => {
     fetchAPIKeys();
+    fetchAPILogs();
   }, []);
 
   const fetchAPIKeys = async () => {
-    // This would fetch from a dedicated API keys table
-    // For now, we'll use mock data
-    const mockKeys: APIKey[] = [
-      {
-        id: '1',
-        name: 'Production API',
-        key: 'ak_live_1234567890abcdef',
-        permissions: ['read', 'write'],
-        last_used: '2024-01-15T10:30:00Z',
-        created_at: '2024-01-01T00:00:00Z',
-        is_active: true
-      },
-      {
-        id: '2',
-        name: 'Mobile App',
-        key: 'ak_live_0987654321fedcba',
-        permissions: ['read'],
-        last_used: null,
-        created_at: '2024-01-10T00:00:00Z',
-        is_active: false
-      }
-    ];
-    
-    setApiKeys(mockKeys);
+    try {
+      const { data, error } = await supabase
+        .from('api_keys')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setApiKeys(data || []);
+    } catch (error) {
+      console.error('Error fetching API keys:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch API keys",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fetchAPILogs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('api_usage_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setApiLogs(data || []);
+    } catch (error) {
+      console.error('Error fetching API logs:', error);
+    }
   };
 
   const generateAPIKey = async () => {
@@ -74,25 +92,34 @@ export const APISettings = () => {
     try {
       // Generate a new API key
       const newKey = `ak_live_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+      const keyHash = await hashAPIKey(newKey);
+      const keyPreview = newKey.substring(0, 8) + '••••••••' + newKey.substring(newKey.length - 4);
       
-      const newAPIKey: APIKey = {
-        id: Date.now().toString(),
-        name: newKeyName,
-        key: newKey,
-        permissions: ['read'],
-        last_used: null,
-        created_at: new Date().toISOString(),
-        is_active: true
-      };
+      const { data, error } = await supabase
+        .from('api_keys')
+        .insert({
+          name: newKeyName,
+          key_hash: keyHash,
+          key_preview: keyPreview,
+          permissions: ['read'],
+          is_active: true
+        })
+        .select()
+        .single();
 
-      setApiKeys([...apiKeys, newAPIKey]);
+      if (error) throw error;
+
+      setApiKeys([data, ...apiKeys]);
       setNewKeyName('');
       
+      // Show the full key to user once
       toast({
         title: "Success",
-        description: "API key generated successfully",
+        description: `API key generated: ${newKey}`,
+        duration: 10000,
       });
     } catch (error) {
+      console.error('Error generating API key:', error);
       toast({
         title: "Error",
         description: "Failed to generate API key",
@@ -103,12 +130,36 @@ export const APISettings = () => {
     }
   };
 
+  const hashAPIKey = async (key: string): Promise<string> => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(key);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
   const revokeAPIKey = async (keyId: string) => {
-    setApiKeys(apiKeys.filter(key => key.id !== keyId));
-    toast({
-      title: "Success",
-      description: "API key revoked successfully",
-    });
+    try {
+      const { error } = await supabase
+        .from('api_keys')
+        .delete()
+        .eq('id', keyId);
+
+      if (error) throw error;
+
+      setApiKeys(apiKeys.filter(key => key.id !== keyId));
+      toast({
+        title: "Success",
+        description: "API key revoked successfully",
+      });
+    } catch (error) {
+      console.error('Error revoking API key:', error);
+      toast({
+        title: "Error",
+        description: "Failed to revoke API key",
+        variant: "destructive",
+      });
+    }
   };
 
   const toggleKeyVisibility = (keyId: string) => {
@@ -134,10 +185,6 @@ export const APISettings = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
-
-  const maskKey = (key: string) => {
-    return key.substring(0, 8) + '••••••••' + key.substring(key.length - 4);
   };
 
   return (
@@ -216,23 +263,12 @@ export const APISettings = () => {
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <code className="text-sm font-mono">
-                            {showKeys[apiKey.id] ? apiKey.key : maskKey(apiKey.key)}
+                            {apiKey.key_preview}
                           </code>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => toggleKeyVisibility(apiKey.id)}
-                          >
-                            {showKeys[apiKey.id] ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyToClipboard(apiKey.key)}
+                            onClick={() => copyToClipboard(apiKey.key_preview)}
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
@@ -294,26 +330,26 @@ export const APISettings = () => {
                 <h4>Products</h4>
                 <ul>
                   <li><code>GET /products</code> - List all products</li>
-                  <li><code>GET /products/{id}</code> - Get single product</li>
+                  <li><code>GET /products/{apiKey.id}</code> - Get single product</li>
                   <li><code>POST /products</code> - Create product</li>
-                  <li><code>PUT /products/{id}</code> - Update product</li>
-                  <li><code>DELETE /products/{id}</code> - Delete product</li>
+                  <li><code>PUT /products/{apiKey.id}</code> - Update product</li>
+                  <li><code>DELETE /products/{apiKey.id}</code> - Delete product</li>
                 </ul>
                 
                 <h4>Orders</h4>
                 <ul>
                   <li><code>GET /orders</code> - List all orders</li>
-                  <li><code>GET /orders/{id}</code> - Get order details</li>
+                  <li><code>GET /orders/{apiKey.id}</code> - Get order details</li>
                   <li><code>POST /orders</code> - Create order</li>
-                  <li><code>PUT /orders/{id}</code> - Update order status</li>
+                  <li><code>PUT /orders/{apiKey.id}</code> - Update order status</li>
                 </ul>
                 
                 <h4>Customers</h4>
                 <ul>
                   <li><code>GET /customers</code> - List customers</li>
-                  <li><code>GET /customers/{id}</code> - Get customer details</li>
+                  <li><code>GET /customers/{apiKey.id}</code> - Get customer details</li>
                   <li><code>POST /customers</code> - Create customer</li>
-                  <li><code>PUT /customers/{id}</code> - Update customer</li>
+                  <li><code>PUT /customers/{apiKey.id}</code> - Update customer</li>
                 </ul>
                 
                 <h4>Analytics</h4>
@@ -327,7 +363,7 @@ export const APISettings = () => {
                 <h4>Inventory</h4>
                 <ul>
                   <li><code>GET /inventory</code> - Stock levels</li>
-                  <li><code>PUT /inventory/{product_id}</code> - Update stock</li>
+                  <li><code>PUT /inventory/{apiKey.id}</code> - Update stock</li>
                 </ul>
               </div>
             </CardContent>
@@ -357,18 +393,42 @@ export const APISettings = () => {
         <TabsContent value="logs">
           <Card>
             <CardHeader>
-              <CardTitle>API Logs</CardTitle>
+              <CardTitle>API Usage Logs</CardTitle>
               <CardDescription>
                 Monitor API usage and performance
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <h3 className="text-lg font-semibold mb-2">API Logs</h3>
-                <p className="text-muted-foreground">
-                  Coming soon - Real-time API logs and monitoring
-                </p>
-              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Endpoint</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Response Time</TableHead>
+                    <TableHead>IP Address</TableHead>
+                    <TableHead>Timestamp</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {apiLogs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="font-mono">{log.endpoint}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{log.method}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={log.response_status === 200 ? "default" : "destructive"}>
+                          {log.response_status || 'N/A'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{log.response_time_ms ? `${log.response_time_ms}ms` : 'N/A'}</TableCell>
+                      <TableCell>{log.ip_address || 'N/A'}</TableCell>
+                      <TableCell>{formatDate(log.created_at)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
