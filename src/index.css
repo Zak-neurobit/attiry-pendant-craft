@@ -2,41 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Attiry Design System - Luxury E-commerce for Custom Name Pendants
+All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Brand Colors - Luxury Palette */
+    --background: 32 28% 97%; /* #F7F4F2 - Muted pastel background */
+    --foreground: 0 0% 17%; /* #2B2B2B - Charcoal text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 32 28% 97%;
+    --card-foreground: 0 0% 17%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 32 28% 97%;
+    --popover-foreground: 0 0% 17%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - Charcoal for premium feel */
+    --primary: 0 0% 17%; /* #2B2B2B */
+    --primary-foreground: 32 28% 97%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary - Light variations */
+    --secondary: 32 20% 94%;
+    --secondary-foreground: 0 0% 17%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted tones */
+    --muted: 32 20% 92%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent - Gold for luxury touches */
+    --accent: 32 30% 62%; /* #C4A07A - Luxury gold */
+    --accent-foreground: 0 0% 17%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Additional luxury colors */
+    --gold: 32 30% 62%; /* #C4A07A */
+    --rose-gold: 14 45% 68%;
+    --silver: 0 0% 75%;
+    --copper: 22 55% 55%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* CTA and interactive elements */
+    --cta: 0 0% 0%; /* Pure black for CTA buttons */
+    --cta-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 32 20% 88%;
+    --input: 32 20% 90%;
+    --ring: 32 30% 62%;
+
+    --radius: 0.75rem;
+
+    /* Luxury gradients */
+    --gradient-luxury: linear-gradient(135deg, hsl(var(--gold)), hsl(var(--rose-gold)));
+    --gradient-hero: linear-gradient(180deg, hsl(var(--background)), hsl(32 25% 95%));
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(32 25% 96%));
+
+    /* Shadows for premium feel */
+    --shadow-luxury: 0 10px 40px -10px hsl(var(--gold) / 0.3);
+    --shadow-card: 0 4px 20px -2px hsl(0 0% 0% / 0.08);
+    --shadow-button: 0 4px 14px 0 hsl(0 0% 0% / 0.15);
+
+    /* Transitions */
+    --transition-luxury: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.3s ease-out;
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +129,85 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-inter antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-playfair;
+  }
+}
+
+@layer components {
+  /* Luxury button variants */
+  .btn-cta {
+    @apply bg-cta text-cta-foreground px-8 py-3 rounded-lg font-medium 
+           transition-all duration-300 hover:scale-105 hover:shadow-button
+           active:scale-95;
+  }
+
+  .btn-luxury {
+    @apply bg-gradient-to-r from-gold to-rose-gold text-white px-6 py-3 
+           rounded-lg font-medium transition-all duration-300 hover:scale-105 
+           hover:shadow-luxury;
+  }
+
+  .btn-outline-luxury {
+    @apply border border-accent text-accent bg-transparent px-6 py-3 
+           rounded-lg font-medium transition-all duration-300 
+           hover:bg-accent hover:text-accent-foreground;
+  }
+
+  /* Luxury card styles */
+  .card-luxury {
+    @apply bg-gradient-to-br from-card to-secondary border border-border 
+           rounded-xl shadow-card transition-all duration-300 
+           hover:shadow-luxury hover:scale-[1.02];
+  }
+
+  /* Premium input styles */
+  .input-luxury {
+    @apply w-full px-4 py-3 border border-input rounded-lg bg-background
+           focus:border-accent focus:ring-2 focus:ring-accent/20 
+           transition-all duration-300 placeholder:text-muted-foreground;
+  }
+
+  /* Luxury animations */
+  .fade-in {
+    @apply animate-[fadeIn_0.6s_ease-out_forwards];
+  }
+
+  .slide-up {
+    @apply animate-[slideUp_0.8s_ease-out_forwards];
+  }
+
+  /* Luxury hover effects */
+  .hover-lift {
+    @apply transition-all duration-300 hover:scale-105 hover:shadow-luxury;
+  }
+
+  .parallax {
+    @apply transition-transform duration-700 ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

@@ -61,7 +61,18 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// Attiry luxury brand colors
+				gold: 'hsl(var(--gold))',
+				'rose-gold': 'hsl(var(--rose-gold))',
+				silver: 'hsl(var(--silver))',
+				copper: 'hsl(var(--copper))',
+				cta: 'hsl(var(--cta))',
+				'cta-foreground': 'hsl(var(--cta-foreground))'
+			},
+			fontFamily: {
+				'playfair': ['Playfair Display', 'serif'],
+				'inter': ['Inter', 'sans-serif'],
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
