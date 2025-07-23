@@ -33,14 +33,14 @@ export const CartDrawer = () => {
       x: '100%',
       transition: {
         duration: 0.3,
-        ease: 'easeOut',
+        ease: [0.4, 0, 0.2, 1],
       },
     },
     open: {
       x: 0,
       transition: {
         duration: 0.3,
-        ease: 'easeOut',
+        ease: [0.4, 0, 0.2, 1],
       },
     },
   };
