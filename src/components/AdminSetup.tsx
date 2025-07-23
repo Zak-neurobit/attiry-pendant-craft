@@ -13,7 +13,34 @@ export const AdminSetup = () => {
   const createAdminUser = async () => {
     setIsSettingUp(true);
     try {
-      // Sign up the admin user
+      // First, try to sign in with existing credentials
+      try {
+        await authService.signIn('zak.seid@gmail.com', 'Neurobit@123');
+        
+        // Ensure admin role exists
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          try {
+            await authService.createAdminUser(user.id);
+          } catch (roleError) {
+            // Role might already exist, that's fine
+            console.log('Admin role already exists or created');
+          }
+        }
+        
+        toast({
+          title: 'Success',
+          description: 'Admin user signed in successfully! You can now access the admin dashboard.',
+        });
+        
+        // Redirect to admin dashboard
+        window.location.href = '/admin';
+        return;
+      } catch (signInError) {
+        console.log('Sign in failed, attempting to create user');
+      }
+
+      // If sign in fails, create new user
       await authService.signUp(
         'zak.seid@gmail.com', 
         'Neurobit@123',
@@ -29,36 +56,17 @@ export const AdminSetup = () => {
           title: 'Success',
           description: 'Admin user created successfully! You can now access the admin dashboard.',
         });
+        
+        // Redirect to admin dashboard
+        window.location.href = '/admin';
       }
     } catch (error: any) {
       console.error('Admin setup error:', error);
-      // If user already exists, just log them in
-      if (error.message?.includes('already registered')) {
-        try {
-          await authService.signIn('zak.seid@gmail.com', 'Neurobit@123');
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            // Ensure admin role exists
-            await authService.createAdminUser(user.id);
-          }
-          toast({
-            title: 'Success',
-            description: 'Admin user signed in successfully! You can now access the admin dashboard.',
-          });
-        } catch (signInError: any) {
-          toast({
-            title: 'Error',
-            description: signInError.message || 'Failed to sign in admin user',
-            variant: 'destructive',
-          });
-        }
-      } else {
-        toast({
-          title: 'Error',
-          description: error.message || 'Failed to create admin user',
-          variant: 'destructive',
-        });
-      }
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to set up admin user',
+        variant: 'destructive',
+      });
     } finally {
       setIsSettingUp(false);
     }

@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/components/auth/AuthProvider';
-import { Index } from '@/pages/Index';
+import Index from '@/pages/Index';
 import { Shop } from '@/pages/Shop';
 import { About } from '@/pages/About';
 import { Terms } from '@/pages/Terms';
@@ -21,10 +21,11 @@ import { Products } from '@/pages/admin/Products';
 import { Orders } from '@/pages/admin/Orders';
 import { Customers } from '@/pages/admin/Customers';
 import { Analytics } from '@/pages/admin/Analytics';
+import { APISettings } from '@/pages/admin/APISettings';
 import { Settings } from '@/pages/admin/Settings';
 import { AISettings } from '@/pages/admin/AISettings';
 import { ProtectedRoute } from '@/components/admin/ProtectedRoute';
-import { NotFound } from '@/pages/NotFound';
+import NotFound from '@/pages/NotFound';
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -52,7 +53,7 @@ function App() {
               
               {/* Admin Routes */}
               <Route path="/admin" element={
-                <ProtectedRoute>
+                <ProtectedRoute requireAdmin={true}>
                   <AdminLayout />
                 </ProtectedRoute>
               }>
@@ -61,6 +62,7 @@ function App() {
                 <Route path="orders" element={<Orders />} />
                 <Route path="customers" element={<Customers />} />
                 <Route path="analytics" element={<Analytics />} />
+                <Route path="api-settings" element={<APISettings />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="ai-settings" element={<AISettings />} />
               </Route>

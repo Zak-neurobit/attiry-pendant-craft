@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
@@ -8,6 +9,7 @@ import {
   Users,
   Bot,
   Settings,
+  Key,
 } from 'lucide-react';
 
 const navigation = [
@@ -16,6 +18,7 @@ const navigation = [
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { name: 'Customers', href: '/admin/customers', icon: Users },
+  { name: 'API Settings', href: '/admin/api-settings', icon: Key },
   { name: 'AI Settings', href: '/admin/ai-settings', icon: Bot },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
