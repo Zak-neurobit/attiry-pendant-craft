@@ -11,13 +11,12 @@ export const TrustBadges: React.FC = () => {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 p-4 bg-gray-50 rounded-lg">
-      {badges.map((badge, index) => (
-        <div key={index} className="flex flex-col items-center text-center">
-          <badge.icon className="h-6 w-6 text-green-600 mb-2" />
-          <span className="text-xs text-gray-600">{badge.text}</span>
-        </div>
-      ))}
+    <div className="mt-6 p-4 bg-muted/30 rounded-lg border">
+      <div className="text-center text-sm text-muted-foreground">
+        <span className="font-medium">
+          Secure Checkout • 7-Day Return if Damaged • Quality Guarantee • Fast Shipping
+        </span>
+      </div>
     </div>
   );
 };

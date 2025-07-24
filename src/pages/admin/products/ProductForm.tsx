@@ -1,45 +1,18 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Save, ArrowLeft, Eye, Wand2, Sparkles } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { ImageUploader } from '@/components/admin/ImageUploader';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ImageUploader } from '@/components/admin/ImageUploader';
-
-const chainTypes = [
-  { id: '16_inch', label: '16 inch' },
-  { id: '18_inch', label: '18 inch' },
-  { id: '20_inch', label: '20 inch' },
-  { id: '22_inch', label: '22 inch' },
-];
-
-// Define valid color options with proper mapping
-const colorOptions = [
-  { id: 'gold', label: 'Gold Plated' },
-  { id: 'matte_gold', label: 'Matte Gold' },
-  { id: 'rose_gold', label: 'Rose Gold' },
-  { id: 'silver', label: 'Silver' },
-  { id: 'matte_silver', label: 'Matte Silver' },
-  { id: 'vintage_copper', label: 'Vintage Copper' },
-  { id: 'black', label: 'Black' },
-];
-
-const fontOptions = [
-  'Arial', 'Times New Roman', 'Great Vibes', 'Dancing Script', 'Pacifico',
-  'Lobster', 'Satisfy', 'Kalam', 'Caveat', 'Indie Flower'
-];
-
-// Define valid color type based on database schema
-type ValidColorVariant = 'gold' | 'rose_gold' | 'silver' | 'matte_gold' | 'matte_silver' | 'vintage_copper' | 'black';
+import { ArrowLeft, Sparkles, Eye, Tag, Save, X } from 'lucide-react';
+import { defaultModel } from '@/services/openai';
 
 interface ProductFormData {
   title: string;
@@ -47,70 +20,60 @@ interface ProductFormData {
   price: number;
   compare_price: number;
   stock: number;
+  sku: string;
   is_active: boolean;
   image_urls: string[];
+  color_variants: string[];
   chain_types: string[];
-  color_variants: ValidColorVariant[];
   fonts: string[];
   meta_title: string;
   meta_description: string;
+  keywords: string[];
   tags: string[];
+  cogs: number;
 }
 
+const defaultFormData: ProductFormData = {
+  title: '',
+  description: '',
+  price: 0,
+  compare_price: 0,
+  stock: 0,
+  sku: '',
+  is_active: true,
+  image_urls: [],
+  color_variants: ['gold'],
+  chain_types: [],
+  fonts: ['Great Vibes'],
+  meta_title: '',
+  meta_description: '',
+  keywords: [],
+  tags: [],
+  cogs: 0,
+};
+
 export const ProductForm = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { id } = useParams();
   const isEditing = Boolean(id);
-
-  const [formData, setFormData] = useState<ProductFormData>({
-    title: '',
-    description: '',
-    price: 0,
-    compare_price: 0,
-    stock: 0,
-    is_active: true,
-    image_urls: [],
-    chain_types: [],
-    color_variants: [],
-    fonts: [],
-    meta_title: '',
-    meta_description: '',
-    tags: [],
-  });
-
   const [loading, setLoading] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiEnabled, setAiEnabled] = useState(false);
+  const [formData, setFormData] = useState<ProductFormData>(defaultFormData);
+  const [aiLoading, setAiLoading] = useState({ description: false, metadata: false, image: false });
+  const { toast } = useToast();
 
   useEffect(() => {
     if (isEditing && id) {
-      fetchProduct(id);
+      loadProduct(id);
     }
-    checkAiEnabled();
-  }, [id, isEditing]);
+  }, [isEditing, id]);
 
-  const checkAiEnabled = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'openai_api_key')
-        .single();
-
-      if (error && error.code !== 'PGRST116') return;
-      setAiEnabled(!!data);
-    } catch (error) {
-      console.error('Error checking AI status:', error);
-    }
-  };
-
-  const fetchProduct = async (productId: string) => {
+  const loadProduct = async (id: string) => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('id', productId)
+        .eq('id', id)
         .single();
 
       if (error) throw error;
@@ -121,69 +84,22 @@ export const ProductForm = () => {
         price: data.price || 0,
         compare_price: data.compare_price || 0,
         stock: data.stock || 0,
+        sku: data.sku || '',
         is_active: data.is_active || true,
         image_urls: data.image_urls || [],
-        chain_types: data.chain_types || [],
         color_variants: data.color_variants || [],
+        chain_types: data.chain_types || [],
         fonts: data.fonts || [],
         meta_title: data.meta_title || '',
         meta_description: data.meta_description || '',
+        keywords: data.keywords || [],
         tags: data.tags || [],
+        cogs: data.cogs || 0,
       });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to fetch product",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      const productData = {
-        title: formData.title,
-        description: formData.description,
-        price: formData.price,
-        compare_price: formData.compare_price,
-        stock: formData.stock,
-        is_active: formData.is_active,
-        image_urls: formData.image_urls,
-        chain_types: formData.chain_types,
-        color_variants: formData.color_variants,
-        fonts: formData.fonts,
-        meta_title: formData.meta_title,
-        meta_description: formData.meta_description,
-        tags: formData.tags,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (isEditing) {
-        const { error } = await supabase
-          .from('products')
-          .update(productData)
-          .eq('id', id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('products')
-          .insert(productData);
-
-        if (error) throw error;
-      }
-
-      toast({
-        title: "Success",
-        description: `Product ${isEditing ? 'updated' : 'created'} successfully`,
-      });
-
-      navigate('/admin/products');
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || `Failed to ${isEditing ? 'update' : 'create'} product`,
+        description: error.message || "Failed to load product",
         variant: "destructive",
       });
     } finally {
@@ -191,72 +107,130 @@ export const ProductForm = () => {
     }
   };
 
-  const analyzeImageWithAI = async () => {
-    if (!formData.image_urls.length) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    
+    // Handle number inputs
+    if (type === 'number') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: parseFloat(value) || 0,
+      }));
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (isEditing && id) {
+        // Update existing product
+        const { error } = await supabase
+          .from('products')
+          .update(formData)
+          .eq('id', id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Product updated successfully",
+        });
+      } else {
+        // Create new product
+        const { error } = await supabase
+          .from('products')
+          .insert([formData]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Product created successfully",
+        });
+      }
+
+      navigate('/admin/products');
+    } catch (error: any) {
       toast({
-        title: "No Image",
-        description: "Please upload an image first",
+        title: "Error",
+        description: error.message || "Failed to save product",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImageAnalysis = async () => {
+    if (formData.image_urls.length === 0) {
+      toast({
+        title: "No Images",
+        description: "Please upload at least one image to analyze",
         variant: "destructive",
       });
       return;
     }
 
-    if (!aiEnabled) {
-      toast({
-        title: "AI Not Configured",
-        description: "Please configure OpenAI API key in AI Settings first",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setAiLoading(true);
+    setAiLoading(prev => ({ ...prev, image: true }));
     try {
       const { data, error } = await supabase.functions.invoke('ai-analyze-image', {
-        body: { imageUrl: formData.image_urls[0] }
+        body: { 
+          imageUrl: formData.image_urls[0],
+          model: defaultModel
+        }
       });
 
       if (error) throw error;
 
-      // Update form with AI analysis
+      // Update form with AI suggestions
       setFormData(prev => ({
         ...prev,
         description: data.description || prev.description,
-        tags: [...(prev.tags || []), ...(data.tags || [])],
+        tags: [...new Set([...prev.tags, ...(data.tags || [])])],
+        keywords: [...new Set([...prev.keywords, ...(data.tags || [])])],
       }));
 
       toast({
-        title: "AI Analysis Complete",
-        description: "Product description and tags have been generated",
+        title: "Analysis Complete",
+        description: "Product information updated with AI insights",
       });
     } catch (error: any) {
       toast({
-        title: "AI Analysis Failed",
-        description: error.message || "Unable to analyze image with AI",
+        title: "Analysis Failed",
+        description: error.message || "Failed to analyze image",
         variant: "destructive",
       });
     } finally {
-      setAiLoading(false);
+      setAiLoading(prev => ({ ...prev, image: false }));
     }
   };
 
-  const enhanceDescriptionWithAI = async () => {
-    if (!aiEnabled) {
+  const enhanceDescription = async () => {
+    if (!formData.title.trim()) {
       toast({
-        title: "AI Not Configured",
-        description: "Please configure OpenAI API key in AI Settings first",
+        title: "Missing Title",
+        description: "Please enter a product title first",
         variant: "destructive",
       });
       return;
     }
 
-    setAiLoading(true);
+    setAiLoading(prev => ({ ...prev, description: true }));
     try {
       const { data, error } = await supabase.functions.invoke('ai-generate-description', {
         body: {
           currentDescription: formData.description,
           productTitle: formData.title,
-          productType: 'jewelry'
+          productType: 'jewelry',
+          model: defaultModel
         }
       });
 
@@ -264,7 +238,7 @@ export const ProductForm = () => {
 
       setFormData(prev => ({
         ...prev,
-        description: data.description
+        description: data.description || prev.description,
       }));
 
       toast({
@@ -274,31 +248,32 @@ export const ProductForm = () => {
     } catch (error: any) {
       toast({
         title: "Enhancement Failed",
-        description: error.message || "Unable to enhance description with AI",
+        description: error.message || "Failed to enhance description",
         variant: "destructive",
       });
     } finally {
-      setAiLoading(false);
+      setAiLoading(prev => ({ ...prev, description: false }));
     }
   };
 
-  const generateSEOWithAI = async () => {
-    if (!aiEnabled) {
+  const generateMetadata = async () => {
+    if (!formData.title.trim()) {
       toast({
-        title: "AI Not Configured",
-        description: "Please configure OpenAI API key in AI Settings first",
+        title: "Missing Title",
+        description: "Please enter a product title first",
         variant: "destructive",
       });
       return;
     }
 
-    setAiLoading(true);
+    setAiLoading(prev => ({ ...prev, metadata: true }));
     try {
       const { data, error } = await supabase.functions.invoke('ai-generate-metadata', {
         body: {
           productTitle: formData.title,
           description: formData.description,
-          category: 'jewelry'
+          category: 'jewelry',
+          model: defaultModel
         }
       });
 
@@ -306,365 +281,322 @@ export const ProductForm = () => {
 
       setFormData(prev => ({
         ...prev,
-        meta_title: data.metaTitle || '',
-        meta_description: data.metaDescription || '',
-        tags: [...(prev.tags || []), ...(data.tags || [])]
+        meta_title: data.metaTitle || prev.meta_title,
+        meta_description: data.metaDescription || prev.meta_description,
+        tags: [...new Set([...prev.tags, ...(data.tags || [])])],
+        keywords: [...new Set([...prev.keywords, ...(data.tags || [])])],
       }));
 
       toast({
-        title: "SEO Generated",
-        description: "Meta title and description have been generated",
+        title: "Metadata Generated",
+        description: "SEO metadata has been created with AI",
       });
     } catch (error: any) {
       toast({
-        title: "SEO Generation Failed",
-        description: error.message || "Unable to generate SEO with AI",
+        title: "Generation Failed",
+        description: error.message || "Failed to generate metadata",
         variant: "destructive",
       });
     } finally {
-      setAiLoading(false);
-    }
-  };
-
-  const handleFontSelect = (fontValue: string) => {
-    if (!formData.fonts.includes(fontValue)) {
-      setFormData({
-        ...formData,
-        fonts: [...formData.fonts, fontValue]
-      });
-    }
-  };
-
-  const removeFontFromList = (fontToRemove: string) => {
-    setFormData({
-      ...formData,
-      fonts: formData.fonts.filter(font => font !== fontToRemove)
-    });
-  };
-
-  const handleColorChange = (colorId: string, checked: boolean) => {
-    const validColor = colorId as ValidColorVariant;
-    if (checked) {
-      if (!formData.color_variants.includes(validColor)) {
-        setFormData({
-          ...formData,
-          color_variants: [...formData.color_variants, validColor]
-        });
-      }
-    } else {
-      setFormData({
-        ...formData,
-        color_variants: formData.color_variants.filter(id => id !== validColor)
-      });
+      setAiLoading(prev => ({ ...prev, metadata: false }));
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate('/admin/products')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Products
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">
-              {isEditing ? 'Edit Product' : 'Add New Product'}
-            </h1>
-            <p className="text-muted-foreground">
-              {isEditing ? 'Modify your product details' : 'Create a new product for your store'}
-            </p>
-          </div>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Eye className="mr-2 h-4 w-4" />
-            Preview
-          </Button>
-          <Button onClick={handleSave} disabled={loading}>
-            <Save className="mr-2 h-4 w-4" />
-            {loading ? 'Saving...' : 'Save Product'}
-          </Button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/admin/products')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Products
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">
+            {isEditing ? 'Edit Product' : 'Add New Product'}
+          </h1>
+          <p className="text-muted-foreground">
+            {isEditing ? 'Update product information' : 'Create a new jewelry product'}
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Product Title */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Product Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="title">Product Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Enter product title"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="description">Description</Label>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={enhanceDescriptionWithAI}
-                    disabled={aiLoading || !aiEnabled}
-                  >
-                    <Wand2 className="mr-2 h-4 w-4" />
-                    {aiEnabled ? 'Enhance with AI' : 'Configure AI Settings'}
-                  </Button>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Basic Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Product Information</CardTitle>
+                <CardDescription>
+                  Basic details about your product
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Product Title</Label>
+                    <Input
+                      id="title"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      placeholder="Custom Gold Name Pendant"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sku">SKU</Label>
+                    <Input
+                      id="sku"
+                      name="sku"
+                      value={formData.sku}
+                      onChange={handleChange}
+                      placeholder="CGNP-001"
+                    />
+                  </div>
                 </div>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Enter product description"
-                  rows={6}
-                />
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Product Images */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="description">Description</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={enhanceDescription}
+                      disabled={aiLoading.description}
+                    >
+                      {aiLoading.description ? (
+                        <div className="animate-spin h-4 w-4 mr-2" />
+                      ) : (
+                        <Sparkles className="h-4 w-4 mr-2" />
+                      )}
+                      Enhance with AI
+                    </Button>
+                  </div>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder="Elegant gold-plated pendant with custom name engraving..."
+                    rows={6}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Images */}
+            <Card>
+              <CardHeader>
                 <CardTitle>Product Images</CardTitle>
+                <CardDescription>
+                  Upload high-quality images of your product
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ImageUploader
+                  imageUrls={formData.image_urls}
+                  onImagesChange={(urls) => setFormData(prev => ({
+                    ...prev,
+                    image_urls: urls
+                  }))}
+                  productId={id}
+                />
                 {formData.image_urls.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={analyzeImageWithAI}
-                    disabled={aiLoading || !aiEnabled}
-                  >
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    {aiEnabled ? 'Analyze with AI' : 'Configure AI Settings'}
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ImageUploader
-                imageUrls={formData.image_urls}
-                onImagesChange={(urls) => setFormData(prev => ({ ...prev, image_urls: urls }))}
-                productId={id}
-              />
-            </CardContent>
-          </Card>
-
-          {/* SEO Settings */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>SEO Settings</CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={generateSEOWithAI}
-                  disabled={aiLoading || !aiEnabled}
-                >
-                  <Wand2 className="mr-2 h-4 w-4" />
-                  {aiEnabled ? 'Generate with AI' : 'Configure AI Settings'}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="meta_title">Meta Title</Label>
-                <Input
-                  id="meta_title"
-                  value={formData.meta_title}
-                  onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
-                  placeholder="Enter meta title"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="meta_description">Meta Description</Label>
-                <Textarea
-                  id="meta_description"
-                  value={formData.meta_description}
-                  onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
-                  placeholder="Enter meta description"
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column - Sidebar */}
-        <div className="space-y-6">
-          {/* Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Product Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_active"
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                />
-                <Label htmlFor="is_active">
-                  {formData.is_active ? 'Active' : 'Draft'}
-                </Label>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pricing */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Pricing</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="price">Price ($)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="compare_price">Compare at Price ($)</Label>
-                <Input
-                  id="compare_price"
-                  type="number"
-                  value={formData.compare_price}
-                  onChange={(e) => setFormData({ ...formData, compare_price: parseFloat(e.target.value) || 0 })}
-                  placeholder="0.00"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Inventory */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Inventory</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div>
-                <Label htmlFor="stock">Quantity</Label>
-                <Input
-                  id="stock"
-                  type="number"
-                  value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
-                  placeholder="0"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Product Options */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Product Options</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Chain Types */}
-              <div>
-                <Label className="text-sm font-medium">Chain Types</Label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {chainTypes.map((chain) => (
-                    <div key={chain.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={chain.id}
-                        checked={formData.chain_types.includes(chain.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFormData({
-                              ...formData,
-                              chain_types: [...formData.chain_types, chain.id]
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              chain_types: formData.chain_types.filter(id => id !== chain.id)
-                            });
-                          }
-                        }}
-                      />
-                      <Label htmlFor={chain.id} className="text-sm">
-                        {chain.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Colors */}
-              <div>
-                <Label className="text-sm font-medium">Colors</Label>
-                <div className="grid grid-cols-1 gap-2 mt-2">
-                  {colorOptions.map((color) => (
-                    <div key={color.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={color.id}
-                        checked={formData.color_variants.includes(color.id as ValidColorVariant)}
-                        onCheckedChange={(checked) => handleColorChange(color.id, checked as boolean)}
-                      />
-                      <Label htmlFor={color.id} className="text-sm">
-                        {color.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Fonts */}
-              <div>
-                <Label htmlFor="fonts">Font Options</Label>
-                <Select onValueChange={handleFontSelect}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select fonts" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fontOptions.map((font) => (
-                      <SelectItem key={font} value={font}>
-                        {font}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                {formData.fonts.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {formData.fonts.map((font) => (
-                      <Badge 
-                        key={font} 
-                        variant="secondary"
-                        className="cursor-pointer"
-                        onClick={() => removeFontFromList(font)}
-                      >
-                        {font} ×
-                      </Badge>
-                    ))}
+                  <div className="mt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleImageAnalysis}
+                      disabled={aiLoading.image}
+                    >
+                      {aiLoading.image ? (
+                        <div className="animate-spin h-4 w-4 mr-2" />
+                      ) : (
+                        <Eye className="h-4 w-4 mr-2" />
+                      )}
+                      Analyze with AI
+                    </Button>
                   </div>
                 )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* SEO & Metadata */}
+            <Card>
+              <CardHeader>
+                <CardTitle>SEO & Metadata</CardTitle>
+                <CardDescription>
+                  Optimize your product for search engines
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Meta Information</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={generateMetadata}
+                    disabled={aiLoading.metadata}
+                  >
+                    {aiLoading.metadata ? (
+                      <div className="animate-spin h-4 w-4 mr-2" />
+                    ) : (
+                      <Tag className="h-4 w-4 mr-2" />
+                    )}
+                    Generate with AI
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="meta_title">Meta Title</Label>
+                  <Input
+                    id="meta_title"
+                    name="meta_title"
+                    value={formData.meta_title}
+                    onChange={handleChange}
+                    placeholder="Custom Gold Name Pendant - Personalized Jewelry"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {formData.meta_title.length}/60 characters
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="meta_description">Meta Description</Label>
+                  <Textarea
+                    id="meta_description"
+                    name="meta_description"
+                    value={formData.meta_description}
+                    onChange={handleChange}
+                    placeholder="Beautiful custom name pendant crafted with premium materials..."
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {formData.meta_description.length}/160 characters
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Status & Visibility */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Status</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="is_active">Active</Label>
+                  <Switch
+                    id="is_active"
+                    checked={formData.is_active}
+                    onCheckedChange={(checked) => setFormData(prev => ({
+                      ...prev,
+                      is_active: checked
+                    }))}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pricing */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Pricing</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price ($)</Label>
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={handleChange}
+                    placeholder="74.99"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="compare_price">Compare Price ($)</Label>
+                  <Input
+                    id="compare_price"
+                    name="compare_price"
+                    type="number"
+                    step="0.01"
+                    value={formData.compare_price}
+                    onChange={handleChange}
+                    placeholder="99.99"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cogs">Cost of Goods ($)</Label>
+                  <Input
+                    id="cogs"
+                    name="cogs"
+                    type="number"
+                    step="0.01"
+                    value={formData.cogs}
+                    onChange={handleChange}
+                    placeholder="25.00"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Inventory */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Inventory</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label htmlFor="stock">Stock Quantity</Label>
+                  <Input
+                    id="stock"
+                    name="stock"
+                    type="number"
+                    value={formData.stock}
+                    onChange={handleChange}
+                    placeholder="50"
+                    required
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Actions */}
+            <div className="flex flex-col gap-2">
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? (
+                  <div className="animate-spin h-4 w-4 mr-2" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                {isEditing ? 'Update Product' : 'Create Product'}
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => navigate('/admin/products')}
+                className="w-full"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 };

@@ -1,198 +1,128 @@
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Bot, Key, Save, RefreshCw, Check, AlertTriangle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { CheckCircle, XCircle, RefreshCw, Settings, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { defaultModel, OPENAI_MODELS } from '@/services/openai';
 
-interface KeyStatus {
-  exists: boolean;
-  lastUpdated?: string;
-  updatedBy?: string;
-}
-
-interface UsageStats {
-  totalCalls?: number;
-  lastCall?: string;
-  estimatedCost?: number;
-}
-
-const AISettings = () => {
-  const [apiKey, setApiKey] = useState('');
-  const [keyStatus, setKeyStatus] = useState<KeyStatus>({ exists: false });
-  const [showKeyInput, setShowKeyInput] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
-  const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+export default function AISettings() {
+  const [keyStatus, setKeyStatus] = useState<'checking' | 'configured' | 'missing'>('checking');
+  const [selectedModel, setSelectedModel] = useState(defaultModel);
+  const [usage, setUsage] = useState({ totalCalls: 0, estimatedCost: 0, lastCall: null });
+  const [testing, setTesting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchSettings();
+    checkKeyStatus();
+    loadSettings();
+    loadUsageStats();
   }, []);
 
-  const fetchSettings = async () => {
-    setLoading(true);
+  const checkKeyStatus = async () => {
     try {
-      // Check if API key exists (without exposing the actual key)
-      const { data: keyData, error: keyError } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'openai_api_key')
-        .single();
-
-      if (!keyError && keyData) {
-        const keyValue = keyData.value as any;
-        setKeyStatus({
-          exists: true,
-          lastUpdated: keyValue?.updated_at,
-          updatedBy: keyValue?.updated_by
-        });
+      const { data, error } = await supabase.functions.invoke('ai-ping');
+      
+      if (error) throw error;
+      
+      if (data.success) {
+        setKeyStatus('configured');
+      } else {
+        setKeyStatus('missing');
       }
+    } catch (error: any) {
+      console.error('Key status check failed:', error);
+      setKeyStatus('missing');
+    }
+  };
 
-      // Get selected model
-      const { data: modelData } = await supabase
+  const loadSettings = async () => {
+    try {
+      const { data } = await supabase
         .from('site_settings')
         .select('value')
         .eq('key', 'ai_selected_model')
         .single();
 
-      if (modelData) {
-        const modelValue = modelData.value as any;
-        setSelectedModel(modelValue?.model || 'gpt-4o-mini');
+      if (data?.value?.model) {
+        setSelectedModel(data.value.model);
       }
+    } catch (error) {
+      console.error('Failed to load AI settings:', error);
+    }
+  };
 
-      // Get usage stats
-      const { data: statsData } = await supabase
+  const loadUsageStats = async () => {
+    try {
+      const { data } = await supabase
         .from('site_settings')
         .select('value')
         .eq('key', 'ai_usage_stats')
         .single();
 
-      if (statsData) {
-        setUsageStats(statsData.value as UsageStats);
+      if (data?.value) {
+        setUsage(data.value);
       }
-
-    } catch (error: any) {
-      console.error('Error fetching settings:', error);
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Failed to load usage stats:', error);
     }
   };
 
-  const saveApiKey = async () => {
-    if (!apiKey.trim() || !apiKey.startsWith('sk-')) {
-      toast({
-        title: "Invalid API Key",
-        description: "Please enter a valid OpenAI API key starting with 'sk-'",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSaving(true);
+  const testConnection = async () => {
+    setTesting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Not authenticated');
-      }
-
-      const { data, error } = await supabase.functions.invoke('save-openai-key', {
-        body: { key: apiKey },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
+      const { data, error } = await supabase.functions.invoke('ai-ping');
+      
       if (error) throw error;
-
-      setKeyStatus({
-        exists: true,
-        lastUpdated: data?.updated_at
-      });
-      setApiKey('');
-      setShowKeyInput(false);
-
-      toast({
-        title: "API Key Saved",
-        description: "OpenAI API key has been securely saved",
-      });
-
+      
+      if (data.success) {
+        toast({
+          title: "Connection Successful",
+          description: `AI service is working properly with model: ${data.model}`,
+        });
+        setKeyStatus('configured');
+      } else {
+        throw new Error(data.error || 'Connection failed');
+      }
     } catch (error: any) {
       toast({
-        title: "Save Failed",
-        description: error.message || "Failed to save API key",
+        title: "Connection Failed",
+        description: error.message || "Failed to connect to AI service",
         variant: "destructive",
       });
+      setKeyStatus('missing');
     } finally {
-      setSaving(false);
+      setTesting(false);
     }
   };
 
-  const saveModelSettings = async () => {
-    setSaving(true);
+  const saveModelSelection = async (model: string) => {
     try {
       const { error } = await supabase
         .from('site_settings')
         .upsert({
           key: 'ai_selected_model',
-          value: { model: selectedModel },
-          description: 'Selected AI model for generation tasks'
+          value: { model, updated_at: new Date().toISOString() },
+          description: 'Selected OpenAI model for AI features'
         });
 
       if (error) throw error;
 
+      setSelectedModel(model);
       toast({
         title: "Settings Saved",
-        description: "AI model settings have been updated",
+        description: `AI model updated to ${model}`,
       });
-
     } catch (error: any) {
       toast({
         title: "Save Failed",
-        description: error.message || "Failed to save settings",
+        description: error.message || "Failed to save model selection",
         variant: "destructive",
       });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const testConnection = async () => {
-    if (!keyStatus.exists) {
-      toast({
-        title: "No API Key",
-        description: "Please save an OpenAI API key first",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('ai-test-connection');
-
-      if (error) throw error;
-
-      toast({
-        title: "Connection Successful",
-        description: "OpenAI API is working correctly",
-      });
-
-    } catch (error: any) {
-      toast({
-        title: "Connection Failed",
-        description: error.message || "Unable to connect to OpenAI API",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -201,198 +131,165 @@ const AISettings = () => {
       <div>
         <h1 className="text-3xl font-bold">AI Settings</h1>
         <p className="text-muted-foreground">
-          Configure AI features and OpenAI integration
+          Configure OpenAI integration and AI-powered features
         </p>
       </div>
 
-      {/* API Key Management */}
+      {/* API Key Status */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
-            OpenAI API Key
+            <Settings className="h-5 w-5" />
+            OpenAI API Configuration
           </CardTitle>
+          <CardDescription>
+            Manage your OpenAI API key and connection status
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {keyStatus.exists && !showKeyInput ? (
-            <div className="space-y-4">
-              <Alert>
-                <Check className="h-4 w-4" />
-                <AlertDescription>
-                  <div className="flex items-center justify-between">
-                    <span>
-                      Key on file • Last updated{' '}
-                      {keyStatus.lastUpdated 
-                        ? new Date(keyStatus.lastUpdated).toLocaleDateString()
-                        : 'Unknown'
-                      }
-                    </span>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowKeyInput(true)}
-                      >
-                        Replace Key
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={testConnection}
-                        disabled={loading}
-                      >
-                        <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                        Test Connection
-                      </Button>
-                    </div>
-                  </div>
-                </AlertDescription>
-              </Alert>
-            </div>
-          ) : (
-            <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <div>
-                <Label htmlFor="apiKey">OpenAI API Key</Label>
-                <Input
-                  id="apiKey"
-                  type="password"
-                  placeholder="sk-..."
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground mt-1">
-                  Your API key will be securely stored and never exposed to the browser
+                <p className="font-medium">API Key Status</p>
+                <p className="text-sm text-muted-foreground">
+                  {keyStatus === 'checking' && 'Checking connection...'}
+                  {keyStatus === 'configured' && 'Key on file ✓ (stored in Supabase Secrets)'}
+                  {keyStatus === 'missing' && 'No API key configured'}
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={saveApiKey} 
-                  disabled={saving || !apiKey.trim()}
-                >
-                  <Save className="mr-2 h-4 w-4" />
-                  {saving ? 'Saving...' : 'Save API Key'}
-                </Button>
-                {keyStatus.exists && (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setShowKeyInput(false);
-                      setApiKey('');
-                    }}
-                  >
-                    Cancel
-                  </Button>
+              <Badge variant={keyStatus === 'configured' ? 'default' : 'destructive'}>
+                {keyStatus === 'checking' ? (
+                  <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                ) : keyStatus === 'configured' ? (
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                ) : (
+                  <XCircle className="h-3 w-3 mr-1" />
                 )}
-              </div>
+                {keyStatus === 'checking' ? 'Checking' : keyStatus === 'configured' ? 'Connected' : 'Not Connected'}
+              </Badge>
             </div>
-          )}
+            <Button onClick={testConnection} disabled={testing} variant="outline">
+              {testing ? (
+                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Test Connection
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Model Configuration */}
+      {/* Model Selection */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5" />
-            Model Configuration
-          </CardTitle>
+          <CardTitle>Model Configuration</CardTitle>
+          <CardDescription>
+            Choose the OpenAI model for AI-powered features
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="model">Default AI Model</Label>
-            <Select value={selectedModel} onValueChange={setSelectedModel}>
-              <SelectTrigger>
-                <SelectValue />
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Selected Model</label>
+            <Select
+              value={selectedModel}
+              onValueChange={saveModelSelection}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a model" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gpt-4o-mini">GPT-4o Mini (Fast & Efficient)</SelectItem>
-                <SelectItem value="gpt-4o">GPT-4o (Most Capable)</SelectItem>
-                <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                {OPENAI_MODELS.map((model) => (
+                  <SelectItem key={model.value} value={model.value}>
+                    {model.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            <p className="text-sm text-muted-foreground mt-1">
-              Choose the default model for AI-powered features
+            <p className="text-xs text-muted-foreground">
+              GPT-4.1 Mini is recommended for the best balance of performance and cost.
             </p>
           </div>
-          
-          <Button onClick={saveModelSettings} disabled={saving}>
-            <Save className="mr-2 h-4 w-4" />
-            {saving ? 'Saving...' : 'Save Model Settings'}
-          </Button>
         </CardContent>
       </Card>
 
       {/* Usage Statistics */}
-      {usageStats && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Usage Statistics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-sm font-medium">Total API Calls</Label>
-                <p className="text-2xl font-bold">{usageStats.totalCalls || 0}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Last Call</Label>
-                <p className="text-sm text-muted-foreground">
-                  {usageStats.lastCall 
-                    ? new Date(usageStats.lastCall).toLocaleString()
-                    : 'Never'
-                  }
-                </p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Estimated Cost</Label>
-                <p className="text-2xl font-bold">
-                  ${(usageStats.estimatedCost || 0).toFixed(4)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Configuration Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Feature Status</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Usage Statistics
+          </CardTitle>
+          <CardDescription>
+            Monitor your AI feature usage and costs
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <p className="text-2xl font-bold">{usage.totalCalls || 0}</p>
+              <p className="text-sm text-muted-foreground">Total API Calls</p>
+            </div>
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <p className="text-2xl font-bold">${(usage.estimatedCost || 0).toFixed(2)}</p>
+              <p className="text-sm text-muted-foreground">Estimated Cost</p>
+            </div>
+            <div className="text-center p-4 bg-muted/50 rounded-lg">
+              <p className="text-2xl font-bold">
+                {usage.lastCall ? new Date(usage.lastCall).toLocaleDateString() : 'Never'}
+              </p>
+              <p className="text-sm text-muted-foreground">Last Used</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* AI Features */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Available AI Features</CardTitle>
+          <CardDescription>
+            AI-powered tools available in your admin panel
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span>Product Description Enhancement</span>
-              <Badge variant={keyStatus.exists ? "default" : "secondary"}>
-                {keyStatus.exists ? "Enabled" : "Disabled"}
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div>
+                <p className="font-medium">Product Image Analysis</p>
+                <p className="text-sm text-muted-foreground">
+                  Automatically generate descriptions from product images
+                </p>
+              </div>
+              <Badge variant={keyStatus === 'configured' ? 'default' : 'secondary'}>
+                {keyStatus === 'configured' ? 'Active' : 'Inactive'}
               </Badge>
             </div>
-            <div className="flex items-center justify-between">
-              <span>Image Analysis</span>
-              <Badge variant={keyStatus.exists ? "default" : "secondary"}>
-                {keyStatus.exists ? "Enabled" : "Disabled"}
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div>
+                <p className="font-medium">Description Enhancement</p>
+                <p className="text-sm text-muted-foreground">
+                  Improve product descriptions with AI suggestions
+                </p>
+              </div>
+              <Badge variant={keyStatus === 'configured' ? 'default' : 'secondary'}>
+                {keyStatus === 'configured' ? 'Active' : 'Inactive'}
               </Badge>
             </div>
-            <div className="flex items-center justify-between">
-              <span>SEO Metadata Generation</span>
-              <Badge variant={keyStatus.exists ? "default" : "secondary"}>
-                {keyStatus.exists ? "Enabled" : "Disabled"}
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div>
+                <p className="font-medium">SEO Metadata Generation</p>
+                <p className="text-sm text-muted-foreground">
+                  Generate optimized titles and descriptions for SEO
+                </p>
+              </div>
+              <Badge variant={keyStatus === 'configured' ? 'default' : 'secondary'}>
+                {keyStatus === 'configured' ? 'Active' : 'Inactive'}
               </Badge>
             </div>
           </div>
-
-          {!keyStatus.exists && (
-            <Alert className="mt-4">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Configure your OpenAI API key to enable AI-powered features
-              </AlertDescription>
-            </Alert>
-          )}
         </CardContent>
       </Card>
     </div>
   );
-};
-
-export default AISettings;
+}
