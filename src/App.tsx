@@ -34,7 +34,7 @@ import { AISettings } from '@/pages/admin/AISettings';
 import { Settings } from '@/pages/admin/Settings';
 
 // Auth components
-import { LoginForm } from '@/components/auth/LoginForm';
+import { AuthPage } from '@/components/auth/AuthPage';
 
 const queryClient = new QueryClient();
 
@@ -64,7 +64,7 @@ function App() {
               </Route>
               
               {/* Auth routes without Layout */}
-              <Route path="/login" element={<LoginForm />} />
+              <Route path="/login" element={<AuthPage />} />
               
               {/* Admin routes */}
               <Route path="/admin/login" element={<AdminLogin />} />

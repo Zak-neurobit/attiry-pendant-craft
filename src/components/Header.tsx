@@ -1,12 +1,14 @@
 
 import { useState, useEffect } from 'react';
-import { Heart, Search, ShoppingBag, User, Menu, X } from 'lucide-react';
+import { Heart, Search, ShoppingBag, User, Menu, X, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCart } from '@/stores/cart';
+import { useAuth } from '@/stores/auth';
 import { SearchModal } from '@/components/SearchModal';
 
 const Header = () => {
   const { getTotalItems, openCart } = useCart();
+  const { user, isAdmin } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -56,6 +58,12 @@ const Header = () => {
             <Link to="/about" className="text-foreground hover:text-accent transition-colors">
               About
             </Link>
+            {isAdmin && (
+              <Link to="/admin" className="text-foreground hover:text-accent transition-colors flex items-center space-x-1">
+                <Shield className="h-4 w-4" />
+                <span>Admin</span>
+              </Link>
+            )}
           </nav>
 
           {/* Actions */}
@@ -124,6 +132,16 @@ const Header = () => {
               >
                 About
               </Link>
+              {isAdmin && (
+                <Link 
+                  to="/admin" 
+                  className="text-foreground hover:text-accent transition-colors py-2 flex items-center space-x-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Shield className="h-4 w-4" />
+                  <span>Admin</span>
+                </Link>
+              )}
               <div className="flex items-center space-x-4 pt-4">
                 <button 
                   className="p-2 hover:bg-muted rounded-lg transition-colors"

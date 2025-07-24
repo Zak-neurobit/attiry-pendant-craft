@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { authService, type AuthUser } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { isAdminEmail } from '@/lib/adminUtils';
 
 interface AuthState {
   user: AuthUser | null;
@@ -23,7 +24,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     try {
       await authService.signIn(email, password);
       const user = await authService.getCurrentUser();
-      const isAdmin = await authService.hasAdminRole();
+      const isAdmin = user ? isAdminEmail(user.email) : false;
       set({ user, isAdmin, loading: false });
     } catch (error) {
       set({ loading: false });
@@ -36,7 +37,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     try {
       await authService.signUp(email, password, firstName, lastName);
       const user = await authService.getCurrentUser();
-      const isAdmin = await authService.hasAdminRole();
+      const isAdmin = user ? isAdminEmail(user.email) : false;
       set({ user, isAdmin, loading: false });
     } catch (error) {
       set({ loading: false });
@@ -56,7 +57,7 @@ export const useAuth = create<AuthState>((set, get) => ({
   initialize: async () => {
     try {
       const user = await authService.getCurrentUser();
-      const isAdmin = user ? await authService.hasAdminRole() : false;
+      const isAdmin = user ? isAdminEmail(user.email) : false;
       set({ user, isAdmin, loading: false });
     } catch (error) {
       console.error('Auth initialization error:', error);

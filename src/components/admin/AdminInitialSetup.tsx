@@ -58,11 +58,12 @@ export const AdminInitialSetup = () => {
       if (authError) throw authError;
 
       if (authData.user) {
-        // Create profile
+        // Create profile with email included
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
             user_id: authData.user.id,
+            email: formData.email,
             first_name: formData.firstName,
             last_name: formData.lastName,
           });
