@@ -12,9 +12,9 @@ import { ReviewsSection } from '@/components/reviews/ReviewsSection';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useProductCustomizer } from '@/stores/productCustomizer';
 import { ColorPicker } from '@/components/product/ColorPicker';
-import { FontPicker } from '@/components/product/FontPicker';
-import { NameInput } from '@/components/product/NameInput';
-import { PreviewName } from '@/components/product/PreviewName';
+import FontPicker from '@/components/product/FontPicker';
+import NameInput from '@/components/product/NameInput';
+import PreviewName from '@/components/product/PreviewName';
 import { GiftWrapOption } from '@/components/product/GiftWrapOption';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -143,18 +143,18 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div className="space-y-4">
-              <Skeleton className="aspect-square w-full rounded-lg" />
+      <div className="min-h-screen bg-background" id="product-detail-loading">
+        <div className="container mx-auto px-4 py-8" id="loading-container">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12" id="loading-grid">
+            <div className="space-y-4" id="loading-image-section">
+              <Skeleton className="aspect-square w-full rounded-lg" id="loading-image-skeleton" />
             </div>
-            <div className="space-y-6">
-              <Skeleton className="h-8 w-3/4" />
-              <Skeleton className="h-6 w-1/2" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-2/3" />
+            <div className="space-y-6" id="loading-details-section">
+              <Skeleton className="h-8 w-3/4" id="loading-title-skeleton" />
+              <Skeleton className="h-6 w-1/2" id="loading-price-skeleton" />
+              <Skeleton className="h-4 w-full" id="loading-desc-1" />
+              <Skeleton className="h-4 w-full" id="loading-desc-2" />
+              <Skeleton className="h-4 w-2/3" id="loading-desc-3" />
             </div>
           </div>
         </div>
@@ -164,13 +164,13 @@ export default function ProductDetail() {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
-          <p className="text-muted-foreground mb-4">
+      <div className="min-h-screen bg-background flex items-center justify-center" id="product-detail-error">
+        <div className="text-center" id="error-content">
+          <h1 className="text-2xl font-bold mb-4" id="error-title">Product Not Found</h1>
+          <p className="text-muted-foreground mb-4" id="error-message">
             The product you're looking for doesn't exist or has been removed.
           </p>
-          <Button onClick={() => window.history.back()}>
+          <Button onClick={() => window.history.back()} id="error-back-button">
             Go Back
           </Button>
         </div>
@@ -182,97 +182,111 @@ export default function ProductDetail() {
   const imageUrl = primaryImage ? getImageUrl(primaryImage) : null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" id="product-detail-page">
       <SEOHead
         title={product?.meta_title || `${product.title} - Attiry`}
         description={product?.meta_description || `Personalized ${product.title}. Custom engraved jewelry made with premium materials.`}
       />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="container mx-auto px-4 py-8" id="product-detail-container">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12" id="product-detail-grid">
           {/* Product Images */}
-          <div className="space-y-4">
-            <div className="aspect-square">
+          <div className="space-y-4" id="product-images-section">
+            <div className="aspect-square" id="main-image-container">
               {imageUrl ? (
                 <img 
                   src={imageUrl} 
                   alt={product.title}
                   className="w-full h-full object-cover rounded-lg"
+                  id="main-product-image"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/placeholder.svg';
                   }}
                 />
               ) : (
-                <div className="w-full h-full bg-muted rounded-lg flex items-center justify-center">
-                  <span className="text-muted-foreground">Image coming soon</span>
+                <div className="w-full h-full bg-muted rounded-lg flex items-center justify-center" id="placeholder-image">
+                  <span className="text-muted-foreground" id="placeholder-text">Image coming soon</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* Product Info */}
-          <div className="space-y-6">
+          <div className="space-y-6" id="product-info-section">
             {/* Live visitor count */}
             <LiveVisitorCount productId={product?.id} />
             
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
+            <div id="product-header">
+              <h1 className="text-3xl font-bold text-foreground mb-2" id="product-title">
                 {product?.title}
               </h1>
               
               {/* Stock urgency */}
               {product && <StockUrgency stock={product.stock} />}
               
-              <div className="flex items-center gap-4 mb-6">
-                <span className="text-3xl font-semibold text-foreground" style={{ fontWeight: 600, color: '#111' }}>
+              <div className="flex items-center gap-4 mb-6" id="price-section">
+                <span className="text-3xl font-semibold text-foreground" style={{ fontWeight: 600, color: '#111' }} id="product-price">
                   ${calculateTotalPrice().toFixed(2)} USD
                 </span>
                 {product?.compare_price && product.compare_price > product.price && (
-                  <span className="text-xl text-muted-foreground line-through">
+                  <span className="text-xl text-muted-foreground line-through" id="compare-price">
                     ${product.compare_price.toFixed(2)}
                   </span>
                 )}
               </div>
 
               {/* Name Input */}
-              <NameInput />
+              <div id="name-input-section">
+                <NameInput />
+              </div>
 
               {/* Live Preview */}
-              <PreviewName />
+              <div id="preview-section">
+                <PreviewName />
+              </div>
 
               {/* Color Picker */}
-              <ColorPicker />
+              <div id="color-picker-section">
+                <ColorPicker />
+              </div>
 
               {/* Font Picker */}
-              <FontPicker />
+              <div id="font-picker-section">
+                <FontPicker />
+              </div>
 
               {/* Gift Wrap Option */}
-              <GiftWrapOption 
-                checked={giftWrap}
-                onCheckedChange={setGiftWrap}
-              />
+              <div id="gift-wrap-section">
+                <GiftWrapOption 
+                  checked={giftWrap}
+                  onCheckedChange={setGiftWrap}
+                />
+              </div>
             </div>
 
             <Button 
               onClick={handleAddToCart} 
               className="w-full"
               disabled={!isValid()}
+              id="add-to-cart-button"
             >
               Add to Cart
             </Button>
 
             {!isValid() && (
-              <p className="text-sm text-muted-foreground text-center">
+              <p className="text-sm text-muted-foreground text-center" id="validation-message">
                 Please enter a valid name (1-12 characters, letters and spaces only)
               </p>
             )}
 
             {/* Trust Badges */}
-            <TrustBadges />
+            <div id="trust-badges-section">
+              <TrustBadges />
+            </div>
 
-            <div className="prose max-w-none">
-              <h2>Description</h2>
-              <p>{product?.description}</p>
+            <div className="prose max-w-none" id="product-description">
+              <h2 id="description-title">Description</h2>
+              <p id="description-content">{product?.description}</p>
             </div>
           </div>
         </div>

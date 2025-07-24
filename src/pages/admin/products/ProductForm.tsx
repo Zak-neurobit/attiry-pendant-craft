@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,13 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ImageUploader } from '@/components/admin/ImageUploader';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Sparkles, Eye, Tag, Save, X } from 'lucide-react';
 import { defaultModel } from '@/services/openai';
+
+type ColorVariant = 'gold' | 'silver' | 'black' | 'rose_gold' | 'matte_gold' | 'matte_silver' | 'vintage_copper';
 
 interface ProductFormData {
   title: string;
@@ -23,7 +25,7 @@ interface ProductFormData {
   sku: string;
   is_active: boolean;
   image_urls: string[];
-  color_variants: string[];
+  color_variants: ColorVariant[];
   chain_types: string[];
   fonts: string[];
   meta_title: string;
@@ -87,7 +89,7 @@ export const ProductForm = () => {
         sku: data.sku || '',
         is_active: data.is_active || true,
         image_urls: data.image_urls || [],
-        color_variants: data.color_variants || [],
+        color_variants: (data.color_variants || ['gold']) as ColorVariant[],
         chain_types: data.chain_types || [],
         fonts: data.fonts || [],
         meta_title: data.meta_title || '',
@@ -147,7 +149,7 @@ export const ProductForm = () => {
         // Create new product
         const { error } = await supabase
           .from('products')
-          .insert([formData]);
+          .insert(formData);
 
         if (error) throw error;
 
@@ -303,38 +305,38 @@ export const ProductForm = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" id="product-form-page">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/admin/products')}>
+      <div className="flex items-center gap-4" id="product-form-header">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/admin/products')} id="back-button">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Products
         </Button>
-        <div>
-          <h1 className="text-3xl font-bold">
+        <div id="header-content">
+          <h1 className="text-3xl font-bold" id="form-title">
             {isEditing ? 'Edit Product' : 'Add New Product'}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground" id="form-description">
             {isEditing ? 'Update product information' : 'Create a new jewelry product'}
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <form onSubmit={handleSubmit} className="space-y-6" id="product-form">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" id="form-grid">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6" id="main-content">
             {/* Basic Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Product Information</CardTitle>
-                <CardDescription>
+            <Card id="basic-info-card">
+              <CardHeader id="basic-info-header">
+                <CardTitle id="basic-info-title">Product Information</CardTitle>
+                <CardDescription id="basic-info-description">
                   Basic details about your product
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+              <CardContent className="space-y-4" id="basic-info-content">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4" id="title-sku-grid">
+                  <div className="space-y-2" id="title-input">
                     <Label htmlFor="title">Product Title</Label>
                     <Input
                       id="title"
@@ -345,7 +347,7 @@ export const ProductForm = () => {
                       required
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2" id="sku-input">
                     <Label htmlFor="sku">SKU</Label>
                     <Input
                       id="sku"
@@ -357,8 +359,8 @@ export const ProductForm = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                <div className="space-y-2" id="description-section">
+                  <div className="flex items-center justify-between" id="description-header">
                     <Label htmlFor="description">Description</Label>
                     <Button
                       type="button"
@@ -366,6 +368,7 @@ export const ProductForm = () => {
                       size="sm"
                       onClick={enhanceDescription}
                       disabled={aiLoading.description}
+                      id="enhance-description-button"
                     >
                       {aiLoading.description ? (
                         <div className="animate-spin h-4 w-4 mr-2" />
@@ -388,14 +391,14 @@ export const ProductForm = () => {
             </Card>
 
             {/* Images */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Product Images</CardTitle>
-                <CardDescription>
+            <Card id="images-card">
+              <CardHeader id="images-header">
+                <CardTitle id="images-title">Product Images</CardTitle>
+                <CardDescription id="images-description">
                   Upload high-quality images of your product
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent id="images-content">
                 <ImageUploader
                   imageUrls={formData.image_urls}
                   onImagesChange={(urls) => setFormData(prev => ({
@@ -405,12 +408,13 @@ export const ProductForm = () => {
                   productId={id}
                 />
                 {formData.image_urls.length > 0 && (
-                  <div className="mt-4">
+                  <div className="mt-4" id="analyze-button-container">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={handleImageAnalysis}
                       disabled={aiLoading.image}
+                      id="analyze-image-button"
                     >
                       {aiLoading.image ? (
                         <div className="animate-spin h-4 w-4 mr-2" />
@@ -425,15 +429,15 @@ export const ProductForm = () => {
             </Card>
 
             {/* SEO & Metadata */}
-            <Card>
-              <CardHeader>
-                <CardTitle>SEO & Metadata</CardTitle>
-                <CardDescription>
+            <Card id="seo-card">
+              <CardHeader id="seo-header">
+                <CardTitle id="seo-title">SEO & Metadata</CardTitle>
+                <CardDescription id="seo-description">
                   Optimize your product for search engines
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
+              <CardContent className="space-y-4" id="seo-content">
+                <div className="flex items-center justify-between" id="metadata-header">
                   <Label>Meta Information</Label>
                   <Button
                     type="button"
@@ -441,6 +445,7 @@ export const ProductForm = () => {
                     size="sm"
                     onClick={generateMetadata}
                     disabled={aiLoading.metadata}
+                    id="generate-metadata-button"
                   >
                     {aiLoading.metadata ? (
                       <div className="animate-spin h-4 w-4 mr-2" />
@@ -451,7 +456,7 @@ export const ProductForm = () => {
                   </Button>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2" id="meta-title-section">
                   <Label htmlFor="meta_title">Meta Title</Label>
                   <Input
                     id="meta_title"
@@ -460,12 +465,12 @@ export const ProductForm = () => {
                     onChange={handleChange}
                     placeholder="Custom Gold Name Pendant - Personalized Jewelry"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground" id="meta-title-counter">
                     {formData.meta_title.length}/60 characters
                   </p>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2" id="meta-description-section">
                   <Label htmlFor="meta_description">Meta Description</Label>
                   <Textarea
                     id="meta_description"
@@ -475,7 +480,7 @@ export const ProductForm = () => {
                     placeholder="Beautiful custom name pendant crafted with premium materials..."
                     rows={3}
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground" id="meta-description-counter">
                     {formData.meta_description.length}/160 characters
                   </p>
                 </div>
@@ -484,14 +489,14 @@ export const ProductForm = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6" id="sidebar">
             {/* Status & Visibility */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Status</CardTitle>
+            <Card id="status-card">
+              <CardHeader id="status-header">
+                <CardTitle id="status-title">Status</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
+              <CardContent className="space-y-4" id="status-content">
+                <div className="flex items-center justify-between" id="active-toggle">
                   <Label htmlFor="is_active">Active</Label>
                   <Switch
                     id="is_active"
@@ -506,12 +511,12 @@ export const ProductForm = () => {
             </Card>
 
             {/* Pricing */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Pricing</CardTitle>
+            <Card id="pricing-card">
+              <CardHeader id="pricing-header">
+                <CardTitle id="pricing-title">Pricing</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
+              <CardContent className="space-y-4" id="pricing-content">
+                <div className="space-y-2" id="price-input">
                   <Label htmlFor="price">Price ($)</Label>
                   <Input
                     id="price"
@@ -525,7 +530,7 @@ export const ProductForm = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2" id="compare-price-input">
                   <Label htmlFor="compare_price">Compare Price ($)</Label>
                   <Input
                     id="compare_price"
@@ -538,7 +543,7 @@ export const ProductForm = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2" id="cogs-input">
                   <Label htmlFor="cogs">Cost of Goods ($)</Label>
                   <Input
                     id="cogs"
@@ -554,12 +559,12 @@ export const ProductForm = () => {
             </Card>
 
             {/* Inventory */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Inventory</CardTitle>
+            <Card id="inventory-card">
+              <CardHeader id="inventory-header">
+                <CardTitle id="inventory-title">Inventory</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
+              <CardContent id="inventory-content">
+                <div className="space-y-2" id="stock-input">
                   <Label htmlFor="stock">Stock Quantity</Label>
                   <Input
                     id="stock"
@@ -575,8 +580,8 @@ export const ProductForm = () => {
             </Card>
 
             {/* Actions */}
-            <div className="flex flex-col gap-2">
-              <Button type="submit" disabled={loading} className="w-full">
+            <div className="flex flex-col gap-2" id="form-actions">
+              <Button type="submit" disabled={loading} className="w-full" id="submit-button">
                 {loading ? (
                   <div className="animate-spin h-4 w-4 mr-2" />
                 ) : (
@@ -589,6 +594,7 @@ export const ProductForm = () => {
                 variant="outline" 
                 onClick={() => navigate('/admin/products')}
                 className="w-full"
+                id="cancel-button"
               >
                 <X className="h-4 w-4 mr-2" />
                 Cancel

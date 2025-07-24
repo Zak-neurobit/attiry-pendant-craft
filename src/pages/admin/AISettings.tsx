@@ -3,289 +3,321 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, XCircle, RefreshCw, Settings, BarChart3 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { defaultModel, OPENAI_MODELS } from '@/services/openai';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Key, 
+  Sparkles, 
+  Activity, 
+  DollarSign, 
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Settings
+} from 'lucide-react';
+import { OPENAI_MODELS, defaultModel, type OpenAIModel } from '@/services/openai';
 
 export default function AISettings() {
-  const [keyStatus, setKeyStatus] = useState<'checking' | 'configured' | 'missing'>('checking');
-  const [selectedModel, setSelectedModel] = useState(defaultModel);
-  const [usage, setUsage] = useState({ totalCalls: 0, estimatedCost: 0, lastCall: null });
-  const [testing, setTesting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [selectedModel, setSelectedModel] = useState<OpenAIModel>(defaultModel);
+  const [keyStatus, setKeyStatus] = useState<'unknown' | 'valid' | 'invalid'>('unknown');
+  const [usageStats, setUsageStats] = useState({
+    totalCalls: 0,
+    estimatedCost: 0,
+    lastCall: null as any
+  });
   const { toast } = useToast();
 
   useEffect(() => {
-    checkKeyStatus();
     loadSettings();
     loadUsageStats();
   }, []);
 
-  const checkKeyStatus = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('ai-ping');
-      
-      if (error) throw error;
-      
-      if (data.success) {
-        setKeyStatus('configured');
-      } else {
-        setKeyStatus('missing');
-      }
-    } catch (error: any) {
-      console.error('Key status check failed:', error);
-      setKeyStatus('missing');
-    }
-  };
-
   const loadSettings = async () => {
     try {
-      const { data } = await supabase
-        .from('site_settings')
-        .select('value')
-        .eq('key', 'ai_selected_model')
-        .single();
+      // Check if API key exists (without retrieving it)
+      const { data: pingData, error: pingError } = await supabase.functions.invoke('ai-ping');
+      
+      if (pingError) {
+        console.error('Ping error:', pingError);
+        setKeyStatus('invalid');
+        return;
+      }
 
-      if (data?.value?.model) {
-        setSelectedModel(data.value.model);
+      if (pingData?.success) {
+        setKeyStatus('valid');
+        if (pingData.model) {
+          setSelectedModel(pingData.model as OpenAIModel);
+        }
+      } else {
+        setKeyStatus('invalid');
       }
     } catch (error) {
-      console.error('Failed to load AI settings:', error);
+      console.error('Error checking API key status:', error);
+      setKeyStatus('invalid');
     }
   };
 
   const loadUsageStats = async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('site_settings')
         .select('value')
         .eq('key', 'ai_usage_stats')
         .single();
 
-      if (data?.value) {
-        setUsage(data.value);
+      if (error) {
+        console.error('Error loading usage stats:', error);
+        return;
+      }
+
+      if (data?.value && typeof data.value === 'object' && !Array.isArray(data.value)) {
+        const stats = data.value as any;
+        setUsageStats({
+          totalCalls: stats.totalCalls || 0,
+          estimatedCost: stats.estimatedCost || 0,
+          lastCall: stats.lastCall || null
+        });
       }
     } catch (error) {
-      console.error('Failed to load usage stats:', error);
+      console.error('Error loading usage stats:', error);
     }
   };
 
-  const testConnection = async () => {
-    setTesting(true);
+  const handleSaveKey = async () => {
+    if (!apiKey.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an API key",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('save-openai-key', {
+        body: { 
+          key: apiKey.trim(),
+          model: selectedModel
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "OpenAI API key saved successfully",
+      });
+      
+      setApiKey('');
+      setKeyStatus('valid');
+      await loadSettings();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save API key",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setTestLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('ai-ping');
       
       if (error) throw error;
-      
-      if (data.success) {
+
+      if (data?.success) {
         toast({
           title: "Connection Successful",
-          description: `AI service is working properly with model: ${data.model}`,
+          description: `OpenAI API is working with ${data.model || defaultModel}`,
         });
-        setKeyStatus('configured');
+        setKeyStatus('valid');
       } else {
-        throw new Error(data.error || 'Connection failed');
+        throw new Error(data?.error || 'Connection test failed');
       }
     } catch (error: any) {
       toast({
         title: "Connection Failed",
-        description: error.message || "Failed to connect to AI service",
+        description: error.message || "Failed to connect to OpenAI API",
         variant: "destructive",
       });
-      setKeyStatus('missing');
+      setKeyStatus('invalid');
     } finally {
-      setTesting(false);
-    }
-  };
-
-  const saveModelSelection = async (model: string) => {
-    try {
-      const { error } = await supabase
-        .from('site_settings')
-        .upsert({
-          key: 'ai_selected_model',
-          value: { model, updated_at: new Date().toISOString() },
-          description: 'Selected OpenAI model for AI features'
-        });
-
-      if (error) throw error;
-
-      setSelectedModel(model);
-      toast({
-        title: "Settings Saved",
-        description: `AI model updated to ${model}`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Save Failed",
-        description: error.message || "Failed to save model selection",
-        variant: "destructive",
-      });
+      setTestLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">AI Settings</h1>
-        <p className="text-muted-foreground">
-          Configure OpenAI integration and AI-powered features
+    <div className="space-y-6" id="ai-settings-page">
+      {/* Header */}
+      <div id="ai-settings-header">
+        <h1 className="text-3xl font-bold" id="page-title">AI Settings</h1>
+        <p className="text-muted-foreground" id="page-description">
+          Configure OpenAI integration for product descriptions, metadata generation, and image analysis
         </p>
       </div>
 
-      {/* API Key Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            OpenAI API Configuration
-          </CardTitle>
-          <CardDescription>
-            Manage your OpenAI API key and connection status
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div>
-                <p className="font-medium">API Key Status</p>
-                <p className="text-sm text-muted-foreground">
-                  {keyStatus === 'checking' && 'Checking connection...'}
-                  {keyStatus === 'configured' && 'Key on file ✓ (stored in Supabase Secrets)'}
-                  {keyStatus === 'missing' && 'No API key configured'}
-                </p>
-              </div>
-              <Badge variant={keyStatus === 'configured' ? 'default' : 'destructive'}>
-                {keyStatus === 'checking' ? (
-                  <RefreshCw className="h-3 w-3 animate-spin mr-1" />
-                ) : keyStatus === 'configured' ? (
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                ) : (
-                  <XCircle className="h-3 w-3 mr-1" />
-                )}
-                {keyStatus === 'checking' ? 'Checking' : keyStatus === 'configured' ? 'Connected' : 'Not Connected'}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="ai-settings-grid">
+        {/* API Configuration */}
+        <Card id="api-config-card">
+          <CardHeader id="api-config-header">
+            <CardTitle className="flex items-center gap-2" id="api-config-title">
+              <Key className="h-5 w-5" />
+              API Configuration
+            </CardTitle>
+            <CardDescription id="api-config-description">
+              Manage your OpenAI API key and model settings
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4" id="api-config-content">
+            {/* API Key Status */}
+            <div className="flex items-center justify-between" id="api-key-status">
+              <Label id="status-label">API Key Status</Label>
+              <Badge variant={keyStatus === 'valid' ? 'default' : keyStatus === 'invalid' ? 'destructive' : 'secondary'} id="status-badge">
+                {keyStatus === 'valid' && <CheckCircle className="h-3 w-3 mr-1" />}
+                {keyStatus === 'invalid' && <AlertCircle className="h-3 w-3 mr-1" />}
+                {keyStatus === 'valid' ? 'Connected' : keyStatus === 'invalid' ? 'Disconnected' : 'Unknown'}
               </Badge>
             </div>
-            <Button onClick={testConnection} disabled={testing} variant="outline">
-              {testing ? (
-                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              Test Connection
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Model Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Model Configuration</CardTitle>
-          <CardDescription>
-            Choose the OpenAI model for AI-powered features
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Selected Model</label>
-            <Select
-              value={selectedModel}
-              onValueChange={saveModelSelection}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent>
-                {OPENAI_MODELS.map((model) => (
-                  <SelectItem key={model.value} value={model.value}>
-                    {model.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              GPT-4.1 Mini is recommended for the best balance of performance and cost.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+            <Separator />
 
-      {/* Usage Statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Usage Statistics
-          </CardTitle>
-          <CardDescription>
-            Monitor your AI feature usage and costs
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-muted/50 rounded-lg">
-              <p className="text-2xl font-bold">{usage.totalCalls || 0}</p>
-              <p className="text-sm text-muted-foreground">Total API Calls</p>
+            {/* Model Selection */}
+            <div className="space-y-2" id="model-selection">
+              <Label htmlFor="model-select" id="model-label">OpenAI Model</Label>
+              <Select value={selectedModel} onValueChange={(value: OpenAIModel) => setSelectedModel(value)}>
+                <SelectTrigger id="model-select">
+                  <SelectValue placeholder="Select model" />
+                </SelectTrigger>
+                <SelectContent id="model-content">
+                  {OPENAI_MODELS.map((model) => (
+                    <SelectItem key={model.value} value={model.value} id={`model-option-${model.value}`}>
+                      {model.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="text-center p-4 bg-muted/50 rounded-lg">
-              <p className="text-2xl font-bold">${(usage.estimatedCost || 0).toFixed(2)}</p>
-              <p className="text-sm text-muted-foreground">Estimated Cost</p>
-            </div>
-            <div className="text-center p-4 bg-muted/50 rounded-lg">
-              <p className="text-2xl font-bold">
-                {usage.lastCall ? new Date(usage.lastCall).toLocaleDateString() : 'Never'}
+
+            {/* API Key Input */}
+            <div className="space-y-2" id="api-key-input">
+              <Label htmlFor="api-key" id="api-key-label">OpenAI API Key</Label>
+              <Input
+                id="api-key"
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="sk-..."
+              />
+              <p className="text-xs text-muted-foreground" id="api-key-help">
+                Your API key is stored securely in Supabase Secrets
               </p>
-              <p className="text-sm text-muted-foreground">Last Used</p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2" id="api-action-buttons">
+              <Button 
+                onClick={handleSaveKey} 
+                disabled={loading}
+                className="flex-1"
+                id="save-key-button"
+              >
+                {loading ? 'Saving...' : 'Save API Key'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleTestConnection}
+                disabled={testLoading}
+                id="test-connection-button"
+              >
+                {testLoading ? 'Testing...' : 'Test'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Usage Statistics */}
+        <Card id="usage-stats-card">
+          <CardHeader id="usage-stats-header">
+            <CardTitle className="flex items-center gap-2" id="usage-stats-title">
+              <Activity className="h-5 w-5" />
+              Usage Statistics
+            </CardTitle>
+            <CardDescription id="usage-stats-description">
+              Monitor your AI API usage and costs
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4" id="usage-stats-content">
+            <div className="grid grid-cols-2 gap-4" id="usage-stats-grid">
+              <div className="text-center" id="total-calls-stat">
+                <div className="text-2xl font-bold" id="total-calls-number">{usageStats.totalCalls}</div>
+                <div className="text-sm text-muted-foreground" id="total-calls-label">Total Calls</div>
+              </div>
+              <div className="text-center" id="estimated-cost-stat">
+                <div className="text-2xl font-bold flex items-center justify-center gap-1" id="estimated-cost-display">
+                  <DollarSign className="h-4 w-4" />
+                  {usageStats.estimatedCost.toFixed(2)}
+                </div>
+                <div className="text-sm text-muted-foreground" id="estimated-cost-label">Estimated Cost</div>
+              </div>
+            </div>
+
+            {usageStats.lastCall && (
+              <div className="text-center" id="last-call-stat">
+                <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground" id="last-call-display">
+                  <Clock className="h-3 w-3" />
+                  Last call: {new Date(usageStats.lastCall).toLocaleDateString()}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* AI Features */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Available AI Features</CardTitle>
-          <CardDescription>
-            AI-powered tools available in your admin panel
+      <Card id="ai-features-card">
+        <CardHeader id="ai-features-header">
+          <CardTitle className="flex items-center gap-2" id="ai-features-title">
+            <Sparkles className="h-5 w-5" />
+            AI Features
+          </CardTitle>
+          <CardDescription id="ai-features-description">
+            Available AI-powered features for your products
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div>
-                <p className="font-medium">Product Image Analysis</p>
-                <p className="text-sm text-muted-foreground">
-                  Automatically generate descriptions from product images
-                </p>
-              </div>
-              <Badge variant={keyStatus === 'configured' ? 'default' : 'secondary'}>
-                {keyStatus === 'configured' ? 'Active' : 'Inactive'}
-              </Badge>
+        <CardContent id="ai-features-content">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="ai-features-grid">
+            <div className="text-center p-4 border rounded-lg" id="feature-description">
+              <Settings className="h-6 w-6 mx-auto mb-2 text-primary" />
+              <h3 className="font-medium mb-1" id="feature-description-title">Description Enhancement</h3>
+              <p className="text-sm text-muted-foreground" id="feature-description-text">
+                Generate compelling product descriptions
+              </p>
             </div>
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div>
-                <p className="font-medium">Description Enhancement</p>
-                <p className="text-sm text-muted-foreground">
-                  Improve product descriptions with AI suggestions
-                </p>
-              </div>
-              <Badge variant={keyStatus === 'configured' ? 'default' : 'secondary'}>
-                {keyStatus === 'configured' ? 'Active' : 'Inactive'}
-              </Badge>
+            <div className="text-center p-4 border rounded-lg" id="feature-metadata">
+              <Key className="h-6 w-6 mx-auto mb-2 text-primary" />
+              <h3 className="font-medium mb-1" id="feature-metadata-title">SEO Metadata</h3>
+              <p className="text-sm text-muted-foreground" id="feature-metadata-text">
+                Auto-generate titles, descriptions, and keywords
+              </p>
             </div>
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div>
-                <p className="font-medium">SEO Metadata Generation</p>
-                <p className="text-sm text-muted-foreground">
-                  Generate optimized titles and descriptions for SEO
-                </p>
-              </div>
-              <Badge variant={keyStatus === 'configured' ? 'default' : 'secondary'}>
-                {keyStatus === 'configured' ? 'Active' : 'Inactive'}
-              </Badge>
+            <div className="text-center p-4 border rounded-lg" id="feature-analysis">
+              <Activity className="h-6 w-6 mx-auto mb-2 text-primary" />
+              <h3 className="font-medium mb-1" id="feature-analysis-title">Image Analysis</h3>
+              <p className="text-sm text-muted-foreground" id="feature-analysis-text">
+                Analyze product images for automatic tagging
+              </p>
             </div>
           </div>
         </CardContent>
