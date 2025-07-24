@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { ChevronRight, Star, Quote } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ProductCard } from '@/components/ProductCard';
-import { Product } from '@/lib/products';
+import ProductCard from '@/components/ProductCard';
 import heroImage from '@/assets/hero-pendant.jpg';
 import collectionImage from '@/assets/collection-hero.jpg';
 import productGold from '@/assets/product-gold.jpg';
@@ -19,60 +17,55 @@ const Home = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const featuredProducts: Product[] = [
+  const featuredProducts = [
     {
       id: '1',
-      slug: 'custom-gold-name-pendant',
       name: 'Custom Gold Name Pendant',
       price: 74.99,
       originalPrice: 99.99,
-      description: 'Elegant gold-plated pendant with custom name engraving.',
-      images: [productGold],
+      image: productGold,
       rating: 5,
       reviewCount: 124,
       isNew: true,
-      colors: ['gold', 'rose-gold', 'silver'],
-      category: 'gold'
+      colors: ['gold', 'rose-gold', 'silver']
     },
     {
       id: '2',
-      slug: 'rose-gold-script-pendant',
       name: 'Rose Gold Script Pendant',
       price: 69.99,
       originalPrice: 92.99,
-      description: 'Beautiful rose gold pendant featuring elegant script lettering.',
-      images: [productRoseGold],
+      image: productRoseGold,
       rating: 5,
       reviewCount: 89,
-      colors: ['rose-gold', 'gold', 'silver'],
-      category: 'rose-gold'
+      colors: ['rose-gold', 'gold', 'silver']
     },
     {
       id: '3',
-      slug: 'classic-silver-nameplate',
       name: 'Classic Silver Nameplate',
       price: 59.99,
       originalPrice: 79.99,
-      description: 'Timeless sterling silver nameplate with precision engraving.',
-      images: [productGold],
+      image: productGold,
       rating: 5,
       reviewCount: 156,
-      colors: ['silver', 'gold', 'copper'],
-      category: 'silver'
+      colors: ['silver', 'gold', 'copper']
     },
     {
       id: '4',
-      slug: 'vintage-copper-pendant',
       name: 'Vintage Copper Pendant',
       price: 64.99,
       originalPrice: 86.99,
-      description: 'Unique copper finish pendant with vintage styling.',
-      images: [productRoseGold],
+      image: productRoseGold,
       rating: 5,
       reviewCount: 67,
-      colors: ['copper', 'gold', 'silver'],
-      category: 'copper'
+      colors: ['copper', 'gold', 'silver']
     }
+  ];
+
+  const categories = [
+    { name: 'Gold', icon: '✨', color: 'bg-gold' },
+    { name: 'Rose Gold', icon: '🌹', color: 'bg-rose-gold' },
+    { name: 'Silver', icon: '💎', color: 'bg-silver' },
+    { name: 'Copper', icon: '🔥', color: 'bg-copper' },
   ];
 
   const testimonials = [
@@ -109,7 +102,7 @@ const Home = () => {
         >
           <img 
             src={heroImage} 
-            alt="Luxury Custom Name Pendant - Personalized Jewelry"
+            alt="Luxury Custom Name Pendant"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-background/20" />
@@ -119,13 +112,14 @@ const Home = () => {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-2xl">
             <div className="fade-in">
-              <h1 className="text-5xl md:text-7xl font-source-serif font-bold text-foreground mb-6 leading-tight">
-                Luxury Custom Name Pendants
-                <span className="block text-accent">& Personalized Jewelry</span>
+              <h1 className="text-5xl md:text-7xl font-playfair font-bold text-foreground mb-6 leading-tight">
+                Luxury
+                <span className="block text-accent">Custom</span>
+                Pendants
               </h1>
               <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                Handcrafted personalized jewelry for couples and loved ones. 
-                Each piece tells your unique story with premium materials and precision craftsmanship.
+                Personalized jewelry crafted with premium materials. 
+                Each piece tells your unique story.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild className="btn-cta text-lg px-8 py-4">
@@ -152,12 +146,46 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Categories Section */}
+      <section className="py-20 bg-secondary/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12 slide-up">
+            <h2 className="text-4xl font-playfair font-bold text-foreground mb-4">
+              Choose Your Style
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Discover our premium collection of custom name pendants in various finishes
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {categories.map((category, index) => (
+              <Link
+                key={category.name}
+                to={`/shop?category=${category.name.toLowerCase()}`}
+                className="group text-center"
+                style={{ animationDelay: `${index * 150}ms` }}
+              >
+                <div className="card-luxury p-8 mb-4 group-hover:scale-105 transition-all duration-300">
+                  <div className={`w-16 h-16 ${category.color} rounded-full mx-auto mb-4 flex items-center justify-center text-2xl`}>
+                    {category.icon}
+                  </div>
+                  <h3 className="font-medium text-foreground group-hover:text-accent transition-colors">
+                    {category.name}
+                  </h3>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Featured Products */}
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-12">
             <div>
-              <h2 className="text-4xl font-source-serif font-bold text-foreground mb-4">
+              <h2 className="text-4xl font-playfair font-bold text-foreground mb-4">
                 Top Offers
               </h2>
               <p className="text-muted-foreground">
@@ -179,47 +207,9 @@ const Home = () => {
                 className="fade-in"
                 style={{ animationDelay: `${index * 200}ms` }}
               >
-                <ProductCard product={product} />
+                <ProductCard {...product} />
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Why Choose Personalized Jewelry */}
-      <section className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-source-serif font-bold text-foreground mb-4">
-              Why Choose Personalized Jewelry?
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Perfect gifts for every occasion - birthdays, anniversaries, and special moments
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-accent/10 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl">💎</span>
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">Premium Materials</h3>
-              <p className="text-muted-foreground">14k Gold, Sterling Silver, and Rose Gold finishes</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-accent/10 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl">✨</span>
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">Handcrafted with Love</h3>
-              <p className="text-muted-foreground">Each piece is carefully crafted by master jewelers</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-accent/10 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl">🎁</span>
-              </div>
-              <h3 className="font-semibold text-foreground mb-2">Perfect Gifts</h3>
-              <p className="text-muted-foreground">Ideal for couples, anniversaries, and special occasions</p>
-            </div>
           </div>
         </div>
       </section>
@@ -229,8 +219,8 @@ const Home = () => {
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="fade-in">
-              <h2 className="text-4xl font-source-serif font-bold text-foreground mb-6">
-                Handcrafted with
+              <h2 className="text-4xl font-playfair font-bold text-foreground mb-6">
+                Crafted with
                 <span className="block text-accent">Precision</span>
               </h2>
               <p className="text-muted-foreground mb-6 text-lg leading-relaxed">
@@ -261,7 +251,7 @@ const Home = () => {
             <div className="slide-up">
               <img 
                 src={collectionImage} 
-                alt="Luxury pendant collection - Custom jewelry craftsmanship"
+                alt="Luxury pendant collection"
                 className="w-full rounded-2xl shadow-luxury"
               />
             </div>
@@ -273,7 +263,7 @@ const Home = () => {
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-source-serif font-bold text-foreground mb-4">
+            <h2 className="text-4xl font-playfair font-bold text-foreground mb-4">
               What Our Customers Say
             </h2>
             <p className="text-muted-foreground">

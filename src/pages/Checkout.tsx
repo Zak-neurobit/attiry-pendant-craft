@@ -314,9 +314,7 @@ export const Checkout = () => {
                           <p className="text-xs text-muted-foreground">
                             "{item.customText}" • {item.color.replace('_', ' ')}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.chain?.replace('-', ' ')} • Qty: {item.quantity}
-                          </p>
+                          <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                         </div>
                         <div className="text-sm font-medium">
                           {formatPrice(item.price * item.quantity)}

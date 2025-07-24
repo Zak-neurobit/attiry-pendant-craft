@@ -1,4 +1,3 @@
-
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProductCustomizer } from '@/stores/productCustomizer';
 
@@ -22,20 +21,6 @@ const PreviewName = () => {
     }
   };
 
-  const getMetallicClass = (color: string) => {
-    const colorMappings: { [key: string]: string } = {
-      'gold': 'preview-gold',
-      'gold-plated': 'preview-gold',
-      'matte-gold': 'preview-matte-gold',
-      'rose-gold': 'preview-rose-gold',
-      'silver': 'preview-silver',
-      'matte-silver': 'preview-matte-silver',
-      'copper': 'preview-rose-gold',
-      'black': 'preview-black',
-    };
-    return colorMappings[color] || 'preview-gold';
-  };
-
   return (
     <div className="mb-8">
       <label className="block text-sm font-medium text-foreground mb-3">
@@ -45,14 +30,14 @@ const PreviewName = () => {
         <AnimatePresence mode="wait">
           {customization.nameText ? (
             <motion.p
-              key={`${customization.nameText}-${customization.font}-${customization.color}`}
+              key={`${customization.nameText}-${customization.font}`}
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              className={`${getFontClass(customization.font)} ${getMetallicClass(customization.color)}`}
+              className={`${getFontClass(customization.font)} text-foreground`}
               style={{ 
-                fontSize: 'clamp(24px, 5vw, 48px)',
+                fontSize: 'clamp(2rem, 5vw, 3rem)',
                 lineHeight: '1.2'
               }}
               aria-live="polite"

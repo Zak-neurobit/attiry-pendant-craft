@@ -1,17 +1,14 @@
-
 import { useState, useEffect } from 'react';
-import { Heart, Search, ShoppingBag, User, Menu, X, Shield } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Heart, Search, ShoppingBag, User, Menu, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import atteryLogo from '@/assets/attiry-logo.png';
 import { useCart } from '@/stores/cart';
-import { useAuth } from '@/stores/auth';
 import { SearchModal } from '@/components/SearchModal';
 
 const Header = () => {
   const { getTotalItems, openCart } = useCart();
-  const { user, isAdmin } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const navigate = useNavigate();
 
   // Keyboard shortcut for search
   useEffect(() => {
@@ -26,14 +23,6 @@ const Header = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleProfileClick = () => {
-    if (user) {
-      navigate('/account');
-    } else {
-      navigate('/auth');
-    }
-  };
-
   return (
     <header className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -46,8 +35,13 @@ const Header = () => {
         <div className="flex items-center justify-between py-4">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">
+            <img 
+              src={atteryLogo} 
+              alt="Attiry Logo" 
+              className="h-12 w-auto"
+            />
             <div className="flex flex-col">
-              <div className="text-4xl font-great-vibes text-foreground leading-none">
+              <div className="text-2xl font-playfair font-bold text-foreground leading-none">
                 Attiry
               </div>
               <div className="hidden sm:block text-xs text-muted-foreground uppercase tracking-widest">
@@ -67,12 +61,9 @@ const Header = () => {
             <Link to="/about" className="text-foreground hover:text-accent transition-colors">
               About
             </Link>
-            {isAdmin && (
-              <Link to="/admin" className="text-foreground hover:text-accent transition-colors flex items-center space-x-1">
-                <Shield className="h-4 w-4" />
-                <span>Admin</span>
-              </Link>
-            )}
+            <Link to="/blog" className="text-foreground hover:text-accent transition-colors">
+              Blog
+            </Link>
           </nav>
 
           {/* Actions */}
@@ -102,13 +93,9 @@ const Header = () => {
                 </span>
               )}
             </button>
-            <button 
-              onClick={handleProfileClick}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-              aria-label={user ? "Go to account" : "Sign in"}
-            >
+            <Link to="/account" className="p-2 hover:bg-muted rounded-lg transition-colors">
               <User className="h-5 w-5" />
-            </button>
+            </Link>
             
             {/* Mobile menu toggle */}
             <button 
@@ -145,16 +132,13 @@ const Header = () => {
               >
                 About
               </Link>
-              {isAdmin && (
-                <Link 
-                  to="/admin" 
-                  className="text-foreground hover:text-accent transition-colors py-2 flex items-center space-x-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <Shield className="h-4 w-4" />
-                  <span>Admin</span>
-                </Link>
-              )}
+              <Link 
+                to="/blog" 
+                className="text-foreground hover:text-accent transition-colors py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Blog
+              </Link>
               <div className="flex items-center space-x-4 pt-4">
                 <button 
                   className="p-2 hover:bg-muted rounded-lg transition-colors"

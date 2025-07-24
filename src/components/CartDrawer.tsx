@@ -1,4 +1,3 @@
-
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,9 +8,9 @@ import { X, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'INR',
     minimumFractionDigits: 0,
   }).format(price);
 };
@@ -138,7 +137,6 @@ export const CartDrawer = () => {
                               <div className="text-xs text-muted-foreground space-y-1">
                                 <p>"{item.customText}"</p>
                                 <p>{item.color.replace('_', ' ')} • {item.font}</p>
-                                <p>{item.chain?.replace('-', ' ')}</p>
                               </div>
                             </div>
                             

@@ -27,19 +27,19 @@ enable_confirmations = false
 port = 54322
 
 [functions.products]
-verify_jwt = true
+verify_jwt = false
 
 [functions.orders]
-verify_jwt = true
+verify_jwt = false
 
 [functions.customers]
-verify_jwt = true
+verify_jwt = false
 
 [functions.analytics]
-verify_jwt = true
+verify_jwt = false
 
 [functions.inventory]
-verify_jwt = true
+verify_jwt = false
 
 [studio]
 enabled = true

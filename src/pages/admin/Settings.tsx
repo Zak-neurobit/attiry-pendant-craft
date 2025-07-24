@@ -1,4 +1,3 @@
-
 export const Settings = () => {
   return (
     <div className="space-y-6">
@@ -16,5 +15,3 @@ export const Settings = () => {
     </div>
   );
 };
-
-export default Settings;

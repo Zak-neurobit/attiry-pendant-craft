@@ -1,10 +1,8 @@
-
 import { create } from 'zustand';
 
 export interface ProductCustomization {
   font: string;
   color: string;
-  chain: string;
   nameText: string;
 }
 
@@ -12,7 +10,6 @@ interface ProductCustomizerState {
   customization: ProductCustomization;
   setFont: (font: string) => void;
   setColor: (color: string) => void;
-  setChain: (chain: string) => void;
   setNameText: (nameText: string) => void;
   reset: () => void;
   isValid: () => boolean;
@@ -21,7 +18,6 @@ interface ProductCustomizerState {
 const defaultCustomization: ProductCustomization = {
   font: 'Great Vibes',
   color: 'gold',
-  chain: 'gold-chain',
   nameText: '',
 };
 
@@ -36,11 +32,6 @@ export const useProductCustomizer = create<ProductCustomizerState>((set, get) =>
   setColor: (color: string) =>
     set((state) => ({
       customization: { ...state.customization, color },
-    })),
-
-  setChain: (chain: string) =>
-    set((state) => ({
-      customization: { ...state.customization, chain },
     })),
     
   setNameText: (nameText: string) =>
