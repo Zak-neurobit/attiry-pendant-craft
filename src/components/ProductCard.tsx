@@ -13,15 +13,15 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const { favourites, addFavourite, removeFavourite } = useFavourites();
+  const { favourites, addToFavourites, removeFromFavourites } = useFavourites();
   const isFavourite = favourites.includes(product.id);
 
   const toggleFavourite = (e: React.MouseEvent) => {
     e.preventDefault();
     if (isFavourite) {
-      removeFavourite(product.id);
+      removeFromFavourites(product.id);
     } else {
-      addFavourite(product.id);
+      addToFavourites(product.id);
     }
   };
 
@@ -123,3 +123,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     </Link>
   );
 };
+
+// Default export for compatibility
+export default ProductCard;

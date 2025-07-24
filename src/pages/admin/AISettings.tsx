@@ -4,25 +4,31 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Bot, Key, Save, RefreshCw, Check, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-export const AISettings = () => {
+interface KeyStatus {
+  exists: boolean;
+  lastUpdated?: string;
+  updatedBy?: string;
+}
+
+interface UsageStats {
+  totalCalls?: number;
+  lastCall?: string;
+  estimatedCost?: number;
+}
+
+const AISettings = () => {
   const [apiKey, setApiKey] = useState('');
-  const [keyStatus, setKeyStatus] = useState<{
-    exists: boolean;
-    lastUpdated?: string;
-    updatedBy?: string;
-  }>({ exists: false });
+  const [keyStatus, setKeyStatus] = useState<KeyStatus>({ exists: false });
   const [showKeyInput, setShowKeyInput] = useState(false);
   const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
-  const [usageStats, setUsageStats] = useState<any>(null);
+  const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -42,10 +48,11 @@ export const AISettings = () => {
         .single();
 
       if (!keyError && keyData) {
+        const keyValue = keyData.value as any;
         setKeyStatus({
           exists: true,
-          lastUpdated: keyData.value.updated_at,
-          updatedBy: keyData.value.updated_by
+          lastUpdated: keyValue?.updated_at,
+          updatedBy: keyValue?.updated_by
         });
       }
 
@@ -57,7 +64,8 @@ export const AISettings = () => {
         .single();
 
       if (modelData) {
-        setSelectedModel(modelData.value.model || 'gpt-4o-mini');
+        const modelValue = modelData.value as any;
+        setSelectedModel(modelValue?.model || 'gpt-4o-mini');
       }
 
       // Get usage stats
@@ -68,7 +76,7 @@ export const AISettings = () => {
         .single();
 
       if (statsData) {
-        setUsageStats(statsData.value);
+        setUsageStats(statsData.value as UsageStats);
       }
 
     } catch (error: any) {
@@ -106,7 +114,7 @@ export const AISettings = () => {
 
       setKeyStatus({
         exists: true,
-        lastUpdated: data.updated_at
+        lastUpdated: data?.updated_at
       });
       setApiKey('');
       setShowKeyInput(false);
@@ -386,3 +394,5 @@ export const AISettings = () => {
     </div>
   );
 };
+
+export default AISettings;
