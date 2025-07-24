@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/components/auth/AuthProvider';
-import Index from '@/pages/Index';
+import { Layout } from '@/components/layout/Layout';
 import Home from '@/pages/Home';
 import { Shop } from '@/pages/Shop';
 import ProductDetail from '@/pages/ProductDetail';
@@ -45,23 +45,25 @@ function App() {
         <Router>
           <div className="App">
             <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/favourites" element={<Favourites />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/shipping" element={<Shipping />} />
-              <Route path="/returns" element={<Returns />} />
-              <Route path="/size-guide" element={<SizeGuide />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/search" element={<SearchResults />} />
+              {/* Public routes with Layout */}
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Home />} />
+                <Route path="home" element={<Home />} />
+                <Route path="shop" element={<Shop />} />
+                <Route path="product" element={<ProductDetail />} />
+                <Route path="about" element={<About />} />
+                <Route path="cart" element={<Cart />} />
+                <Route path="checkout" element={<Checkout />} />
+                <Route path="favourites" element={<Favourites />} />
+                <Route path="faq" element={<FAQ />} />
+                <Route path="shipping" element={<Shipping />} />
+                <Route path="returns" element={<Returns />} />
+                <Route path="size-guide" element={<SizeGuide />} />
+                <Route path="terms" element={<Terms />} />
+                <Route path="search" element={<SearchResults />} />
+              </Route>
               
-              {/* Auth routes */}
+              {/* Auth routes without Layout */}
               <Route path="/login" element={<LoginForm />} />
               
               {/* Admin routes */}

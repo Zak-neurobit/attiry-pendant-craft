@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Heart, Search, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -61,9 +62,6 @@ const Header = () => {
             <Link to="/about" className="text-foreground hover:text-accent transition-colors">
               About
             </Link>
-            <Link to="/blog" className="text-foreground hover:text-accent transition-colors">
-              Blog
-            </Link>
           </nav>
 
           {/* Actions */}
@@ -93,7 +91,7 @@ const Header = () => {
                 </span>
               )}
             </button>
-            <Link to="/account" className="p-2 hover:bg-muted rounded-lg transition-colors">
+            <Link to="/login" className="p-2 hover:bg-muted rounded-lg transition-colors">
               <User className="h-5 w-5" />
             </Link>
             
@@ -131,13 +129,6 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 About
-              </Link>
-              <Link 
-                to="/blog" 
-                className="text-foreground hover:text-accent transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Blog
               </Link>
               <div className="flex items-center space-x-4 pt-4">
                 <button 

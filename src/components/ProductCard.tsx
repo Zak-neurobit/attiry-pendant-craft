@@ -28,8 +28,7 @@ const ProductCard = ({
   rating = 5, 
   reviewCount = 0,
   isNew = false,
-  colors = ['gold', 'rose-gold', 'silver'],
-  slug
+  colors = ['gold', 'rose-gold', 'silver']
 }: ProductCardProps) => {
   const { isFavourite, addToFavourites, removeFromFavourites } = useFavourites();
   const { toast } = useToast();
@@ -62,11 +61,6 @@ const ProductCard = ({
     }
   };
 
-  const productSlug = slug || (id === '1' ? 'custom-gold-name-pendant' : 
-                                id === '2' ? 'rose-gold-script-pendant' : 
-                                id === '3' ? 'classic-silver-nameplate' : 
-                                'vintage-copper-pendant');
-
   return (
     <motion.div 
       className="bg-card rounded-lg shadow-soft overflow-hidden border hover:shadow-lg transition-all duration-300 group"
@@ -77,7 +71,7 @@ const ProductCard = ({
     >
       {/* Product Image */}
       <div className="relative overflow-hidden aspect-square">
-        <Link to={`/product/${productSlug}`}>
+        <Link to="/product">
           <img 
             src={image} 
             alt={name}
@@ -139,7 +133,7 @@ const ProductCard = ({
         </div>
 
         {/* Product Name */}
-        <Link to={`/product/${productSlug}`}>
+        <Link to="/product">
           <h3 className="font-medium text-foreground hover:text-accent transition-colors mb-2 line-clamp-2">
             {name}
           </h3>

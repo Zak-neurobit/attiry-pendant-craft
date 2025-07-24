@@ -26,10 +26,6 @@ const container = {
   },
 };
 
-const formatSlug = (title: string) => {
-  return title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-};
-
 const getSalePrice = (originalPrice: number) => {
   return originalPrice * 0.75; // 25% off
 };
@@ -100,7 +96,6 @@ export const Shop = () => {
           {products.map((product) => {
             const originalPrice = product.price;
             const salePrice = getSalePrice(originalPrice);
-            const slug = formatSlug(product.title);
 
             return (
               <ProductCard
@@ -114,7 +109,6 @@ export const Shop = () => {
                 reviewCount={Math.floor(Math.random() * 200) + 50}
                 isNew={Math.random() > 0.7}
                 colors={product.color_variants || ['gold', 'rose-gold', 'silver']}
-                slug={slug}
               />
             );
           })}
