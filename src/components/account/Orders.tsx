@@ -3,59 +3,41 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/stores/auth';
+import { useCart } from '@/stores/cart';
 import { useToast } from '@/hooks/use-toast';
-import { useCartStore } from '@/stores/cart';
-import { Eye, Package, ShoppingCart } from 'lucide-react';
+import { Package, Eye, ShoppingCart } from 'lucide-react';
 import { format } from 'date-fns';
-
-interface OrderItem {
-  id: string;
-  quantity: number;
-  unit_price: number;
-  custom_text?: string;
-  color_variant: string;
-  products: {
-    id: string;
-    title: string;
-    image_urls: string[];
-  };
-}
 
 interface Order {
   id: string;
   created_at: string;
-  total: number;
-  status: string;
   customer_name: string;
+  customer_email: string;
+  total: number;
+  status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
   shipping_address: any;
-  order_items: OrderItem[];
+  order_items: Array<{
+    id: string;
+    product_id: string;
+    quantity: number;
+    unit_price: number;
+    custom_text?: string;
+    color_variant: string;
+    products: {
+      title: string;
+      image_urls?: string[];
+    };
+  }>;
 }
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'processing':
-      return 'bg-blue-100 text-blue-800';
-    case 'shipped':
-      return 'bg-purple-100 text-purple-800';
-    case 'delivered':
-      return 'bg-green-100 text-green-800';
-    case 'cancelled':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
 
 export const Orders = () => {
   const { user } = useAuth();
+  const { addItem } = useCart();
   const { toast } = useToast();
-  const { addToCart } = useCartStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -75,7 +57,6 @@ export const Orders = () => {
           order_items (
             *,
             products (
-              id,
               title,
               image_urls
             )
@@ -97,36 +78,61 @@ export const Orders = () => {
     }
   };
 
-  const handleBuyAgain = (order: Order) => {
-    order.order_items.forEach((item) => {
-      addToCart({
-        id: item.products.id,
-        name: item.products.title,
-        price: item.unit_price,
-        image: item.products.image_urls[0] || '/placeholder.svg',
-        customText: item.custom_text || '',
-        color: item.color_variant,
-        quantity: item.quantity,
+  const handleBuyAgain = async (order: Order) => {
+    try {
+      for (const item of order.order_items) {
+        await addItem({
+          id: item.product_id,
+          title: item.products.title,
+          price: item.unit_price,
+          image_urls: item.products.image_urls || [],
+          color_variant: item.color_variant as 'gold' | 'rose_gold' | 'silver',
+          custom_text: item.custom_text || '',
+        }, item.quantity);
+      }
+      
+      toast({
+        title: 'Success',
+        description: 'Items added to cart successfully.',
       });
-    });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to add items to cart.',
+        variant: 'destructive',
+      });
+    }
+  };
 
-    toast({
-      title: 'Items Added to Cart',
-      description: `${order.order_items.length} item(s) have been added to your cart.`,
-    });
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-500';
+      case 'paid':
+        return 'bg-blue-500';
+      case 'shipped':
+        return 'bg-purple-500';
+      case 'delivered':
+        return 'bg-green-500';
+      case 'cancelled':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
   };
 
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 bg-muted rounded w-1/4 animate-pulse"></div>
-        <Card className="animate-pulse">
-          <CardContent className="p-6">
-            <div className="h-4 bg-muted rounded w-full mb-2"></div>
-            <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-            <div className="h-4 bg-muted rounded w-1/2"></div>
-          </CardContent>
-        </Card>
+        {[...Array(3)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-6">
+              <div className="h-4 bg-muted rounded w-1/4 mb-2"></div>
+              <div className="h-3 bg-muted rounded w-3/4 mb-1"></div>
+              <div className="h-3 bg-muted rounded w-1/2"></div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
@@ -136,7 +142,7 @@ export const Orders = () => {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
         <p className="text-muted-foreground">
-          View and manage your order history
+          View your order history and track shipments
         </p>
       </div>
 
@@ -148,45 +154,46 @@ export const Orders = () => {
             <p className="text-muted-foreground text-center mb-4">
               Your order history will appear here once you make your first purchase
             </p>
-            <Button asChild>
-              <a href="/shop">Start Shopping</a>
-            </Button>
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order #</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">
-                    #{order.id.slice(-8).toUpperCase()}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(order.created_at), 'MMM d, yyyy')}
-                  </TableCell>
-                  <TableCell>
-                    {order.order_items.length} item{order.order_items.length !== 1 ? 's' : ''}
-                  </TableCell>
-                  <TableCell>${order.total.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(order.status)}>
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Drawer>
-                      <DrawerTrigger asChild>
+        <div className="space-y-4">
+          {orders.map((order) => (
+            <Card key={order.id}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">
+                    Order #{order.id.slice(-8).toUpperCase()}
+                  </CardTitle>
+                  <Badge 
+                    variant="secondary" 
+                    className={`${getStatusColor(order.status)} text-white`}
+                  >
+                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Date</p>
+                    <p className="font-medium">
+                      {format(new Date(order.created_at), 'MMM d, yyyy')}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Items</p>
+                    <p className="font-medium">
+                      {order.order_items.reduce((total, item) => total + item.quantity, 0)} items
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Total</p>
+                    <p className="font-medium">${order.total.toFixed(2)}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Sheet>
+                      <SheetTrigger asChild>
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -195,101 +202,95 @@ export const Orders = () => {
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>
-                      </DrawerTrigger>
-                      <DrawerContent className="max-h-[80vh]">
-                        <DrawerHeader>
-                          <DrawerTitle>
-                            Order #{order.id.slice(-8).toUpperCase()}
-                          </DrawerTitle>
-                        </DrawerHeader>
-                        <div className="p-6 space-y-6 overflow-y-auto">
-                          {/* Order Items */}
-                          <div>
-                            <h3 className="font-semibold mb-3">Items</h3>
-                            <div className="space-y-3">
-                              {order.order_items.map((item) => (
-                                <div key={item.id} className="flex gap-3 p-3 border rounded-lg">
-                                  <img
-                                    src={item.products.image_urls[0] || '/placeholder.svg'}
-                                    alt={item.products.title}
-                                    className="w-16 h-16 object-cover rounded"
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <h4 className="font-medium truncate">{item.products.title}</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      Color: {item.color_variant}
-                                    </p>
-                                    {item.custom_text && (
-                                      <p className="text-sm text-muted-foreground">
-                                        Custom: "{item.custom_text}"
-                                      </p>
-                                    )}
-                                    <p className="text-sm">
-                                      Qty: {item.quantity} × ${item.unit_price.toFixed(2)}
-                                    </p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Shipping Address */}
-                          <div>
-                            <h3 className="font-semibold mb-3">Shipping Address</h3>
-                            <div className="p-3 bg-muted rounded-lg">
-                              <div className="text-sm space-y-1">
-                                <div className="font-medium">{order.customer_name}</div>
-                                {order.shipping_address && (
-                                  <>
-                                    <div>{order.shipping_address.line1}</div>
-                                    {order.shipping_address.line2 && <div>{order.shipping_address.line2}</div>}
-                                    <div>
-                                      {order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.zip}
+                      </SheetTrigger>
+                      <SheetContent className="w-full sm:max-w-lg">
+                        {selectedOrder && (
+                          <>
+                            <SheetHeader>
+                              <SheetTitle>
+                                Order #{selectedOrder.id.slice(-8).toUpperCase()}
+                              </SheetTitle>
+                            </SheetHeader>
+                            <div className="mt-6 space-y-6">
+                              {/* Order Items */}
+                              <div>
+                                <h3 className="font-semibold mb-3">Items</h3>
+                                <div className="space-y-3">
+                                  {selectedOrder.order_items.map((item) => (
+                                    <div key={item.id} className="flex gap-3">
+                                      {item.products.image_urls?.[0] && (
+                                        <img
+                                          src={item.products.image_urls[0]}
+                                          alt={item.products.title}
+                                          className="w-16 h-16 object-cover rounded"
+                                        />
+                                      )}
+                                      <div className="flex-1">
+                                        <p className="font-medium">{item.products.title}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                          {item.color_variant.replace('_', ' ')} • Qty: {item.quantity}
+                                        </p>
+                                        {item.custom_text && (
+                                          <p className="text-sm text-muted-foreground">
+                                            "{item.custom_text}"
+                                          </p>
+                                        )}
+                                        <p className="text-sm font-medium">
+                                          ${(item.unit_price * item.quantity).toFixed(2)}
+                                        </p>
+                                      </div>
                                     </div>
-                                    <div>{order.shipping_address.country}</div>
-                                  </>
-                                )}
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          </div>
 
-                          {/* Order Summary */}
-                          <div>
-                            <h3 className="font-semibold mb-3">Order Summary</h3>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex justify-between">
-                                <span>Order Date:</span>
-                                <span>{format(new Date(order.created_at), 'PPP')}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span>Status:</span>
-                                <Badge className={getStatusColor(order.status)}>
-                                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                                </Badge>
-                              </div>
-                              <div className="flex justify-between font-semibold border-t pt-2">
-                                <span>Total:</span>
-                                <span>${order.total.toFixed(2)}</span>
-                              </div>
-                            </div>
-                          </div>
+                              <Separator />
 
-                          {/* Actions */}
-                          <div className="flex gap-2 pt-4 border-t">
-                            <Button onClick={() => handleBuyAgain(order)} className="flex-1">
-                              <ShoppingCart className="h-4 w-4 mr-2" />
-                              Buy Again
-                            </Button>
-                          </div>
-                        </div>
-                      </DrawerContent>
-                    </Drawer>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+                              {/* Shipping Address */}
+                              <div>
+                                <h3 className="font-semibold mb-3">Shipping Address</h3>
+                                <div className="text-sm space-y-1">
+                                  <p>{selectedOrder.shipping_address.name}</p>
+                                  <p>{selectedOrder.shipping_address.line1}</p>
+                                  {selectedOrder.shipping_address.line2 && (
+                                    <p>{selectedOrder.shipping_address.line2}</p>
+                                  )}
+                                  <p>
+                                    {selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.state} {selectedOrder.shipping_address.zip}
+                                  </p>
+                                  <p>{selectedOrder.shipping_address.country}</p>
+                                </div>
+                              </div>
+
+                              <Separator />
+
+                              {/* Order Total */}
+                              <div>
+                                <div className="flex justify-between font-semibold">
+                                  <span>Total</span>
+                                  <span>${selectedOrder.total.toFixed(2)}</span>
+                                </div>
+                              </div>
+
+                              {/* Buy Again Button */}
+                              <Button 
+                                className="w-full" 
+                                onClick={() => handleBuyAgain(selectedOrder)}
+                              >
+                                <ShoppingCart className="h-4 w-4 mr-2" />
+                                Buy Again
+                              </Button>
+                            </div>
+                          </>
+                        )}
+                      </SheetContent>
+                    </Sheet>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );
