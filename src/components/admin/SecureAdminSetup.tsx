@@ -1,264 +1,275 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
+import { Shield, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertTriangle, Shield } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface AdminSetupFormData {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  initializationToken: string;
+}
+
+interface AdminSetupResult {
+  success?: boolean;
+  error?: string;
+}
 
 export const SecureAdminSetup = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [initToken, setInitToken] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasValidToken, setHasValidToken] = useState(false);
+  const [formData, setFormData] = useState<AdminSetupFormData>({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    initializationToken: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Check if there's a valid initialization token available
-  useEffect(() => {
-    checkInitializationTokens();
-  }, []);
-
-  const checkInitializationTokens = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('admin_initialization')
-        .select('initialization_token')
-        .eq('used', false)
-        .gt('expires_at', new Date().toISOString())
-        .limit(1);
-
-      if (error) {
-        console.error('Error checking tokens:', error);
-        return;
-      }
-
-      setHasValidToken(data && data.length > 0);
-      if (data && data.length > 0) {
-        setInitToken(data[0].initialization_token);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
-
-  const validateInput = () => {
-    if (!email || !password || !confirmPassword) {
-      toast({
-        title: "Validation Error",
-        description: "All fields are required",
-        variant: "destructive",
-      });
-      return false;
-    }
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
 
     // Email validation
-    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-    if (!emailRegex.test(email)) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
-      return false;
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Invalid email format';
     }
 
     // Password validation
-    if (password.length < 8) {
-      toast({
-        title: "Validation Error",
-        description: "Password must be at least 8 characters long",
-        variant: "destructive",
-      });
-      return false;
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(formData.password)) {
+      newErrors.password = 'Password must contain uppercase, lowercase, number, and special character';
     }
 
-    if (password !== confirmPassword) {
-      toast({
-        title: "Validation Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
-      return false;
+    // Confirm password validation
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    return true;
+    // Token validation
+    if (!formData.initializationToken) {
+      newErrors.initializationToken = 'Initialization token is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleCreateAdmin = async () => {
-    if (!validateInput()) return;
+  const handleInputChange = (field: keyof AdminSetupFormData) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    // Input sanitization
+    const sanitizedValue = value.replace(/[<>]/g, '').trim();
+    
+    setFormData(prev => ({
+      ...prev,
+      [field]: sanitizedValue
+    }));
 
-    setIsLoading(true);
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      // First create the user through Supabase Auth
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
+      // First, create the user account through Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/admin`,
-        },
+          data: {
+            role: 'admin'
+          }
+        }
       });
 
-      if (signUpError) {
-        throw signUpError;
+      if (authError) {
+        throw new Error(authError.message);
       }
 
-      const userId = signUpData.user?.id;
-      if (!userId) {
-        throw new Error('Failed to create user');
+      if (!authData.user) {
+        throw new Error('Failed to create user account');
       }
 
-      // Create profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: userId,
-          email,
-          first_name: 'Admin',
-          last_name: 'User',
-        });
+      // Then call the admin initialization function
+      const { data: setupResult, error: setupError } = await supabase.rpc(
+        'create_initial_admin',
+        {
+          p_email: formData.email,
+          p_password: formData.password,
+          p_initialization_token: formData.initializationToken
+        }
+      );
 
-      if (profileError) {
-        console.warn('Profile creation failed:', profileError);
+      if (setupError) {
+        throw new Error(setupError.message);
       }
 
-      // Assign admin role using the secure function
-      const { data: adminResult, error: adminError } = await supabase
-        .rpc('create_initial_admin', {
-          p_email: email,
-          p_password: password,
-          p_initialization_token: initToken,
-        });
+      const result = setupResult as AdminSetupResult;
 
-      if (adminError) {
-        throw adminError;
+      if (result.error) {
+        throw new Error(result.error);
       }
 
-      if (adminResult?.error) {
-        throw new Error(adminResult.error);
-      }
-
-      // Manually insert admin role (since function handles validation)
+      // Create admin role for the user
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert({
-          user_id: userId,
-          role: 'admin',
+          user_id: authData.user.id,
+          role: 'admin'
         });
 
       if (roleError) {
-        console.warn('Role assignment warning:', roleError);
+        throw new Error('Failed to assign admin role');
       }
 
       toast({
-        title: "Success",
-        description: "Admin account created successfully! Please sign in.",
+        title: 'Success',
+        description: 'Admin account created successfully',
       });
 
-      // Redirect to admin login
-      setTimeout(() => {
-        window.location.href = '/admin/login';
-      }, 2000);
+      navigate('/admin/login');
+
     } catch (error: any) {
-      console.error('Admin setup error:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to create admin account",
-        variant: "destructive",
+        title: 'Setup Failed',
+        description: error.message || 'Failed to create admin account',
+        variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  if (!hasValidToken) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              <CardTitle>Admin Setup Unavailable</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Alert>
-              <AlertDescription>
-                No valid initialization token found. Admin setup is only available immediately after deployment or when authorized by a system administrator.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Shield className="h-5 w-5 text-primary" />
-            <CardTitle>Secure Admin Setup</CardTitle>
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <Shield className="h-12 w-12 text-accent" />
           </div>
+          <CardTitle className="text-2xl font-bold">Secure Admin Setup</CardTitle>
           <CardDescription>
-            Create the initial admin account for this application
+            Create the initial administrator account for your store
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert>
+        <CardContent>
+          <Alert className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              This is a one-time setup process. The admin account will have full access to the system.
+              This is a one-time setup process. The initialization token can only be used once.
             </AlertDescription>
           </Alert>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Admin Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@company.com"
-              required
-            />
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange('email')}
+                disabled={loading}
+                className={errors.email ? 'border-destructive' : ''}
+              />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={handleInputChange('password')}
+                disabled={loading}
+                className={errors.password ? 'border-destructive' : ''}
+              />
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange('confirmPassword')}
+                disabled={loading}
+                className={errors.confirmPassword ? 'border-destructive' : ''}
+              />
+              {errors.confirmPassword && (
+                <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="initializationToken">Initialization Token</Label>
+              <Input
+                id="initializationToken"
+                type="text"
+                value={formData.initializationToken}
+                onChange={handleInputChange('initializationToken')}
+                disabled={loading}
+                className={errors.initializationToken ? 'border-destructive' : ''}
+                placeholder="Enter the secure initialization token"
+              />
+              {errors.initializationToken && (
+                <p className="text-sm text-destructive">{errors.initializationToken}</p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading}
+            >
+              {loading ? 'Creating Admin Account...' : 'Create Admin Account'}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Already have an admin account?{' '}
+              <Button
+                variant="link"
+                className="p-0 h-auto"
+                onClick={() => navigate('/admin/login')}
+              >
+                Sign in here
+              </Button>
+            </p>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter secure password (8+ characters)"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm password"
-              required
-            />
-          </div>
-          
-          <Button 
-            onClick={handleCreateAdmin} 
-            disabled={isLoading}
-            className="w-full"
-          >
-            {isLoading ? 'Creating Admin Account...' : 'Create Admin Account'}
-          </Button>
         </CardContent>
       </Card>
     </div>

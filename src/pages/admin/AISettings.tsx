@@ -1,3 +1,4 @@
+
 export const AISettings = () => {
   return (
     <div className="space-y-6">
@@ -15,3 +16,5 @@ export const AISettings = () => {
     </div>
   );
 };
+
+export default AISettings;

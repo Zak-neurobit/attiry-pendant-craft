@@ -1,3 +1,4 @@
+
 export const Customers = () => {
   return (
     <div className="space-y-6">
@@ -15,3 +16,5 @@ export const Customers = () => {
     </div>
   );
 };
+
+export default Customers;
