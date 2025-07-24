@@ -15,23 +15,37 @@ serve(async (req) => {
   try {
     const { currentDescription, productTitle, productType } = await req.json();
 
-    // Get OpenAI API key from settings
+    // Get OpenAI API key and selected model from settings
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { data: settingsData, error: settingsError } = await supabaseClient
+    const { data: apiKeyData, error: apiKeyError } = await supabaseClient
       .from('site_settings')
       .select('value')
       .eq('key', 'openai_api_key')
       .single();
 
-    if (settingsError || !settingsData) {
+    if (apiKeyError || !apiKeyData) {
       throw new Error("OpenAI API key not configured");
     }
 
-    const apiKey = settingsData.value.api_key;
+    const { data: modelData } = await supabaseClient
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'ai_selected_model')
+      .single();
+
+    const apiKey = apiKeyData.value.api_key;
+    const selectedModel = modelData?.value?.model || 'gpt-4.1-mini';
+
+    // Auto-swap to vision model if needed
+    let modelToUse = selectedModel;
+    if (selectedModel && !selectedModel.includes('vision') && !selectedModel.includes('gpt-4o')) {
+      console.warn(`Selected model ${selectedModel} may not be optimal for this task, using gpt-4o-mini`);
+      modelToUse = 'gpt-4o-mini';
+    }
 
     const prompt = `Enhance this jewelry product description to be more engaging and professional:
 
@@ -55,7 +69,7 @@ Return only the enhanced description text.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: modelToUse,
         messages: [
           {
             role: "system",
