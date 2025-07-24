@@ -20,6 +20,9 @@ import { SearchResults } from '@/pages/SearchResults';
 import NotFound from '@/pages/NotFound';
 import DesignRequest from '@/pages/DesignRequest';
 
+// Account components
+import { Account } from '@/pages/Account';
+
 // Admin components
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { ProtectedRoute } from '@/components/admin/ProtectedRoute';
@@ -69,6 +72,9 @@ function App() {
                 <Route path="search" element={<SearchResults />} />
                 <Route path="design-request" element={<DesignRequest />} />
               </Route>
+              
+              {/* Account routes */}
+              <Route path="/account/*" element={<Account />} />
               
               {/* Auth routes without Layout */}
               <Route path="/login" element={<AuthPage />} />
