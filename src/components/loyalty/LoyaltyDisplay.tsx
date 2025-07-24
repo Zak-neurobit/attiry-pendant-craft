@@ -35,7 +35,15 @@ export const LoyaltyDisplay: React.FC = () => {
         throw error;
       }
 
-      setLoyaltyData(data || { points: 0, tier: 'bronze', total_spent: 0 });
+      if (data) {
+        setLoyaltyData({
+          points: data.points,
+          tier: data.tier as 'bronze' | 'silver' | 'gold',
+          total_spent: data.total_spent
+        });
+      } else {
+        setLoyaltyData({ points: 0, tier: 'bronze', total_spent: 0 });
+      }
     } catch (error) {
       console.error('Error loading loyalty data:', error);
     }

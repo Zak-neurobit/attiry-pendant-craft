@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/stores/auth';
-import { ProductCard } from '@/components/ProductCard';
+import ProductCard from '@/components/ProductCard';
 
 interface Product {
   id: string;

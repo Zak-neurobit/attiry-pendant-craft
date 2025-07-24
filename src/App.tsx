@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -17,6 +18,7 @@ import { SizeGuide } from '@/pages/SizeGuide';
 import { Terms } from '@/pages/Terms';
 import { SearchResults } from '@/pages/SearchResults';
 import NotFound from '@/pages/NotFound';
+import DesignRequest from '@/pages/DesignRequest';
 
 // Admin components
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -28,9 +30,9 @@ import { Products } from '@/pages/admin/Products';
 import { ProductForm } from '@/pages/admin/products/ProductForm';
 import { Orders } from '@/pages/admin/Orders';
 import { Analytics } from '@/pages/admin/Analytics';
-import { Customers } from '@/pages/admin/Customers';
+import Customers from '@/pages/admin/Customers';
 import { APISettings } from '@/pages/admin/APISettings';
-import { AISettings } from '@/pages/admin/AISettings';
+import AISettings from '@/pages/admin/AISettings';
 import { Settings } from '@/pages/admin/Settings';
 
 // Payment admin pages
@@ -65,6 +67,7 @@ function App() {
                 <Route path="size-guide" element={<SizeGuide />} />
                 <Route path="terms" element={<Terms />} />
                 <Route path="search" element={<SearchResults />} />
+                <Route path="design-request" element={<DesignRequest />} />
               </Route>
               
               {/* Auth routes without Layout */}

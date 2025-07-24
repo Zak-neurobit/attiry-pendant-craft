@@ -52,13 +52,13 @@ export default function AISettings() {
         .eq('key', 'ai_selected_model')
         .single();
 
-      if (apiKeyData?.value?.api_key) {
-        const key = apiKeyData.value.api_key;
+      if (apiKeyData?.value && typeof apiKeyData.value === 'object' && 'api_key' in apiKeyData.value) {
+        const key = apiKeyData.value.api_key as string;
         setApiKey(`${key.substring(0, 8)}${'*'.repeat(Math.max(0, key.length - 12))}${key.substring(key.length - 4)}`);
       }
 
-      if (modelData?.value?.model) {
-        setSelectedModel(modelData.value.model);
+      if (modelData?.value && typeof modelData.value === 'object' && 'model' in modelData.value) {
+        setSelectedModel(modelData.value.model as string);
       }
     } catch (error) {
       console.error('Error loading AI settings:', error);
@@ -73,8 +73,8 @@ export default function AISettings() {
         .eq('key', 'ai_usage_stats')
         .single();
 
-      if (data?.value) {
-        setUsageStats(data.value);
+      if (data?.value && typeof data.value === 'object') {
+        setUsageStats(data.value as any);
       }
     } catch (error) {
       console.error('Error loading usage stats:', error);

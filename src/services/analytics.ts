@@ -110,7 +110,7 @@ class AnalyticsService {
           )
         )
       `)
-      .eq('status', 'paid')
+      .eq('status', 'delivered')
       .order('created_at', { ascending: false })
       .limit(50);
 

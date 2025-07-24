@@ -1,12 +1,12 @@
+
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { SEOHead } from '@/components/SEOHead';
 import { supabase } from '@/integrations/supabase/client';
-import { ColorPicker } from '@/components/ColorPicker';
-import { FontPicker } from '@/components/FontPicker';
+import { ColorPicker } from '@/components/product/ColorPicker';
+import { FontPicker } from '@/components/product/FontPicker';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/stores/auth';
-import { ImageCarousel } from '@/components/ImageCarousel';
 import { LiveVisitorCount } from '@/components/conversion/LiveVisitorCount';
 import { StockUrgency } from '@/components/conversion/StockUrgency';
 import { TrustBadges } from '@/components/conversion/TrustBadges';
@@ -117,6 +117,18 @@ export default function ProductDetail() {
     // to reflect the items in the cart
   };
 
+  const handleGiftOptionsChange = (options: {
+    isGift: boolean;
+    message: string;
+    giftWrap: boolean;
+    deliveryDate?: Date;
+  }) => {
+    setGiftOptions({
+      ...options,
+      deliveryDate: options.deliveryDate || undefined,
+    });
+  };
+
   const calculateTotalPrice = () => {
     let total = product?.price || 0;
     if (giftOptions.giftWrap) {
@@ -136,8 +148,14 @@ export default function ProductDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
           <div className="space-y-4">
-            {product?.image_urls && (
-              <ImageCarousel images={product.image_urls} />
+            {product?.image_urls && product.image_urls.length > 0 && (
+              <div className="aspect-square">
+                <img 
+                  src={product.image_urls[0]} 
+                  alt={product.title}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
             )}
           </div>
 
@@ -179,7 +197,7 @@ export default function ProductDetail() {
             </div>
 
             {/* Gift Options */}
-            <GiftOptions onGiftOptionsChange={setGiftOptions} />
+            <GiftOptions onGiftOptionsChange={handleGiftOptionsChange} />
 
             <Button onClick={handleAddToCart} className="w-full">
               Add to Cart

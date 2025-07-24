@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { analytics } from '@/services/analytics';
 import { toast } from 'sonner';
-import { useRouter } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface LiveSalesNotificationsProps {
   enabled?: boolean;
@@ -11,7 +11,7 @@ interface LiveSalesNotificationsProps {
 
 export const LiveSalesNotifications: React.FC<LiveSalesNotificationsProps> = ({ enabled = true }) => {
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!enabled) return;
