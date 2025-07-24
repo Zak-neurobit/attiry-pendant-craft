@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFavourites } from '@/stores/favourites';
 import { ShoppingCart, ArrowLeft, Clock, Heart } from 'lucide-react';
 import { RazorpayPayment } from '@/components/RazorpayPayment';
+import ChainPicker from '@/components/product/ChainPicker';
 import productGold from '@/assets/product-gold.jpg';
 import productRoseGold from '@/assets/product-rose-gold.jpg';
 
@@ -68,6 +69,7 @@ const ProductDetail = () => {
   const [product] = useState(defaultProduct);
   const [selectedColor, setSelectedColor] = useState<string>('gold');
   const [selectedFont, setSelectedFont] = useState<string>('Great Vibes');
+  const [selectedChain, setSelectedChain] = useState<string>('gold-chain');
   const [customText, setCustomText] = useState<string>('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [textError, setTextError] = useState<string>('');
@@ -140,6 +142,7 @@ const ProductDetail = () => {
       originalPrice: product.price,
       color: selectedColor,
       font: selectedFont,
+      chain: selectedChain,
       customText,
       quantity: 1,
       image: product.image_urls[currentImageIndex],
@@ -172,6 +175,7 @@ const ProductDetail = () => {
       price: salePrice,
       color: selectedColor,
       font: selectedFont,
+      chain: selectedChain,
       customText,
       quantity: 1,
       image: product.image_urls[currentImageIndex],
@@ -184,7 +188,7 @@ const ProductDetail = () => {
       city: '',
       state: '',
       zip: '',
-      country: 'IN',
+      country: 'US',
     },
     total: salePrice,
     shippingCost: 0,
@@ -349,6 +353,9 @@ const ProductDetail = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Chain Selection */}
+            <ChainPicker />
 
             {/* Custom Text Input */}
             <div className="space-y-3">

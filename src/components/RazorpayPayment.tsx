@@ -34,20 +34,6 @@ export const RazorpayPayment = ({ orderData, onSuccess, onError }: RazorpayPayme
   const handlePayment = async () => {
     setIsProcessing(true);
     try {
-      // Create order in Supabase first
-      const { data, error } = await supabase.functions.invoke('create-order', {
-        body: {
-          items: orderData.items,
-          customerInfo: orderData.customerInfo,
-          total: orderData.total,
-          shippingCost: orderData.shippingCost,
-        },
-      });
-
-      if (error) throw error;
-
-      const { orderId, razorpayOrderId } = data;
-
       // Load Razorpay script if not already loaded
       if (!window.Razorpay) {
         const script = document.createElement('script');
@@ -60,11 +46,31 @@ export const RazorpayPayment = ({ orderData, onSuccess, onError }: RazorpayPayme
         });
       }
 
+      // Create order in Supabase first
+      const { data, error } = await supabase.functions.invoke('create-order', {
+        body: {
+          items: orderData.items.map(item => ({
+            ...item,
+            customText: item.customText,
+            color: item.color,
+            font: item.font,
+            chain: item.chain,
+          })),
+          customerInfo: orderData.customerInfo,
+          total: orderData.total,
+          shippingCost: orderData.shippingCost,
+        },
+      });
+
+      if (error) throw error;
+
+      const { orderId, razorpayOrderId } = data;
+
       // Initialize Razorpay payment
       const options = {
         key: RAZORPAY_KEY_ID,
         order_id: razorpayOrderId,
-        amount: Math.round(orderData.total * 100), // Convert to paise
+        amount: Math.round((orderData.total + orderData.shippingCost) * 100), // Convert to paise
         currency: 'INR',
         name: 'Attiry',
         description: 'Custom Pendant Order',
@@ -134,7 +140,7 @@ export const RazorpayPayment = ({ orderData, onSuccess, onError }: RazorpayPayme
       className="w-full"
       size="lg"
     >
-      {isProcessing ? 'Processing...' : `Pay ₹${orderData.total.toFixed(2)}`}
+      {isProcessing ? 'Processing...' : `Pay $${orderData.total.toFixed(2)}`}
     </Button>
   );
 };
