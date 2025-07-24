@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,12 +80,29 @@ export const ProductForm = () => {
 
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(false);
 
   useEffect(() => {
     if (isEditing && id) {
       fetchProduct(id);
     }
+    checkAiEnabled();
   }, [id, isEditing]);
+
+  const checkAiEnabled = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'openai_api_key')
+        .single();
+
+      if (error && error.code !== 'PGRST116') return;
+      setAiEnabled(!!data);
+    } catch (error) {
+      console.error('Error checking AI status:', error);
+    }
+  };
 
   const fetchProduct = async (productId: string) => {
     try {
@@ -184,17 +200,38 @@ export const ProductForm = () => {
       return;
     }
 
+    if (!aiEnabled) {
+      toast({
+        title: "AI Not Configured",
+        description: "Please configure OpenAI API key in AI Settings first",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setAiLoading(true);
     try {
-      // TODO: Implement AI image analysis
+      const { data, error } = await supabase.functions.invoke('ai-analyze-image', {
+        body: { imageUrl: formData.image_urls[0] }
+      });
+
+      if (error) throw error;
+
+      // Update form with AI analysis
+      setFormData(prev => ({
+        ...prev,
+        description: data.description || prev.description,
+        tags: [...(prev.tags || []), ...(data.tags || [])],
+      }));
+
       toast({
         title: "AI Analysis Complete",
         description: "Product description and tags have been generated",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "AI Analysis Failed",
-        description: "Unable to analyze image with AI",
+        description: error.message || "Unable to analyze image with AI",
         variant: "destructive",
       });
     } finally {
@@ -203,17 +240,40 @@ export const ProductForm = () => {
   };
 
   const enhanceDescriptionWithAI = async () => {
+    if (!aiEnabled) {
+      toast({
+        title: "AI Not Configured",
+        description: "Please configure OpenAI API key in AI Settings first",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setAiLoading(true);
     try {
-      // TODO: Implement AI description enhancement
+      const { data, error } = await supabase.functions.invoke('ai-generate-description', {
+        body: {
+          currentDescription: formData.description,
+          productTitle: formData.title,
+          productType: 'jewelry'
+        }
+      });
+
+      if (error) throw error;
+
+      setFormData(prev => ({
+        ...prev,
+        description: data.description
+      }));
+
       toast({
         title: "Description Enhanced",
         description: "Product description has been improved with AI",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Enhancement Failed",
-        description: "Unable to enhance description with AI",
+        description: error.message || "Unable to enhance description with AI",
         variant: "destructive",
       });
     } finally {
@@ -222,17 +282,42 @@ export const ProductForm = () => {
   };
 
   const generateSEOWithAI = async () => {
+    if (!aiEnabled) {
+      toast({
+        title: "AI Not Configured",
+        description: "Please configure OpenAI API key in AI Settings first",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setAiLoading(true);
     try {
-      // TODO: Implement AI SEO generation
+      const { data, error } = await supabase.functions.invoke('ai-generate-metadata', {
+        body: {
+          productTitle: formData.title,
+          description: formData.description,
+          category: 'jewelry'
+        }
+      });
+
+      if (error) throw error;
+
+      setFormData(prev => ({
+        ...prev,
+        meta_title: data.metaTitle || '',
+        meta_description: data.metaDescription || '',
+        tags: [...(prev.tags || []), ...(data.tags || [])]
+      }));
+
       toast({
         title: "SEO Generated",
         description: "Meta title and description have been generated",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "SEO Generation Failed",
-        description: "Unable to generate SEO with AI",
+        description: error.message || "Unable to generate SEO with AI",
         variant: "destructive",
       });
     } finally {
@@ -329,10 +414,10 @@ export const ProductForm = () => {
                     variant="outline"
                     size="sm"
                     onClick={enhanceDescriptionWithAI}
-                    disabled={aiLoading}
+                    disabled={aiLoading || !aiEnabled}
                   >
                     <Wand2 className="mr-2 h-4 w-4" />
-                    Enhance with AI
+                    {aiEnabled ? 'Enhance with AI' : 'Configure AI Settings'}
                   </Button>
                 </div>
                 <Textarea
@@ -356,10 +441,10 @@ export const ProductForm = () => {
                     variant="outline"
                     size="sm"
                     onClick={analyzeImageWithAI}
-                    disabled={aiLoading}
+                    disabled={aiLoading || !aiEnabled}
                   >
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Analyze with AI
+                    {aiEnabled ? 'Analyze with AI' : 'Configure AI Settings'}
                   </Button>
                 )}
               </div>
@@ -400,10 +485,10 @@ export const ProductForm = () => {
                   variant="outline"
                   size="sm"
                   onClick={generateSEOWithAI}
-                  disabled={aiLoading}
+                  disabled={aiLoading || !aiEnabled}
                 >
                   <Wand2 className="mr-2 h-4 w-4" />
-                  Generate with AI
+                  {aiEnabled ? 'Generate with AI' : 'Configure AI Settings'}
                 </Button>
               </div>
             </CardHeader>
