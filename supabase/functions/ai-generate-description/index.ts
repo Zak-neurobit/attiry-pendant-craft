@@ -7,22 +7,45 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const defaultModel = 'gpt-4.1-mini';
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { currentDescription, productTitle, productType, model } = await req.json();
+    const { currentDescription, productTitle, productType } = await req.json();
 
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) {
-      throw new Error("OpenAI API key not configured in Supabase Secrets");
+    // Get OpenAI API key and selected model from settings
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { data: apiKeyData, error: apiKeyError } = await supabaseClient
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'openai_api_key')
+      .single();
+
+    if (apiKeyError || !apiKeyData) {
+      throw new Error("OpenAI API key not configured");
     }
 
-    const selectedModel = model || defaultModel;
+    const { data: modelData } = await supabaseClient
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'ai_selected_model')
+      .single();
+
+    const apiKey = apiKeyData.value.api_key;
+    const selectedModel = modelData?.value?.model || 'gpt-4.1-mini';
+
+    // Auto-swap to vision model if needed
+    let modelToUse = selectedModel;
+    if (selectedModel && !selectedModel.includes('vision') && !selectedModel.includes('gpt-4o')) {
+      console.warn(`Selected model ${selectedModel} may not be optimal for this task, using gpt-4o-mini`);
+      modelToUse = 'gpt-4o-mini';
+    }
 
     const prompt = `Enhance this jewelry product description to be more engaging and professional:
 
@@ -42,11 +65,11 @@ Return only the enhanced description text.`;
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: selectedModel,
+        model: modelToUse,
         messages: [
           {
             role: "system",
@@ -71,11 +94,6 @@ Return only the enhanced description text.`;
     const enhancedDescription = data.choices[0].message.content.trim();
 
     // Update usage stats
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
     await supabaseClient
       .from('site_settings')
       .upsert({

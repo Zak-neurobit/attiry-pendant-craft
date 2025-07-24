@@ -14,7 +14,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ImageUploader } from '@/components/admin/ImageUploader';
-import { defaultModel } from '@/services/openai';
 
 const chainTypes = [
   { id: '16_inch', label: '16 inch' },
@@ -214,10 +213,7 @@ export const ProductForm = () => {
     setAiLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('ai-analyze-image', {
-        body: { 
-          imageUrl: formData.image_urls[0],
-          model: defaultModel
-        }
+        body: { imageUrl: formData.image_urls[0] }
       });
 
       if (error) throw error;
@@ -260,8 +256,7 @@ export const ProductForm = () => {
         body: {
           currentDescription: formData.description,
           productTitle: formData.title,
-          productType: 'jewelry',
-          model: defaultModel
+          productType: 'jewelry'
         }
       });
 
@@ -303,8 +298,7 @@ export const ProductForm = () => {
         body: {
           productTitle: formData.title,
           description: formData.description,
-          category: 'jewelry',
-          model: defaultModel
+          category: 'jewelry'
         }
       });
 

@@ -5,35 +5,34 @@ import { SEOHead } from '@/components/SEOHead';
 import { supabase } from '@/integrations/supabase/client';
 import ColorPicker from '@/components/product/ColorPicker';
 import FontPicker from '@/components/product/FontPicker';
-import NameInput from '@/components/product/NameInput';
-import PreviewName from '@/components/product/PreviewName';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/stores/auth';
-import { useProductCustomizer } from '@/stores/productCustomizer';
 import { LiveVisitorCount } from '@/components/conversion/LiveVisitorCount';
 import { StockUrgency } from '@/components/conversion/StockUrgency';
 import { TrustBadges } from '@/components/conversion/TrustBadges';
 import { ReviewsSection } from '@/components/reviews/ReviewsSection';
+import { GiftOptions } from '@/components/gift/GiftOptions';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 
 export default function ProductDetail() {
   const { productId } = useParams<{ productId: string }>();
   const [product, setProduct] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [imageError, setImageError] = useState(false);
-  const [giftWrap, setGiftWrap] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<string>('');
+  const [selectedFont, setSelectedFont] = useState<string>('');
   const { user } = useAuth();
-  const { customization, isValid } = useProductCustomizer();
   const { trackProductView, trackAddToCart } = useAnalytics();
+  const [giftOptions, setGiftOptions] = useState({
+    isGift: false,
+    message: '',
+    giftWrap: false,
+    deliveryDate: undefined as Date | undefined,
+  });
 
   useEffect(() => {
     const loadProduct = async () => {
       if (!productId) return;
 
       try {
-        setLoading(true);
         const { data, error } = await supabase
           .from('products')
           .select('*')
@@ -44,11 +43,11 @@ export default function ProductDetail() {
           console.error('Error loading product:', error);
         } else {
           setProduct(data);
+          setSelectedColor(data.color_variants?.[0] || '');
+          setSelectedFont(data.fonts?.[0] || '');
         }
       } catch (error) {
         console.error('Error loading product:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -92,66 +91,58 @@ export default function ProductDetail() {
   };
 
   const handleAddToCart = () => {
-    if (!product || !isValid()) return;
+    if (!product) return;
+
+    // Basic validation
+    if (!selectedColor) {
+      alert('Please select a color.');
+      return;
+    }
+
+    if (!selectedFont) {
+      alert('Please select a font.');
+      return;
+    }
 
     // Here you would typically add the product to a cart
-    alert(`Added to cart: ${product.title} with "${customization.nameText}" in ${customization.color}`);
+    // This is a placeholder for that functionality
+    alert(`Added to cart: ${product.title} in ${selectedColor} with ${selectedFont}`);
     
     // Track add to cart event
-    trackAddToCart(product.id, calculateTotalPrice());
+    if (product) {
+      trackAddToCart(product.id, product.price);
+    }
+    
+    // You might also want to update local storage or a context
+    // to reflect the items in the cart
+  };
+
+  const handleGiftOptionsChange = (options: {
+    isGift: boolean;
+    message: string;
+    giftWrap: boolean;
+    deliveryDate?: Date;
+  }) => {
+    setGiftOptions({
+      isGift: options.isGift,
+      message: options.message,
+      giftWrap: options.giftWrap,
+      deliveryDate: options.deliveryDate,
+    });
   };
 
   const calculateTotalPrice = () => {
     let total = product?.price || 0;
-    if (giftWrap) {
+    if (giftOptions.giftWrap) {
       total += 5; // Gift wrap cost
     }
     return total;
   };
 
-  const getImageUrl = () => {
-    if (!product?.image_urls || product.image_urls.length === 0) return null;
-    
-    const imageUrl = product.image_urls[0];
-    // If it's a Supabase storage path, get the public URL
-    if (imageUrl && !imageUrl.startsWith('http')) {
-      return supabase.storage.from('product-images').getPublicUrl(imageUrl).data.publicUrl;
-    }
-    return imageUrl;
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div className="aspect-square bg-muted animate-pulse rounded-lg"></div>
-            <div className="space-y-6">
-              <div className="h-8 bg-muted animate-pulse rounded"></div>
-              <div className="h-4 bg-muted animate-pulse rounded w-3/4"></div>
-              <div className="h-6 bg-muted animate-pulse rounded w-1/2"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Product not found</h1>
-          <p className="text-gray-600">The product you're looking for doesn't exist.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-white">
       <SEOHead
-        title={product?.meta_title || `${product.title} - Attiry`}
+        title={product?.meta_title || 'Product Detail - Attiry'}
         description={product?.meta_description || 'View details for our unique jewelry.'}
       />
       
@@ -159,23 +150,15 @@ export default function ProductDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
           <div className="space-y-4">
-            <div className="aspect-square">
-              {getImageUrl() && !imageError ? (
+            {product?.image_urls && product.image_urls.length > 0 && (
+              <div className="aspect-square">
                 <img 
-                  src={getImageUrl()}
+                  src={product.image_urls[0]} 
                   alt={product.title}
                   className="w-full h-full object-cover rounded-lg"
-                  onError={() => setImageError(true)}
                 />
-              ) : (
-                <div className="w-full h-full bg-muted rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-4xl mb-2">📷</div>
-                    <p className="text-muted-foreground">Image coming soon</p>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Product Info */}
@@ -188,52 +171,28 @@ export default function ProductDetail() {
                 {product?.title}
               </h1>
               
-              {/* Price */}
+              {/* Stock urgency */}
+              {product && <StockUrgency stock={product.stock} />}
+              
               <div className="flex items-center gap-4 mb-4">
-                <span className="text-3xl font-semibold text-gray-900">
-                  ${calculateTotalPrice().toFixed(2)} USD
+                <span className="text-3xl font-bold text-purple-600">
+                  ${calculateTotalPrice()}
                 </span>
                 {product?.compare_price && product.compare_price > product.price && (
                   <span className="text-xl text-gray-500 line-through">
-                    ${product.compare_price.toFixed(2)}
+                    ${product.compare_price}
                   </span>
                 )}
               </div>
-              
-              {/* Stock urgency */}
-              {product && <StockUrgency stock={product.stock} />}
 
-              {/* Name Input */}
-              <NameInput />
-
-              {/* Live Preview */}
-              <PreviewName />
-
-              {/* Color Picker */}
               <ColorPicker />
-
-              {/* Font Picker */}
               <FontPicker />
             </div>
 
-            {/* Gift Wrap Option */}
-            <div className="flex items-center space-x-2 p-4 border rounded-lg">
-              <Checkbox
-                id="gift-wrap"
-                checked={giftWrap}
-                onCheckedChange={setGiftWrap}
-              />
-              <Label htmlFor="gift-wrap" className="text-sm">
-                Add gift wrap for $5.00
-              </Label>
-            </div>
+            {/* Gift Options */}
+            <GiftOptions onGiftOptionsChange={handleGiftOptionsChange} />
 
-            {/* Add to Cart Button */}
-            <Button 
-              onClick={handleAddToCart} 
-              className="w-full"
-              disabled={!isValid()}
-            >
+            <Button onClick={handleAddToCart} className="w-full">
               Add to Cart
             </Button>
 

@@ -1,13 +1,13 @@
-
 import { motion } from 'framer-motion';
 import { useProductCustomizer } from '@/stores/productCustomizer';
 
 const colors = [
   { name: 'Gold Plated', value: 'gold', class: 'bg-gold' },
-  { name: 'Silver Plated', value: 'silver', class: 'bg-silver' },
-  { name: 'Rose Gold', value: 'rose-gold', class: 'bg-rose-gold' },
   { name: 'Matte Gold', value: 'matte-gold', class: 'bg-gold/70' },
+  { name: 'Rose Gold', value: 'rose-gold', class: 'bg-rose-gold' },
+  { name: 'Silver', value: 'silver', class: 'bg-silver' },
   { name: 'Matte Silver', value: 'matte-silver', class: 'bg-silver/70' },
+  { name: 'Vintage Copper', value: 'copper', class: 'bg-copper' },
   { name: 'Black', value: 'black', class: 'bg-foreground' },
 ];
 
@@ -19,7 +19,7 @@ const ColorPicker = () => {
       <label className="block text-sm font-medium text-foreground mb-3">
         Choose Metal Finish
       </label>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {colors.map((color) => (
           <motion.button
             key={color.value}

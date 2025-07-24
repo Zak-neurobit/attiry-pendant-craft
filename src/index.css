@@ -1,61 +1,125 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Allura&family=Alex+Brush&family=Dancing+Script:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Attiry Design System - Luxury E-commerce for Custom Name Pendants
+All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
+*/
+
 @layer base {
   :root {
-    --background: 247 244 242; /* #F7F4F2 */
-    --foreground: 43 43 43; /* #2B2B2B */
-    --card: 0 0% 100%;
-    --card-foreground: 43 43 43;
-    --popover: 0 0% 100%;
-    --popover-foreground: 43 43 43;
-    --primary: 43 43 43;
-    --primary-foreground: 247 244 242;
-    --secondary: 247 244 242;
-    --secondary-foreground: 43 43 43;
-    --muted: 239 235 233;
-    --muted-foreground: 115 115 115;
-    --accent: 196 160 122; /* #C4A07A */
-    --accent-foreground: 43 43 43;
+    /* Brand Colors - Luxury Palette */
+    --background: 32 28% 97%; /* #F7F4F2 - Muted pastel background */
+    --foreground: 0 0% 17%; /* #2B2B2B - Charcoal text */
+
+    --card: 32 28% 97%;
+    --card-foreground: 0 0% 17%;
+
+    --popover: 32 28% 97%;
+    --popover-foreground: 0 0% 17%;
+
+    /* Primary - Charcoal for premium feel */
+    --primary: 0 0% 17%; /* #2B2B2B */
+    --primary-foreground: 32 28% 97%;
+
+    /* Secondary - Light variations */
+    --secondary: 32 20% 94%;
+    --secondary-foreground: 0 0% 17%;
+
+    /* Muted tones */
+    --muted: 32 20% 92%;
+    --muted-foreground: 0 0% 45%;
+
+    /* Accent - Gold for luxury touches */
+    --accent: 32 30% 62%; /* #C4A07A - Luxury gold */
+    --accent-foreground: 0 0% 17%;
+
+    /* Additional luxury colors */
+    --gold: 32 30% 62%; /* #C4A07A */
+    --rose-gold: 14 45% 68%;
+    --silver: 0 0% 75%;
+    --copper: 22 55% 55%;
+
+    /* CTA and interactive elements */
+    --cta: 0 0% 0%; /* Pure black for CTA buttons */
+    --cta-foreground: 0 0% 100%;
+
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 196 160 122;
-    --radius: 0.5rem;
-    
-    /* Custom color variables */
-    --gold: 212 175 55; /* #D4AF37 */
-    --rose-gold: 232 183 163; /* #E8B7A3 */
-    --silver: 217 217 217; /* #D9D9D9 */
-    --copper: 205 127 50; /* #CD7F32 */
+
+    --border: 32 20% 88%;
+    --input: 32 20% 90%;
+    --ring: 32 30% 62%;
+
+    --radius: 0.75rem;
+
+    /* Luxury gradients */
+    --gradient-luxury: linear-gradient(135deg, hsl(var(--gold)), hsl(var(--rose-gold)));
+    --gradient-hero: linear-gradient(180deg, hsl(var(--background)), hsl(32 25% 95%));
+    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(32 25% 96%));
+
+    /* Shadows for premium feel */
+    --shadow-luxury: 0 10px 40px -10px hsl(var(--gold) / 0.3);
+    --shadow-card: 0 4px 20px -2px hsl(0 0% 0% / 0.08);
+    --shadow-button: 0 4px 14px 0 hsl(0 0% 0% / 0.15);
+
+    /* Transitions */
+    --transition-luxury: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.3s ease-out;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 43 43 43;
-    --foreground: 247 244 242;
-    --card: 43 43 43;
-    --card-foreground: 247 244 242;
-    --popover: 43 43 43;
-    --popover-foreground: 247 244 242;
-    --primary: 247 244 242;
-    --primary-foreground: 43 43 43;
-    --secondary: 51 51 51;
-    --secondary-foreground: 247 244 242;
-    --muted: 51 51 51;
-    --muted-foreground: 163 163 163;
-    --accent: 196 160 122;
-    --accent-foreground: 43 43 43;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 51 51 51;
-    --input: 51 51 51;
-    --ring: 196 160 122;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -63,117 +127,115 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
+    @apply bg-background text-foreground font-inter antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-playfair;
   }
 }
 
-/* Custom font classes */
-.font-playfair {
-  font-family: 'Playfair Display', serif;
+@layer components {
+  /* Luxury button variants */
+  .btn-cta {
+    @apply bg-cta text-cta-foreground px-8 py-3 rounded-lg font-medium 
+           transition-all duration-300 hover:scale-105 hover:shadow-button
+           active:scale-95;
+  }
+
+  .btn-luxury {
+    @apply bg-gradient-to-r from-gold to-rose-gold text-white px-6 py-3 
+           rounded-lg font-medium transition-all duration-300 hover:scale-105 
+           hover:shadow-luxury;
+  }
+
+  .btn-outline-luxury {
+    @apply border border-accent text-accent bg-transparent px-6 py-3 
+           rounded-lg font-medium transition-all duration-300 
+           hover:bg-accent hover:text-accent-foreground;
+  }
+
+  /* Luxury card styles */
+  .card-luxury {
+    @apply bg-gradient-to-br from-card to-secondary border border-border 
+           rounded-xl shadow-card transition-all duration-300 
+           hover:shadow-luxury hover:scale-[1.02];
+  }
+
+  /* Premium input styles */
+  .input-luxury {
+    @apply w-full px-4 py-3 border border-input rounded-lg bg-background
+           focus:border-accent focus:ring-2 focus:ring-accent/20 
+           transition-all duration-300 placeholder:text-muted-foreground;
+  }
+
+  /* Luxury animations */
+  .fade-in {
+    @apply animate-[fadeIn_0.6s_ease-out_forwards];
+  }
+
+  .slide-up {
+    @apply animate-[slideUp_0.8s_ease-out_forwards];
+  }
+
+  /* Luxury hover effects */
+  .hover-lift {
+    @apply transition-all duration-300 hover:scale-105 hover:shadow-luxury;
+  }
+
+  .parallax {
+    @apply transition-transform duration-700 ease-out;
+  }
 }
 
-.font-playfair-italic {
-  font-family: 'Playfair Display', serif;
-  font-style: italic;
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Custom font utilities for pendant fonts */
+  .font-greatvibes {
+    font-family: 'Great Vibes', cursive;
+  }
+  
+  .font-allura {
+    font-family: 'Allura', cursive;
+  }
+  
+  .font-alexbrush {
+    font-family: 'Alex Brush', cursive;
+  }
+  
+  .font-dancingscript {
+    font-family: 'Dancing Script', cursive;
+  }
+  
+  .font-playfair-italic {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+  }
 }
 
-.font-greatvibes {
-  font-family: 'Great Vibes', cursive;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.font-allura {
-  font-family: 'Allura', cursive;
-}
-
-.font-alexbrush {
-  font-family: 'Alex Brush', cursive;
-}
-
-.font-dancingscript {
-  font-family: 'Dancing Script', cursive;
-}
-
-/* Metallic text effects */
-.metal-gold {
-  background: linear-gradient(90deg, #D4AF37, #A67C00);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  text-shadow: 0 1px 1px rgba(0,0,0,.25);
-}
-
-.metal-silver {
-  background: linear-gradient(90deg, #D9D9D9, #9E9E9E);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  text-shadow: 0 1px 1px rgba(0,0,0,.25);
-}
-
-.metal-rose-gold {
-  background: linear-gradient(90deg, #E8B7A3, #B76E79);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-  text-shadow: 0 1px 1px rgba(0,0,0,.25);
-}
-
-.metal-matte-gold {
-  color: #A5854E;
-  text-shadow: 0 1px 1px rgba(0,0,0,.25);
-}
-
-.metal-matte-silver {
-  color: #8F8F8F;
-  text-shadow: 0 1px 1px rgba(0,0,0,.25);
-}
-
-.metal-black {
-  color: #111;
-  text-shadow: 0 1px 1px rgba(0,0,0,.25);
-}
-
-/* Custom utility classes */
-.bg-gold {
-  background-color: hsl(var(--gold));
-}
-
-.bg-rose-gold {
-  background-color: hsl(var(--rose-gold));
-}
-
-.bg-silver {
-  background-color: hsl(var(--silver));
-}
-
-.bg-copper {
-  background-color: hsl(var(--copper));
-}
-
-.text-gold {
-  color: hsl(var(--gold));
-}
-
-.text-rose-gold {
-  color: hsl(var(--rose-gold));
-}
-
-.text-silver {
-  color: hsl(var(--silver));
-}
-
-.text-copper {
-  color: hsl(var(--copper));
-}
-
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

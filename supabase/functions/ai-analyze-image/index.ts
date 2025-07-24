@@ -7,35 +7,44 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const defaultModel = 'gpt-4.1-mini';
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { imageUrl, model } = await req.json();
+    const { imageUrl } = await req.json();
 
     if (!imageUrl) {
       throw new Error("Image URL is required");
     }
 
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) {
-      throw new Error("OpenAI API key not configured in Supabase Secrets");
+    // Get OpenAI API key from settings
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { data: settingsData, error: settingsError } = await supabaseClient
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'openai_api_key')
+      .single();
+
+    if (settingsError || !settingsData) {
+      throw new Error("OpenAI API key not configured");
     }
 
-    const selectedModel = model || defaultModel;
+    const apiKey = settingsData.value.api_key;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: selectedModel,
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "user",
@@ -80,11 +89,6 @@ serve(async (req) => {
     }
 
     // Update usage stats
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
     await supabaseClient
       .from('site_settings')
       .upsert({
