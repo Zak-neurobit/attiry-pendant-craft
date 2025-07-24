@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,7 @@ interface Order {
   customer_name: string;
   customer_email: string;
   total: number;
-  status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   shipping_address: any;
   order_items: Array<{
     id: string;
@@ -81,7 +82,7 @@ export const Orders = () => {
   const handleBuyAgain = async (order: Order) => {
     try {
       for (const item of order.order_items) {
-        await addItem({
+        addItem({
           id: item.product_id,
           title: item.products.title,
           price: item.unit_price,
@@ -108,7 +109,7 @@ export const Orders = () => {
     switch (status) {
       case 'pending':
         return 'bg-yellow-500';
-      case 'paid':
+      case 'processing':
         return 'bg-blue-500';
       case 'shipped':
         return 'bg-purple-500';
@@ -295,3 +296,4 @@ export const Orders = () => {
     </div>
   );
 };
+

@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,15 +9,17 @@ import { useAuth } from '@/stores/auth';
 import { Package, MapPin, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
+interface DefaultAddress {
+  name: string;
+  line1: string;
+  city: string;
+  state: string;
+}
+
 interface OverviewData {
   totalOrders: number;
   lastOrderDate: string | null;
-  defaultAddress: {
-    name: string;
-    line1: string;
-    city: string;
-    state: string;
-  } | null;
+  defaultAddress: DefaultAddress | null;
 }
 
 export const Overview = () => {
@@ -46,7 +49,7 @@ export const Overview = () => {
           .select('name, line1, city, state')
           .eq('user_id', user.id)
           .eq('is_default', true)
-          .single();
+          .maybeSingle();
 
         setData({
           totalOrders: orders?.length || 0,
@@ -154,3 +157,4 @@ export const Overview = () => {
     </div>
   );
 };
+
