@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -18,6 +17,7 @@ import { SizeGuide } from '@/pages/SizeGuide';
 import { Terms } from '@/pages/Terms';
 import { SearchResults } from '@/pages/SearchResults';
 import NotFound from '@/pages/NotFound';
+import { SEOHead } from '@/components/SEOHead';
 
 // Admin components
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -44,6 +44,7 @@ function App() {
       <AuthProvider>
         <Router>
           <div className="App">
+            <SEOHead />
             <Routes>
               {/* Public routes with Layout */}
               <Route path="/" element={<Layout />}>
