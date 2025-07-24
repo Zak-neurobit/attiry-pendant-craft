@@ -13,19 +13,17 @@ import { useFavourites } from '@/stores/favourites';
 import { useToast } from '@/hooks/use-toast';
 import { SEOHead } from '@/components/SEOHead';
 import { supabase } from '@/integrations/supabase/client';
+import { useProductCustomizer } from '@/stores/productCustomizer';
 
 // Components
-import { NameInput } from '@/components/product/NameInput';
-import { FontPicker } from '@/components/product/FontPicker';
+import NameInput from '@/components/product/NameInput';
+import FontPicker from '@/components/product/FontPicker';
 import { ColorPicker } from '@/components/product/ColorPicker';
-import { ChainPicker } from '@/components/product/ChainPicker';
-import { PreviewName } from '@/components/product/PreviewName';
+import ChainPicker from '@/components/product/ChainPicker';
+import PreviewName from '@/components/product/PreviewName';
 import { GiftWrapOption } from '@/components/product/GiftWrapOption';
 import { ReviewsSection } from '@/components/reviews/ReviewsSection';
-import { RecentlyViewed } from '@/components/personalization/RecentlyViewed';
 import { TrustBadges } from '@/components/conversion/TrustBadges';
-import { StockUrgency } from '@/components/conversion/StockUrgency';
-import { CountdownTimer } from '@/components/conversion/CountdownTimer';
 
 interface Product {
   id: string;
@@ -43,30 +41,26 @@ interface Product {
 const ProductDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
+  const { addItem } = useCart();
   const { favourites, addToFavourites, removeFromFavourites } = useFavourites();
   const { toast } = useToast();
+  const { customization, isValid, reset } = useProductCustomizer();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [customName, setCustomName] = useState('');
-  const [selectedFont, setSelectedFont] = useState('Great Vibes');
-  const [selectedColor, setSelectedColor] = useState('gold');
-  const [selectedChain, setSelectedChain] = useState('18-inch');
   const [includeGiftWrap, setIncludeGiftWrap] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity] = useState(1);
 
   useEffect(() => {
     const fetchProduct = async () => {
       if (!slug) return;
       
       try {
-        // Try to get product by ID first, then by slug matching
         const { data, error } = await supabase
           .from('products')
           .select('*')
-          .or(`id.eq.${slug},sku.eq.${slug}`)
+          .eq('id', slug)
           .eq('is_active', true)
           .single();
 
@@ -75,9 +69,6 @@ const ProductDetail = () => {
           setProduct(null);
         } else {
           setProduct(data);
-          if (data.color_variants && data.color_variants.length > 0) {
-            setSelectedColor(data.color_variants[0]);
-          }
         }
       } catch (error) {
         console.error('Product fetch error:', error);
@@ -93,33 +84,33 @@ const ProductDetail = () => {
   const isFavourite = product ? favourites.includes(product.id) : false;
 
   const handleAddToCart = () => {
-    if (!product || !customName.trim()) {
+    if (!product || !isValid()) {
       toast({
         title: "Name Required",
-        description: "Please enter a name for your pendant",
+        description: "Please enter a valid name for your pendant (1-12 characters, letters only)",
         variant: "destructive",
       });
       return;
     }
 
-    addToCart({
-      id: product.id,
-      name: product.title,
-      price: product.price,
+    const finalPrice = product.price + (includeGiftWrap ? 5 : 0);
+
+    addItem({
+      productId: product.id,
+      title: product.title,
+      price: finalPrice,
+      originalPrice: product.compare_price || product.price,
+      color: customization.color,
+      font: customization.font,
+      chain: customization.chain,
+      customText: customization.nameText,
+      quantity,
       image: product.image_urls[0],
-      customization: {
-        name: customName,
-        font: selectedFont,
-        color: selectedColor,
-        chain: selectedChain,
-        giftWrap: includeGiftWrap,
-      },
-      quantity
     });
 
     toast({
       title: "Added to Cart",
-      description: `${product.title} with "${customName}" has been added to your cart`,
+      description: `${product.title} with "${customization.nameText}" has been added to your cart`,
     });
   };
 
@@ -291,33 +282,19 @@ const ProductDetail = () => {
 
             {/* Customization Options */}
             <div className="space-y-6">
-              <NameInput value={customName} onChange={setCustomName} />
+              <NameInput />
               
-              <PreviewName 
-                name={customName} 
-                font={selectedFont} 
-                color={selectedColor} 
-              />
+              <PreviewName />
               
-              <FontPicker 
-                selectedFont={selectedFont} 
-                onFontChange={setSelectedFont} 
-              />
+              <FontPicker />
               
-              <ColorPicker 
-                selectedColor={selectedColor} 
-                onColorChange={setSelectedColor}
-                availableColors={product.color_variants}
-              />
+              <ColorPicker />
               
-              <ChainPicker 
-                selectedChain={selectedChain} 
-                onChainChange={setSelectedChain} 
-              />
+              <ChainPicker />
               
               <GiftWrapOption 
-                includeGiftWrap={includeGiftWrap} 
-                onGiftWrapChange={setIncludeGiftWrap} 
+                checked={includeGiftWrap} 
+                onCheckedChange={setIncludeGiftWrap} 
               />
             </div>
 
@@ -336,7 +313,7 @@ const ProductDetail = () => {
                 size="lg"
               >
                 <ShoppingBag className="h-5 w-5 mr-2" />
-                Add to Cart - {formatPrice(salePrice || originalPrice)}
+                Add to Cart - {formatPrice((salePrice || originalPrice) + (includeGiftWrap ? 5 : 0))}
               </Button>
 
               <div className="flex gap-2">
@@ -419,9 +396,6 @@ const ProductDetail = () => {
             </TabsContent>
           </Tabs>
         </div>
-
-        {/* Recently Viewed */}
-        <RecentlyViewed currentProductId={product.id} />
       </div>
     </div>
   );
