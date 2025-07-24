@@ -8,89 +8,148 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export const AdminSetup = () => {
-  const [email, setEmail] = useState('zak.seid@gmail.com');
-  const [password, setPassword] = useState('Neurobit@123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleCreateAdmin = async () => {
-    if (!email || !password) {
+  const validateInput = () => {
+    if (!email || !password || !confirmPassword) {
       toast({
         title: "Error",
-        description: "Please provide both email and password",
+        description: "Please fill in all fields",
         variant: "destructive",
       });
-      return;
+      return false;
     }
+
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (password.length < 8) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 8 characters long",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleCreateAdmin = async () => {
+    if (!validateInput()) return;
 
     setIsLoading(true);
     try {
-      // First, try to sign up the user
+      // Check if any admin user already exists
+      const { data: existingAdmins, error: adminCheckError } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('role', 'admin')
+        .limit(1);
+
+      if (adminCheckError) {
+        throw new Error('Failed to check existing admin users');
+      }
+
+      if (existingAdmins && existingAdmins.length > 0) {
+        toast({
+          title: "Error",
+          description: "An admin user already exists. Please contact support for additional admin access.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create the user account
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: email.trim().toLowerCase(),
         password,
         options: {
           data: {
-            first_name: 'Zak',
-            last_name: 'Seid',
+            first_name: '',
+            last_name: '',
           },
         },
       });
 
-      if (signUpError && signUpError.message !== 'User already registered') {
+      if (signUpError) {
         throw signUpError;
       }
 
-      // Sign in the user
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (signInError) {
-        throw signInError;
+      if (!signUpData.user) {
+        throw new Error('Failed to create user account');
       }
 
-      const userId = signInData.user?.id;
-      if (!userId) {
-        throw new Error('No user ID returned');
-      }
-
-      // Create or update profile
+      // Create profile
       const { error: profileError } = await supabase
         .from('profiles')
-        .upsert({
-          user_id: userId,
-          email,
-          first_name: 'Zak',
-          last_name: 'Seid',
+        .insert({
+          user_id: signUpData.user.id,
+          email: email.trim().toLowerCase(),
+          first_name: '',
+          last_name: '',
         });
 
       if (profileError) {
-        console.error('Profile error:', profileError);
-        // Don't throw here as it's not critical
+        console.warn('Profile creation failed:', profileError);
       }
 
       // Assign admin role
       const { error: roleError } = await supabase
         .from('user_roles')
-        .upsert({
-          user_id: userId,
+        .insert({
+          user_id: signUpData.user.id,
           role: 'admin',
         });
 
       if (roleError) {
-        console.error('Role error:', roleError);
-        // Don't throw here as it's not critical
+        throw new Error('Failed to assign admin role');
+      }
+
+      // Log the admin creation for security audit
+      const { error: auditError } = await supabase
+        .from('security_audit_log')
+        .insert({
+          action: 'admin_account_created',
+          user_id: signUpData.user.id,
+          details: { email: email.trim().toLowerCase() },
+          ip_address: null, // Client-side, can't get real IP
+          user_agent: navigator.userAgent,
+        });
+
+      if (auditError) {
+        console.warn('Audit log failed:', auditError);
       }
 
       toast({
         title: "Success",
-        description: "Admin account created successfully! You can now access the admin dashboard.",
+        description: "Admin account created successfully! Please check your email to verify your account.",
       });
 
-      // Redirect to admin dashboard
-      window.location.href = '/admin';
+      // Clear form
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
     } catch (error: any) {
       console.error('Admin setup error:', error);
       toast({
@@ -109,7 +168,7 @@ export const AdminSetup = () => {
         <CardHeader>
           <CardTitle>Admin Setup</CardTitle>
           <CardDescription>
-            Set up your admin account to access the dashboard
+            Create the first admin account for your store
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -121,6 +180,7 @@ export const AdminSetup = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@example.com"
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -130,7 +190,19 @@ export const AdminSetup = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter admin password"
+              placeholder="Enter secure password (min 8 chars)"
+              disabled={isLoading}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
+              disabled={isLoading}
             />
           </div>
           <Button 

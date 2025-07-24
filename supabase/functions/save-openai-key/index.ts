@@ -7,6 +7,26 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting map (in production, use Redis or similar)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+const isRateLimited = (userId: string): boolean => {
+  const now = Date.now();
+  const userLimit = rateLimitMap.get(userId);
+  
+  if (!userLimit || now > userLimit.resetTime) {
+    rateLimitMap.set(userId, { count: 1, resetTime: now + 60000 }); // 1 minute window
+    return false;
+  }
+  
+  if (userLimit.count >= 5) { // Max 5 requests per minute
+    return true;
+  }
+  
+  userLimit.count++;
+  return false;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -19,20 +39,32 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Verify admin role
+    // Enhanced authentication verification
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new Error('Missing or invalid authorization header');
     }
 
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     if (authError || !user) {
+      console.error('Auth verification failed:', authError);
       throw new Error('Invalid authentication');
     }
 
-    // Check if user has admin role
+    // Rate limiting
+    if (isRateLimited(user.id)) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429,
+        }
+      );
+    }
+
+    // Enhanced admin role verification
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -41,13 +73,39 @@ serve(async (req) => {
       .single();
 
     if (roleError || !roleData) {
+      // Log unauthorized access attempt
+      await supabaseAdmin
+        .from('security_audit_log')
+        .insert({
+          action: 'unauthorized_admin_access_attempt',
+          user_id: user.id,
+          details: { 
+            endpoint: '/save-openai-key',
+            user_email: user.email 
+          },
+          ip_address: req.headers.get('x-forwarded-for') || 'unknown',
+          user_agent: req.headers.get('user-agent') || 'unknown',
+        });
+
       throw new Error('Admin access required');
     }
 
-    const { key } = await req.json();
+    // Enhanced input validation
+    const body = await req.json();
+    const { key } = body;
 
-    if (!key || !key.startsWith('sk-')) {
+    if (!key || typeof key !== 'string') {
+      throw new Error('API key is required and must be a string');
+    }
+
+    // Validate OpenAI API key format
+    if (!key.startsWith('sk-') || key.length < 20) {
       throw new Error('Invalid OpenAI API key format');
+    }
+
+    // Additional security: check for suspicious patterns
+    if (key.includes(' ') || key.includes('\n') || key.includes('\t')) {
+      throw new Error('Invalid API key format - contains whitespace');
     }
 
     // Store the key securely in site_settings
@@ -64,8 +122,23 @@ serve(async (req) => {
       });
 
     if (upsertError) {
+      console.error('Database error:', upsertError);
       throw new Error(`Failed to save API key: ${upsertError.message}`);
     }
+
+    // Log the API key update for security audit
+    await supabaseAdmin
+      .from('security_audit_log')
+      .insert({
+        action: 'openai_api_key_updated',
+        user_id: user.id,
+        details: { 
+          updated_by_email: user.email,
+          key_preview: `${key.substring(0, 7)}...${key.substring(key.length - 4)}`
+        },
+        ip_address: req.headers.get('x-forwarded-for') || 'unknown',
+        user_agent: req.headers.get('user-agent') || 'unknown',
+      });
 
     return new Response(
       JSON.stringify({ 
@@ -74,17 +147,29 @@ serve(async (req) => {
         updated_at: new Date().toISOString()
       }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "X-Content-Type-Options": "nosniff",
+          "X-Frame-Options": "DENY"
+        },
         status: 200,
       }
     );
   } catch (error) {
     console.error("Save OpenAI key error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Internal server error',
+        timestamp: new Date().toISOString()
+      }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "X-Content-Type-Options": "nosniff"
+        },
+        status: error instanceof Error && error.message.includes('Rate limit') ? 429 : 500,
       }
     );
   }

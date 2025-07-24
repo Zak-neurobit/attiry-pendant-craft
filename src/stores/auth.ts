@@ -2,7 +2,6 @@
 import { create } from 'zustand';
 import { authService, type AuthUser } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { isAdminEmail } from '@/lib/adminUtils';
 
 interface AuthState {
   user: AuthUser | null;
@@ -24,7 +23,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     try {
       await authService.signIn(email, password);
       const user = await authService.getCurrentUser();
-      const isAdmin = user ? isAdminEmail(user.email) : false;
+      const isAdmin = user ? await authService.hasAdminRole() : false;
       set({ user, isAdmin, loading: false });
     } catch (error) {
       set({ loading: false });
@@ -37,7 +36,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     try {
       await authService.signUp(email, password, firstName, lastName);
       const user = await authService.getCurrentUser();
-      const isAdmin = user ? isAdminEmail(user.email) : false;
+      const isAdmin = user ? await authService.hasAdminRole() : false;
       set({ user, isAdmin, loading: false });
     } catch (error) {
       set({ loading: false });
@@ -57,7 +56,7 @@ export const useAuth = create<AuthState>((set, get) => ({
   initialize: async () => {
     try {
       const user = await authService.getCurrentUser();
-      const isAdmin = user ? isAdminEmail(user.email) : false;
+      const isAdmin = user ? await authService.hasAdminRole() : false;
       set({ user, isAdmin, loading: false });
     } catch (error) {
       console.error('Auth initialization error:', error);
@@ -66,13 +65,34 @@ export const useAuth = create<AuthState>((set, get) => ({
   },
 }));
 
-// Listen for auth changes
+// Listen for auth changes with security logging
 supabase.auth.onAuthStateChange(async (event, session) => {
   const { initialize } = useAuth.getState();
   
-  if (event === 'SIGNED_OUT') {
+  // Log security events
+  if (event === 'SIGNED_IN' && session?.user) {
+    // Log successful login for security audit
+    const { error } = await supabase
+      .from('security_audit_log')
+      .insert({
+        action: 'user_login',
+        user_id: session.user.id,
+        details: { 
+          email: session.user.email,
+          method: 'password' 
+        },
+        ip_address: null, // Client-side limitation
+        user_agent: navigator.userAgent,
+      });
+    
+    if (error) {
+      console.warn('Failed to log login event:', error);
+    }
+  } else if (event === 'SIGNED_OUT') {
     useAuth.setState({ user: null, isAdmin: false, loading: false });
-  } else if (event === 'SIGNED_IN' && session) {
+  }
+  
+  if (event === 'SIGNED_IN' && session) {
     // Defer the initialization to avoid blocking the auth state change
     setTimeout(() => {
       initialize();

@@ -7,33 +7,49 @@ export type AuthUser = {
   role?: string;
 };
 
-// Input validation utilities
+// Enhanced input validation utilities
 const validateEmail = (email: string): boolean => {
   const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-  return emailRegex.test(email);
+  return emailRegex.test(email) && email.length <= 320; // RFC 5321 limit
 };
 
 const validatePassword = (password: string): boolean => {
-  return password.length >= 8;
+  return password.length >= 8 && password.length <= 128; // Reasonable limits
 };
 
 const sanitizeInput = (input: string): string => {
-  return input.trim().slice(0, 255); // Prevent excessively long inputs
+  // Remove potentially harmful characters and limit length
+  return input.replace(/[<>'"&]/g, '').trim().slice(0, 255);
+};
+
+const sanitizeName = (name: string): string => {
+  // Allow only letters, spaces, hyphens, apostrophes for names
+  return name.replace(/[^a-zA-Z\s\-']/g, '').trim().slice(0, 50);
 };
 
 export const authService = {
   async signUp(email: string, password: string, firstName?: string, lastName?: string) {
-    // Input validation
-    const sanitizedEmail = sanitizeInput(email);
-    const sanitizedFirstName = firstName ? sanitizeInput(firstName).slice(0, 50) : undefined;
-    const sanitizedLastName = lastName ? sanitizeInput(lastName).slice(0, 50) : undefined;
+    // Enhanced input validation and sanitization
+    const sanitizedEmail = sanitizeInput(email).toLowerCase();
+    const sanitizedFirstName = firstName ? sanitizeName(firstName) : undefined;
+    const sanitizedLastName = lastName ? sanitizeName(lastName) : undefined;
 
     if (!validateEmail(sanitizedEmail)) {
       throw new Error('Invalid email format');
     }
 
     if (!validatePassword(password)) {
-      throw new Error('Password must be at least 8 characters long');
+      throw new Error('Password must be between 8-128 characters long');
+    }
+
+    // Additional password strength validation
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+    if (!(hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar)) {
+      throw new Error('Password must contain uppercase, lowercase, number, and special character');
     }
 
     const { data, error } = await supabase.auth.signUp({
@@ -71,8 +87,8 @@ export const authService = {
   },
 
   async signIn(email: string, password: string) {
-    // Input validation
-    const sanitizedEmail = sanitizeInput(email);
+    // Input validation and sanitization
+    const sanitizedEmail = sanitizeInput(email).toLowerCase();
 
     if (!validateEmail(sanitizedEmail)) {
       throw new Error('Invalid email format');
@@ -101,7 +117,7 @@ export const authService = {
     
     if (!user) return null;
 
-    // Get user role
+    // Get user role from database
     const { data: roleData } = await supabase
       .from('user_roles')
       .select('role')
