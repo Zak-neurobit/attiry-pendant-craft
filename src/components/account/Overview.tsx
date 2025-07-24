@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 interface OverviewData {
   totalOrders: number;
   lastOrderDate: string | null;
+  totalAddresses: number;
 }
 
 export const Overview = () => {
@@ -18,6 +19,7 @@ export const Overview = () => {
   const [data, setData] = useState<OverviewData>({
     totalOrders: 0,
     lastOrderDate: null,
+    totalAddresses: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -33,9 +35,16 @@ export const Overview = () => {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
+        // Fetch total addresses
+        const { data: addresses } = await supabase
+          .from('addresses')
+          .select('id')
+          .eq('user_id', user.id);
+
         setData({
           totalOrders: orders?.length || 0,
           lastOrderDate: orders?.[0]?.created_at || null,
+          totalAddresses: addresses?.length || 0,
         });
       } catch (error) {
         console.error('Error fetching overview data:', error);
@@ -107,17 +116,15 @@ export const Overview = () => {
           </CardContent>
         </Card>
 
-        {/* Address Placeholder */}
+        {/* Total Addresses */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Addresses</CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-sm text-muted-foreground">
-              Address management coming soon
-            </div>
-            <Button asChild variant="link" className="p-0 h-auto text-xs mt-2">
+            <div className="text-2xl font-bold">{data.totalAddresses}</div>
+            <Button asChild variant="link" className="p-0 h-auto text-xs">
               <Link to="/account/addresses">Manage addresses</Link>
             </Button>
           </CardContent>

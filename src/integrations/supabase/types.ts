@@ -50,6 +50,51 @@ export type Database = {
         }
         Relationships: []
       }
+      addresses: {
+        Row: {
+          city: string
+          country: string
+          created_at: string
+          id: string
+          is_default: boolean | null
+          line1: string
+          line2: string | null
+          name: string
+          state: string
+          updated_at: string
+          user_id: string
+          zip: string
+        }
+        Insert: {
+          city: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          line1: string
+          line2?: string | null
+          name: string
+          state: string
+          updated_at?: string
+          user_id: string
+          zip: string
+        }
+        Update: {
+          city?: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          line1?: string
+          line2?: string | null
+          name?: string
+          state?: string
+          updated_at?: string
+          user_id?: string
+          zip?: string
+        }
+        Relationships: []
+      }
       admin_initialization: {
         Row: {
           created_at: string
