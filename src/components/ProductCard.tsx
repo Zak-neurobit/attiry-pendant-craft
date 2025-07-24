@@ -33,7 +33,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   };
 
   return (
-    <Link to={`/product/${product.slug}`}>
+    <Link to={`/product/${product.id}`}>
       <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 h-full">
         <div className="relative overflow-hidden">
           <img
@@ -43,7 +43,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           />
           <div className="absolute top-3 left-3 flex flex-col gap-2">
             {product.isNew && (
-              <Badge className="bg-accent-gold text-white">New</Badge>
+              <Badge className="bg-accent text-accent-foreground">New</Badge>
             )}
             {product.originalPrice && product.originalPrice > product.price && (
               <Badge variant="destructive">
@@ -102,7 +102,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   key={color}
                   className={`w-4 h-4 rounded-full border-2 border-white shadow-sm ${
                     color === 'gold'
-                      ? 'bg-accent-gold'
+                      ? 'bg-yellow-500'
                       : color === 'rose-gold'
                       ? 'bg-rose-400'
                       : color === 'silver'

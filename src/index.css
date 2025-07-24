@@ -55,12 +55,12 @@ All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
     --radius: 0.75rem;
 
     /* Luxury gradients */
-    --gradient-luxury: linear-gradient(135deg, hsl(var(--gold)), hsl(var(--rose-gold)));
-    --gradient-hero: linear-gradient(180deg, hsl(var(--background)), hsl(32 25% 95%));
-    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(32 25% 96%));
+    --gradient-luxury: linear-gradient(135deg, hsl(32 30% 62%), hsl(14 45% 68%));
+    --gradient-hero: linear-gradient(180deg, hsl(32 28% 97%), hsl(32 25% 95%));
+    --gradient-card: linear-gradient(145deg, hsl(32 28% 97%), hsl(32 25% 96%));
 
     /* Shadows for premium feel */
-    --shadow-luxury: 0 10px 40px -10px hsl(var(--gold) / 0.3);
+    --shadow-luxury: 0 10px 40px -10px hsl(32 30% 62% / 0.3);
     --shadow-card: 0 4px 20px -2px hsl(0 0% 0% / 0.08);
     --shadow-button: 0 4px 14px 0 hsl(0 0% 0% / 0.15);
 
@@ -177,7 +177,7 @@ All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
 
   /* Metallic preview text effects */
   .preview-gold {
-    background: linear-gradient(90deg, #D4AF37, #A67C00);
+    background: linear-gradient(90deg, hsl(45 100% 83%), hsl(45 100% 65%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -185,7 +185,7 @@ All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
   }
 
   .preview-silver {
-    background: linear-gradient(90deg, #E6E8E9, #9E9E9E);
+    background: linear-gradient(90deg, hsl(0 0% 90%), hsl(0 0% 62%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -193,7 +193,7 @@ All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
   }
 
   .preview-rose-gold {
-    background: linear-gradient(90deg, #E8B7A3, #B76E79);
+    background: linear-gradient(90deg, hsl(14 45% 68%), hsl(14 45% 58%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -201,17 +201,17 @@ All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
   }
 
   .preview-matte-gold {
-    color: #A5854E;
+    color: hsl(45 30% 55%);
     text-shadow: 0 1px 1px rgba(0,0,0,.25);
   }
 
   .preview-matte-silver {
-    color: #8F8F8F;
+    color: hsl(0 0% 56%);
     text-shadow: 0 1px 1px rgba(0,0,0,.25);
   }
 
   .preview-black {
-    color: #111;
+    color: hsl(0 0% 7%);
     text-shadow: 0 1px 1px rgba(0,0,0,.25);
   }
 }

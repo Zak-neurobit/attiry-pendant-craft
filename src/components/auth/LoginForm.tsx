@@ -48,11 +48,16 @@ export const LoginForm = () => {
     
     if (!validateInput()) return;
     
-    // Enhanced rate limiting
+    // Reset attempt count for the specific test email
+    if (email.toLowerCase() === 'zak.seid@gmail.com') {
+      setAttemptCount(0);
+    }
+    
+    // Rate limiting
     if (attemptCount >= 5) {
       toast({
         title: "Account Temporarily Locked",
-        description: "Too many failed attempts. Please try again in 15 minutes.",
+        description: "Please try again later.",
         variant: "destructive",
       });
       return;
@@ -72,14 +77,14 @@ export const LoginForm = () => {
       });
       navigate('/');
     } catch (error: any) {
-      setAttemptCount(prev => prev + 1);
+      // Only increment attempt count for other emails
+      if (email.toLowerCase() !== 'zak.seid@gmail.com') {
+        setAttemptCount(prev => prev + 1);
+      }
       
-      // Enhanced error messages without revealing sensitive information
       let errorMessage = "Invalid email or password";
       if (error.message.includes('Email not confirmed')) {
         errorMessage = "Please check your email and confirm your account";
-      } else if (error.message.includes('Invalid login credentials')) {
-        errorMessage = "Invalid email or password";
       }
       
       toast({

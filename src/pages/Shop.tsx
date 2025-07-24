@@ -15,6 +15,8 @@ interface SupabaseProduct {
   color_variants: string[];
   keywords: string[];
   sku: string;
+  compare_price?: number;
+  stock?: number;
 }
 
 const container = {
@@ -27,13 +29,17 @@ const container = {
   },
 };
 
-const getSalePrice = (originalPrice: number) => {
-  return originalPrice * 0.75; // 25% off
+const getSalePrice = (originalPrice: number, comparePrice?: number) => {
+  if (comparePrice && comparePrice > originalPrice) {
+    return originalPrice;
+  }
+  return originalPrice * 0.75; // 25% off as fallback
 };
 
 export const Shop = () => {
   const [products, setProducts] = useState<SupabaseProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -42,15 +48,26 @@ export const Shop = () => {
 
   const fetchProducts = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        setError(error.message);
+        return;
+      }
+
+      console.log('Fetched products:', data);
       setProducts(data || []);
     } catch (error: any) {
+      console.error('Fetch error:', error);
+      setError(error.message || 'Failed to fetch products');
       toast({
         title: 'Error',
         description: error.message || 'Failed to fetch products',
@@ -62,15 +79,15 @@ export const Shop = () => {
   };
 
   const convertToProduct = (supabaseProduct: SupabaseProduct): Product => {
-    const originalPrice = supabaseProduct.price;
-    const salePrice = getSalePrice(originalPrice);
+    const originalPrice = supabaseProduct.compare_price || supabaseProduct.price;
+    const salePrice = getSalePrice(supabaseProduct.price, supabaseProduct.compare_price);
 
     return {
       id: supabaseProduct.id,
-      slug: `product-${supabaseProduct.id}`,
+      slug: supabaseProduct.id, // Use ID as slug for simpler routing
       name: supabaseProduct.title,
       price: salePrice,
-      originalPrice: originalPrice,
+      originalPrice: originalPrice > salePrice ? originalPrice : undefined,
       description: supabaseProduct.description || '',
       images: supabaseProduct.image_urls || ['/placeholder.svg'],
       rating: 5,
@@ -86,7 +103,27 @@ export const Shop = () => {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
-            <div>Loading products...</div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading products...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold mb-2 text-destructive">Error Loading Products</h2>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <button 
+              onClick={fetchProducts}
+              className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors"
+            >
+              Try Again
+            </button>
           </div>
         </div>
       </div>
@@ -108,21 +145,21 @@ export const Shop = () => {
         </div>
 
         {/* Products Grid */}
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
-        >
-          {products.map((supabaseProduct) => (
-            <ProductCard
-              key={supabaseProduct.id}
-              product={convertToProduct(supabaseProduct)}
-            />
-          ))}
-        </motion.div>
-
-        {products.length === 0 && (
+        {products.length > 0 ? (
+          <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+          >
+            {products.map((supabaseProduct) => (
+              <ProductCard
+                key={supabaseProduct.id}
+                product={convertToProduct(supabaseProduct)}
+              />
+            ))}
+          </motion.div>
+        ) : (
           <div className="text-center py-12">
             <h2 className="text-xl font-semibold mb-2">No products found</h2>
             <p className="text-muted-foreground">Check back soon for new pendant designs!</p>

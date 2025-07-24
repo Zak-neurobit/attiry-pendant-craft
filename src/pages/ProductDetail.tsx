@@ -1,160 +1,160 @@
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Heart, Star, ShoppingBag, Share2, Truck, Shield, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { useCart } from '@/stores/cart';
+import { useFavourites } from '@/stores/favourites';
+import { useToast } from '@/hooks/use-toast';
 import { SEOHead } from '@/components/SEOHead';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/stores/auth';
-import { LiveVisitorCount } from '@/components/conversion/LiveVisitorCount';
-import { StockUrgency } from '@/components/conversion/StockUrgency';
-import { TrustBadges } from '@/components/conversion/TrustBadges';
-import { ReviewsSection } from '@/components/reviews/ReviewsSection';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import { useProductCustomizer } from '@/stores/productCustomizer';
-import { ColorPicker } from '@/components/product/ColorPicker';
-import FontPicker from '@/components/product/FontPicker';
-import NameInput from '@/components/product/NameInput';
-import PreviewName from '@/components/product/PreviewName';
-import { GiftWrapOption } from '@/components/product/GiftWrapOption';
-import { Skeleton } from '@/components/ui/skeleton';
 
-export default function ProductDetail() {
-  const { slug } = useParams<{ slug: string }>();
-  const [product, setProduct] = useState<any>(null);
+// Components
+import { NameInput } from '@/components/product/NameInput';
+import { FontPicker } from '@/components/product/FontPicker';
+import { ColorPicker } from '@/components/product/ColorPicker';
+import { ChainPicker } from '@/components/product/ChainPicker';
+import { PreviewName } from '@/components/product/PreviewName';
+import { GiftWrapOption } from '@/components/product/GiftWrapOption';
+import { ReviewsSection } from '@/components/reviews/ReviewsSection';
+import { RecentlyViewed } from '@/components/personalization/RecentlyViewed';
+import { TrustBadges } from '@/components/conversion/TrustBadges';
+import { StockUrgency } from '@/components/conversion/StockUrgency';
+import { CountdownTimer } from '@/components/conversion/CountdownTimer';
+
+interface Product {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  image_urls: string[];
+  color_variants: string[];
+  keywords: string[];
+  sku: string;
+  stock?: number;
+  compare_price?: number;
+}
+
+const ProductDetail = () => {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { favourites, addToFavourites, removeFromFavourites } = useFavourites();
+  const { toast } = useToast();
+
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [giftWrap, setGiftWrap] = useState(false);
-  const { user } = useAuth();
-  const { trackProductView, trackAddToCart } = useAnalytics();
-  const { customization, isValid } = useProductCustomizer();
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [customName, setCustomName] = useState('');
+  const [selectedFont, setSelectedFont] = useState('Great Vibes');
+  const [selectedColor, setSelectedColor] = useState('gold');
+  const [selectedChain, setSelectedChain] = useState('18-inch');
+  const [includeGiftWrap, setIncludeGiftWrap] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
-    const loadProduct = async () => {
+    const fetchProduct = async () => {
       if (!slug) return;
-
+      
       try {
-        setLoading(true);
-        setError(null);
-        
-        // First try to find by slug, then fall back to title-based slug matching
-        let { data, error } = await supabase
+        // Try to get product by ID first, then by slug matching
+        const { data, error } = await supabase
           .from('products')
-          .select('*')  
-          .eq('title', slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()))
+          .select('*')
+          .or(`id.eq.${slug},sku.eq.${slug}`)
           .eq('is_active', true)
           .single();
 
-        if (error && error.code === 'PGRST116') {
-          // If no exact match, try a more flexible search
-          const searchQuery = slug.replace(/-/g, ' ');
-          const { data: searchData, error: searchError } = await supabase
-            .from('products')
-            .select('*')
-            .ilike('title', `%${searchQuery}%`)
-            .eq('is_active', true)
-            .limit(1)
-            .single();
-          
-          if (searchError) throw searchError;
-          data = searchData;
-        } else if (error) {
-          throw error;
+        if (error) {
+          console.error('Product fetch error:', error);
+          setProduct(null);
+        } else {
+          setProduct(data);
+          if (data.color_variants && data.color_variants.length > 0) {
+            setSelectedColor(data.color_variants[0]);
+          }
         }
-
-        setProduct(data);
-      } catch (err: any) {
-        console.error('Error loading product:', err);
-        setError(err.message);
+      } catch (error) {
+        console.error('Product fetch error:', error);
+        setProduct(null);
       } finally {
         setLoading(false);
       }
     };
 
-    loadProduct();
+    fetchProduct();
   }, [slug]);
 
-  // Add product view tracking
-  useEffect(() => {
-    if (product) {
-      trackProductView(product.id);
-      
-      // Update user behavior for logged-in users
-      if (user) {
-        updateViewedProducts(product.id);
-      }
-    }
-  }, [product, user, trackProductView]);
-
-  const updateViewedProducts = async (productId: string) => {
-    if (!user) return;
-
-    try {
-      const { data: behavior } = await supabase
-        .from('user_behavior')
-        .select('viewed_products')
-        .eq('user_id', user.id)
-        .single();
-
-      const viewedProducts = behavior?.viewed_products || [];
-      const updatedProducts = [productId, ...viewedProducts.filter(id => id !== productId)].slice(0, 12);
-
-      await supabase
-        .from('user_behavior')
-        .upsert({
-          user_id: user.id,
-          viewed_products: updatedProducts,
-        });
-    } catch (error) {
-      console.error('Error updating viewed products:', error);
-    }
-  };
-
-  const getImageUrl = (imagePath: string) => {
-    if (!imagePath) return null;
-    
-    if (imagePath.startsWith('http')) {
-      return imagePath;
-    }
-    
-    const { data } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(imagePath);
-    
-    return data.publicUrl;
-  };
+  const isFavourite = product ? favourites.includes(product.id) : false;
 
   const handleAddToCart = () => {
-    if (!product || !isValid()) return;
+    if (!product || !customName.trim()) {
+      toast({
+        title: "Name Required",
+        description: "Please enter a name for your pendant",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Track add to cart event
-    trackAddToCart(product.id, calculateTotalPrice());
-    
-    // Here you would typically add the product to a cart
-    alert(`Added to cart: ${product.title} with name "${customization.nameText}" in ${customization.color} with ${customization.font}${giftWrap ? ' (with gift wrap)' : ''}`);
+    addToCart({
+      id: product.id,
+      name: product.title,
+      price: product.price,
+      image: product.image_urls[0],
+      customization: {
+        name: customName,
+        font: selectedFont,
+        color: selectedColor,
+        chain: selectedChain,
+        giftWrap: includeGiftWrap,
+      },
+      quantity
+    });
+
+    toast({
+      title: "Added to Cart",
+      description: `${product.title} with "${customName}" has been added to your cart`,
+    });
   };
 
-  const calculateTotalPrice = () => {
-    let total = product?.price || 0;
-    if (giftWrap) {
-      total += 5; // Gift wrap cost
+  const toggleFavourite = () => {
+    if (!product) return;
+    
+    if (isFavourite) {
+      removeFromFavourites(product.id);
+      toast({
+        title: "Removed from Favourites",
+        description: `${product.title} removed from your favourites`,
+      });
+    } else {
+      addToFavourites(product.id);
+      toast({
+        title: "Added to Favourites",
+        description: `${product.title} added to your favourites`,
+      });
     }
-    return total;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background" id="product-detail-loading">
-        <div className="container mx-auto px-4 py-8" id="loading-container">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12" id="loading-grid">
-            <div className="space-y-4" id="loading-image-section">
-              <Skeleton className="aspect-square w-full rounded-lg" id="loading-image-skeleton" />
-            </div>
-            <div className="space-y-6" id="loading-details-section">
-              <Skeleton className="h-8 w-3/4" id="loading-title-skeleton" />
-              <Skeleton className="h-6 w-1/2" id="loading-price-skeleton" />
-              <Skeleton className="h-4 w-full" id="loading-desc-1" />
-              <Skeleton className="h-4 w-full" id="loading-desc-2" />
-              <Skeleton className="h-4 w-2/3" id="loading-desc-3" />
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-muted rounded w-1/4 mb-8"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="aspect-square bg-muted rounded-lg"></div>
+              <div className="space-y-4">
+                <div className="h-8 bg-muted rounded w-3/4"></div>
+                <div className="h-4 bg-muted rounded w-1/2"></div>
+                <div className="h-6 bg-muted rounded w-1/4"></div>
+                <div className="h-32 bg-muted rounded"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -162,138 +162,269 @@ export default function ProductDetail() {
     );
   }
 
-  if (error || !product) {
+  if (!product) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center" id="product-detail-error">
-        <div className="text-center" id="error-content">
-          <h1 className="text-2xl font-bold mb-4" id="error-title">Product Not Found</h1>
-          <p className="text-muted-foreground mb-4" id="error-message">
-            The product you're looking for doesn't exist or has been removed.
-          </p>
-          <Button onClick={() => window.history.back()} id="error-back-button">
-            Go Back
-          </Button>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
+            <p className="text-muted-foreground mb-8">
+              The product you're looking for doesn't exist or has been removed.
+            </p>
+            <Button onClick={() => navigate('/shop')}>
+              Browse Products
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
-  const primaryImage = product.image_urls?.[0];
-  const imageUrl = primaryImage ? getImageUrl(primaryImage) : null;
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(price);
+  };
+
+  const salePrice = product.compare_price && product.compare_price > product.price 
+    ? product.price 
+    : undefined;
+  const originalPrice = product.compare_price && product.compare_price > product.price 
+    ? product.compare_price 
+    : product.price;
 
   return (
-    <div className="min-h-screen bg-background" id="product-detail-page">
+    <div className="min-h-screen bg-background">
       <SEOHead
-        title={product?.meta_title || `${product.title} - Attiry`}
-        description={product?.meta_description || `Personalized ${product.title}. Custom engraved jewelry made with premium materials.`}
+        title={product.title}
+        description={product.description || `Custom ${product.title} - Personalized name pendant`}
+        image={product.image_urls[0]}
+        url={`/product/${product.id}`}
+        type="product"
       />
-      
-      <div className="container mx-auto px-4 py-8" id="product-detail-container">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12" id="product-detail-grid">
+
+      <div className="container mx-auto px-4 py-8">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="hover:bg-muted"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
-          <div className="space-y-4" id="product-images-section">
-            <div className="aspect-square" id="main-image-container">
-              {imageUrl ? (
-                <img 
-                  src={imageUrl} 
-                  alt={product.title}
-                  className="w-full h-full object-cover rounded-lg"
-                  id="main-product-image"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full bg-muted rounded-lg flex items-center justify-center" id="placeholder-image">
-                  <span className="text-muted-foreground" id="placeholder-text">Image coming soon</span>
-                </div>
-              )}
+          <div className="space-y-4">
+            <div className="aspect-square overflow-hidden rounded-lg border">
+              <img
+                src={product.image_urls[selectedImage] || '/placeholder.svg'}
+                alt={product.title}
+                className="w-full h-full object-cover"
+              />
             </div>
+
+            {product.image_urls.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto">
+                {product.image_urls.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImage(index)}
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+                      selectedImage === index ? 'border-accent' : 'border-border'
+                    }`}
+                  >
+                    <img
+                      src={image}
+                      alt={`${product.title} ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Info */}
-          <div className="space-y-6" id="product-info-section">
-            {/* Live visitor count */}
-            <LiveVisitorCount productId={product?.id} />
-            
-            <div id="product-header">
-              <h1 className="text-3xl font-bold text-foreground mb-2" id="product-title">
-                {product?.title}
-              </h1>
-              
-              {/* Stock urgency */}
-              {product && <StockUrgency stock={product.stock} />}
-              
-              <div className="flex items-center gap-4 mb-6" id="price-section">
-                <span className="text-3xl font-semibold text-foreground" style={{ fontWeight: 600, color: '#111' }} id="product-price">
-                  ${calculateTotalPrice().toFixed(2)} USD
-                </span>
-                {product?.compare_price && product.compare_price > product.price && (
-                  <span className="text-xl text-muted-foreground line-through" id="compare-price">
-                    ${product.compare_price.toFixed(2)}
-                  </span>
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                {product.stock && product.stock < 10 && (
+                  <Badge variant="secondary">Only {product.stock} left</Badge>
                 )}
+                <Badge className="bg-accent text-accent-foreground">Custom Made</Badge>
               </div>
-
-              {/* Name Input */}
-              <div id="name-input-section">
-                <NameInput />
+              <h1 className="text-3xl font-bold text-foreground mb-2">{product.title}</h1>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-foreground">
+                    {formatPrice(salePrice || originalPrice)}
+                  </span>
+                  {salePrice && (
+                    <span className="text-lg text-muted-foreground line-through">
+                      {formatPrice(originalPrice)}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleFavourite}
+                  className="hover:bg-muted"
+                >
+                  <Heart
+                    className={`h-5 w-5 ${
+                      isFavourite ? 'fill-red-500 text-red-500' : 'text-muted-foreground'
+                    }`}
+                  />
+                </Button>
               </div>
-
-              {/* Live Preview */}
-              <div id="preview-section">
-                <PreviewName />
-              </div>
-
-              {/* Color Picker */}
-              <div id="color-picker-section">
-                <ColorPicker />
-              </div>
-
-              {/* Font Picker */}
-              <div id="font-picker-section">
-                <FontPicker />
-              </div>
-
-              {/* Gift Wrap Option */}
-              <div id="gift-wrap-section">
-                <GiftWrapOption 
-                  checked={giftWrap}
-                  onCheckedChange={setGiftWrap}
-                />
-              </div>
+              <p className="text-muted-foreground">{product.description}</p>
             </div>
 
-            <Button 
-              onClick={handleAddToCart} 
-              className="w-full"
-              disabled={!isValid()}
-              id="add-to-cart-button"
-            >
-              Add to Cart
-            </Button>
+            <Separator />
 
-            {!isValid() && (
-              <p className="text-sm text-muted-foreground text-center" id="validation-message">
-                Please enter a valid name (1-12 characters, letters and spaces only)
-              </p>
-            )}
+            {/* Customization Options */}
+            <div className="space-y-6">
+              <NameInput value={customName} onChange={setCustomName} />
+              
+              <PreviewName 
+                name={customName} 
+                font={selectedFont} 
+                color={selectedColor} 
+              />
+              
+              <FontPicker 
+                selectedFont={selectedFont} 
+                onFontChange={setSelectedFont} 
+              />
+              
+              <ColorPicker 
+                selectedColor={selectedColor} 
+                onColorChange={setSelectedColor}
+                availableColors={product.color_variants}
+              />
+              
+              <ChainPicker 
+                selectedChain={selectedChain} 
+                onChainChange={setSelectedChain} 
+              />
+              
+              <GiftWrapOption 
+                includeGiftWrap={includeGiftWrap} 
+                onGiftWrapChange={setIncludeGiftWrap} 
+              />
+            </div>
+
+            <Separator />
+
+            {/* Add to Cart */}
+            <motion.div 
+              className="space-y-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Button
+                onClick={handleAddToCart}
+                className="w-full bg-cta hover:bg-cta/90 text-cta-foreground font-medium py-3"
+                size="lg"
+              >
+                <ShoppingBag className="h-5 w-5 mr-2" />
+                Add to Cart - {formatPrice(salePrice || originalPrice)}
+              </Button>
+
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
+              </div>
+            </motion.div>
 
             {/* Trust Badges */}
-            <div id="trust-badges-section">
-              <TrustBadges />
-            </div>
-
-            <div className="prose max-w-none" id="product-description">
-              <h2 id="description-title">Description</h2>
-              <p id="description-content">{product?.description}</p>
-            </div>
+            <TrustBadges />
           </div>
         </div>
 
-        {/* Reviews Section */}
-        {product && <ReviewsSection productId={product.id} />}
+        {/* Product Details Tabs */}
+        <div className="mt-16">
+          <Tabs defaultValue="details" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="shipping">Shipping</TabsTrigger>
+              <TabsTrigger value="reviews">Reviews</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="details" className="mt-8">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="flex items-center gap-3">
+                      <Truck className="h-5 w-5 text-accent" />
+                      <div>
+                        <h4 className="font-medium">Free Shipping</h4>
+                        <p className="text-sm text-muted-foreground">On orders over $50</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Shield className="h-5 w-5 text-accent" />
+                      <div>
+                        <h4 className="font-medium">Lifetime Warranty</h4>
+                        <p className="text-sm text-muted-foreground">Against manufacturing defects</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <RotateCcw className="h-5 w-5 text-accent" />
+                      <div>
+                        <h4 className="font-medium">30-Day Returns</h4>
+                        <p className="text-sm text-muted-foreground">Easy returns & exchanges</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="shipping" className="mt-8">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium mb-2">Processing Time</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Custom pendants are made to order and typically ship within 3-5 business days.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Shipping Options</h4>
+                      <ul className="space-y-1 text-sm text-muted-foreground">
+                        <li>• Standard Shipping (5-7 days): Free on orders over $50</li>
+                        <li>• Express Shipping (2-3 days): $15</li>
+                        <li>• Overnight Shipping (1 day): $25</li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="reviews" className="mt-8">
+              <ReviewsSection productId={product.id} />
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Recently Viewed */}
+        <RecentlyViewed currentProductId={product.id} />
       </div>
     </div>
   );
-}
+};
+
+export default ProductDetail;
