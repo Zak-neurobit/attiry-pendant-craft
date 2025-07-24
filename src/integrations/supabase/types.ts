@@ -246,44 +246,62 @@ export type Database = {
       }
       products: {
         Row: {
+          chain_types: string[] | null
           color_variants: Database["public"]["Enums"]["color_variant"][] | null
+          compare_price: number | null
           created_at: string
           description: string | null
+          fonts: string[] | null
           id: string
           image_urls: string[] | null
           is_active: boolean
           keywords: string[] | null
+          meta_description: string | null
+          meta_title: string | null
           price: number
           sku: string | null
           stock: number
+          tags: string[] | null
           title: string
           updated_at: string
         }
         Insert: {
+          chain_types?: string[] | null
           color_variants?: Database["public"]["Enums"]["color_variant"][] | null
+          compare_price?: number | null
           created_at?: string
           description?: string | null
+          fonts?: string[] | null
           id?: string
           image_urls?: string[] | null
           is_active?: boolean
           keywords?: string[] | null
+          meta_description?: string | null
+          meta_title?: string | null
           price: number
           sku?: string | null
           stock?: number
+          tags?: string[] | null
           title: string
           updated_at?: string
         }
         Update: {
+          chain_types?: string[] | null
           color_variants?: Database["public"]["Enums"]["color_variant"][] | null
+          compare_price?: number | null
           created_at?: string
           description?: string | null
+          fonts?: string[] | null
           id?: string
           image_urls?: string[] | null
           is_active?: boolean
           keywords?: string[] | null
+          meta_description?: string | null
+          meta_title?: string | null
           price?: number
           sku?: string | null
           stock?: number
+          tags?: string[] | null
           title?: string
           updated_at?: string
         }

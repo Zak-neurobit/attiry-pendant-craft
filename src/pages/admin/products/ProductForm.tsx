@@ -122,7 +122,19 @@ export const ProductForm = () => {
     setLoading(true);
     try {
       const productData = {
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        price: formData.price,
+        compare_price: formData.compare_price,
+        stock: formData.stock,
+        is_active: formData.is_active,
+        image_urls: formData.image_urls,
+        chain_types: formData.chain_types,
+        color_variants: formData.color_variants,
+        fonts: formData.fonts,
+        meta_title: formData.meta_title,
+        meta_description: formData.meta_description,
+        tags: formData.tags,
         updated_at: new Date().toISOString(),
       };
 
@@ -222,6 +234,22 @@ export const ProductForm = () => {
     } finally {
       setAiLoading(false);
     }
+  };
+
+  const handleFontSelect = (fontValue: string) => {
+    if (!formData.fonts.includes(fontValue)) {
+      setFormData({
+        ...formData,
+        fonts: [...formData.fonts, fontValue]
+      });
+    }
+  };
+
+  const removeFontFromList = (fontToRemove: string) => {
+    setFormData({
+      ...formData,
+      fonts: formData.fonts.filter(font => font !== fontToRemove)
+    });
   };
 
   return (
@@ -528,7 +556,7 @@ export const ProductForm = () => {
               {/* Fonts */}
               <div>
                 <Label htmlFor="fonts">Font Options</Label>
-                <Select>
+                <Select onValueChange={handleFontSelect}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select fonts" />
                   </SelectTrigger>
@@ -544,8 +572,13 @@ export const ProductForm = () => {
                 {formData.fonts.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {formData.fonts.map((font) => (
-                      <Badge key={font} variant="secondary">
-                        {font}
+                      <Badge 
+                        key={font} 
+                        variant="secondary"
+                        className="cursor-pointer"
+                        onClick={() => removeFontFromList(font)}
+                      >
+                        {font} ×
                       </Badge>
                     ))}
                   </div>

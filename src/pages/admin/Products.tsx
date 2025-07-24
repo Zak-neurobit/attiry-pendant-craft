@@ -17,10 +17,12 @@ interface Product {
   id: string;
   title: string;
   price: number;
+  compare_price: number;
   stock: number;
   is_active: boolean;
   image_urls: string[] | null;
   color_variants: string[] | null;
+  chain_types: string[] | null;
   created_at: string;
 }
 
@@ -270,7 +272,7 @@ export const Products = () => {
                   <TableHead>Status</TableHead>
                   <TableHead>Inventory</TableHead>
                   <TableHead>Price</TableHead>
-                  <TableHead>Variants</TableHead>
+                  <TableHead>Options</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -312,6 +314,11 @@ export const Products = () => {
                           </div>
                           <div>
                             <div className="font-medium">{product.title}</div>
+                            {product.compare_price > 0 && product.compare_price > product.price && (
+                              <div className="text-sm text-muted-foreground line-through">
+                                {formatPrice(product.compare_price)}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </TableCell>
@@ -325,17 +332,31 @@ export const Products = () => {
                           {product.stock} in stock
                         </Badge>
                       </TableCell>
-                      <TableCell>{formatPrice(product.price)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{formatPrice(product.price)}</span>
+                          {product.compare_price > 0 && product.compare_price > product.price && (
+                            <span className="text-sm text-muted-foreground line-through">
+                              {formatPrice(product.compare_price)}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
-                          {product.color_variants?.slice(0, 3).map((variant) => (
+                          {product.color_variants?.slice(0, 2).map((variant) => (
                             <Badge key={variant} variant="outline" className="text-xs">
                               {variant.replace('_', ' ')}
                             </Badge>
                           ))}
-                          {product.color_variants && product.color_variants.length > 3 && (
+                          {product.color_variants && product.color_variants.length > 2 && (
                             <Badge variant="outline" className="text-xs">
-                              +{product.color_variants.length - 3}
+                              +{product.color_variants.length - 2}
+                            </Badge>
+                          )}
+                          {product.chain_types && product.chain_types.length > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {product.chain_types.length} chains
                             </Badge>
                           )}
                         </div>
