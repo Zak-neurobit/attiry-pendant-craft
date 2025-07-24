@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,18 +13,9 @@ import { useCart } from '@/stores/cart';
 import { useToast } from '@/hooks/use-toast';
 import { useFavourites } from '@/stores/favourites';
 import { ShoppingCart, ArrowLeft, Clock, Heart } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-
-interface Product {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  image_urls: string[];
-  color_variants: string[];
-  keywords: string[];
-  sku: string;
-}
+import { RazorpayPayment } from '@/components/RazorpayPayment';
+import productGold from '@/assets/product-gold.jpg';
+import productRoseGold from '@/assets/product-rose-gold.jpg';
 
 const colorNames: Record<string, string> = {
   gold: 'Gold Plated',
@@ -37,7 +28,7 @@ const colorNames: Record<string, string> = {
 };
 
 const fontOptions = [
-  { value: 'Great Vibes', label: 'Great Vibes', className: 'font-greatvibes' },
+  { value: 'Great Vibes', label: 'Great Vibes', className: 'font-great-vibes' },
   { value: 'Allura', label: 'Allura', className: 'font-allura' },
   { value: 'Alex Brush', label: 'Alex Brush', className: 'font-alexbrush' },
   { value: 'Dancing Script', label: 'Dancing Script', className: 'font-dancingscript' },
@@ -56,72 +47,35 @@ const getSalePrice = (originalPrice: number) => {
   return originalPrice * 0.75; // 25% off
 };
 
+// Default product data
+const defaultProduct = {
+  id: '1',
+  title: 'Custom Gold Name Pendant',
+  description: 'Elegant gold-plated pendant with custom name engraving. Perfect for special occasions and personal gifts. Handcrafted with precision using premium materials.',
+  price: 99.99,
+  image_urls: [productGold, productRoseGold],
+  color_variants: ['gold', 'rose_gold', 'silver', 'matte_gold', 'vintage_copper'],
+  keywords: ['custom', 'pendant', 'jewelry', 'personalized'],
+  sku: 'ATR-001',
+};
+
 const ProductDetail = () => {
-  const { slug } = useParams();
   const navigate = useNavigate();
   const { addItem, openCart } = useCart();
   const { toast } = useToast();
   const { isFavourite, addToFavourites, removeFromFavourites } = useFavourites();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedColor, setSelectedColor] = useState<string>('');
-  const [selectedFont, setSelectedFont] = useState<string>('');
+  const [product] = useState(defaultProduct);
+  const [selectedColor, setSelectedColor] = useState<string>('gold');
+  const [selectedFont, setSelectedFont] = useState<string>('Great Vibes');
   const [customText, setCustomText] = useState<string>('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [textError, setTextError] = useState<string>('');
+  const [showPayment, setShowPayment] = useState(false);
 
-  useEffect(() => {
-    fetchProduct();
-  }, [slug]);
-
-  const fetchProduct = async () => {
-    if (!slug) return;
-
-    try {
-      setLoading(true);
-      
-      // Try to find product by converting slug back to title
-      const productTitle = slug
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .ilike('title', `%${productTitle}%`)
-        .single();
-
-      if (error) throw error;
-
-      setProduct(data);
-      
-      if (data.color_variants && data.color_variants.length > 0) {
-        setSelectedColor(data.color_variants[0]);
-      }
-      
-      if (fontOptions.length > 0) {
-        setSelectedFont(fontOptions[0].value);
-      }
-    } catch (error: any) {
-      console.error('Error fetching product:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load product details',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const isProductFavourite = product ? isFavourite(product.id) : false;
+  const isProductFavourite = isFavourite(product.id);
 
   const handleFavoriteClick = async () => {
-    if (!product) return;
-    
     try {
       if (isProductFavourite) {
         await removeFromFavourites(product.id);
@@ -171,12 +125,10 @@ const ProductDetail = () => {
 
   const getFontClass = (fontValue: string) => {
     const font = fontOptions.find(f => f.value === fontValue);
-    return font ? font.className : 'font-greatvibes';
+    return font ? font.className : 'font-great-vibes';
   };
 
   const handleAddToCart = () => {
-    if (!product) return;
-
     if (!validateCustomText(customText)) {
       return;
     }
@@ -202,30 +154,41 @@ const ProductDetail = () => {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-lg">Loading product...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Product not found</h1>
-          <Button onClick={() => navigate('/shop')}>Back to Shop</Button>
-        </div>
-      </div>
-    );
-  }
+  const handleBuyNow = () => {
+    if (!validateCustomText(customText)) {
+      return;
+    }
+    setShowPayment(true);
+  };
 
   const originalPrice = product.price;
   const salePrice = getSalePrice(originalPrice);
   const savings = originalPrice - salePrice;
+
+  const orderData = {
+    items: [{
+      id: product.id,
+      title: product.title,
+      price: salePrice,
+      color: selectedColor,
+      font: selectedFont,
+      customText,
+      quantity: 1,
+      image: product.image_urls[currentImageIndex],
+    }],
+    customerInfo: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      street: '',
+      city: '',
+      state: '',
+      zip: '',
+      country: 'IN',
+    },
+    total: salePrice,
+    shippingCost: 0,
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -336,7 +299,7 @@ const ProductDetail = () => {
           {/* Product Details */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl lg:text-4xl font-bold font-heading text-foreground mb-3">
+              <h1 className="text-3xl lg:text-4xl font-bold font-source-serif text-foreground mb-3">
                 {product.title}
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed">
@@ -435,16 +398,49 @@ const ProductDetail = () => {
               </div>
             )}
 
-            {/* Add to Cart Button */}
-            <Button
-              onClick={handleAddToCart}
-              size="lg"
-              className="w-full"
-              disabled={!customText || !!textError}
-            >
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              Add to Cart - {formatPrice(salePrice)}
-            </Button>
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <Button
+                onClick={handleAddToCart}
+                size="lg"
+                className="w-full"
+                variant="outline"
+                disabled={!customText || !!textError}
+              >
+                <ShoppingCart className="mr-2 h-5 w-5" />
+                Add to Cart - {formatPrice(salePrice)}
+              </Button>
+
+              {showPayment ? (
+                <RazorpayPayment
+                  orderData={orderData}
+                  onSuccess={(orderId) => {
+                    toast({
+                      title: 'Order Placed!',
+                      description: `Your order ${orderId} has been placed successfully.`,
+                    });
+                    navigate('/');
+                  }}
+                  onError={(error) => {
+                    toast({
+                      title: 'Payment Failed',
+                      description: error,
+                      variant: 'destructive',
+                    });
+                    setShowPayment(false);
+                  }}
+                />
+              ) : (
+                <Button
+                  onClick={handleBuyNow}
+                  size="lg"
+                  className="w-full"
+                  disabled={!customText || !!textError}
+                >
+                  Buy Now - {formatPrice(salePrice)}
+                </Button>
+              )}
+            </div>
 
             {/* Upsell Strip */}
             <Card className="border border-muted bg-muted/50">

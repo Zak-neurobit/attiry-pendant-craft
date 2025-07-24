@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { ChevronRight, Star, Quote } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -102,7 +103,7 @@ const Home = () => {
         >
           <img 
             src={heroImage} 
-            alt="Luxury Custom Name Pendant"
+            alt="Luxury Custom Name Pendant - Personalized Jewelry"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-background/20" />
@@ -112,14 +113,13 @@ const Home = () => {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-2xl">
             <div className="fade-in">
-              <h1 className="text-5xl md:text-7xl font-playfair font-bold text-foreground mb-6 leading-tight">
-                Luxury
-                <span className="block text-accent">Custom</span>
-                Pendants
+              <h1 className="text-5xl md:text-7xl font-source-serif font-bold text-foreground mb-6 leading-tight">
+                Luxury Custom Name Pendants
+                <span className="block text-accent">& Personalized Jewelry</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                Personalized jewelry crafted with premium materials. 
-                Each piece tells your unique story.
+                Handcrafted personalized jewelry for couples and loved ones. 
+                Each piece tells your unique story with premium materials and precision craftsmanship.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild className="btn-cta text-lg px-8 py-4">
@@ -150,7 +150,7 @@ const Home = () => {
       <section className="py-20 bg-secondary/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 slide-up">
-            <h2 className="text-4xl font-playfair font-bold text-foreground mb-4">
+            <h2 className="text-4xl font-source-serif font-bold text-foreground mb-4">
               Choose Your Style
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
@@ -185,7 +185,7 @@ const Home = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-12">
             <div>
-              <h2 className="text-4xl font-playfair font-bold text-foreground mb-4">
+              <h2 className="text-4xl font-source-serif font-bold text-foreground mb-4">
                 Top Offers
               </h2>
               <p className="text-muted-foreground">
@@ -214,13 +214,51 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Why Choose Personalized Jewelry */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-source-serif font-bold text-foreground mb-4">
+              Why Choose Personalized Jewelry?
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Perfect gifts for every occasion - birthdays, anniversaries, and special moments
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-accent/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <span className="text-2xl">💎</span>
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Premium Materials</h3>
+              <p className="text-muted-foreground">14k Gold, Sterling Silver, and Rose Gold finishes</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-accent/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <span className="text-2xl">✨</span>
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Handcrafted with Love</h3>
+              <p className="text-muted-foreground">Each piece is carefully crafted by master jewelers</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 bg-accent/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <span className="text-2xl">🎁</span>
+              </div>
+              <h3 className="font-semibold text-foreground mb-2">Perfect Gifts</h3>
+              <p className="text-muted-foreground">Ideal for couples, anniversaries, and special occasions</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Collection Showcase */}
       <section className="py-20 bg-gradient-to-br from-secondary/50 to-background">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="fade-in">
-              <h2 className="text-4xl font-playfair font-bold text-foreground mb-6">
-                Crafted with
+              <h2 className="text-4xl font-source-serif font-bold text-foreground mb-6">
+                Handcrafted with
                 <span className="block text-accent">Precision</span>
               </h2>
               <p className="text-muted-foreground mb-6 text-lg leading-relaxed">
@@ -251,7 +289,7 @@ const Home = () => {
             <div className="slide-up">
               <img 
                 src={collectionImage} 
-                alt="Luxury pendant collection"
+                alt="Luxury pendant collection - Custom jewelry craftsmanship"
                 className="w-full rounded-2xl shadow-luxury"
               />
             </div>
@@ -263,7 +301,7 @@ const Home = () => {
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-playfair font-bold text-foreground mb-4">
+            <h2 className="text-4xl font-source-serif font-bold text-foreground mb-4">
               What Our Customers Say
             </h2>
             <p className="text-muted-foreground">

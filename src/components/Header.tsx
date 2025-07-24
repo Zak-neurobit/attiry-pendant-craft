@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { Heart, Search, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import atteryLogo from '@/assets/attiry-logo.png';
 import { useCart } from '@/stores/cart';
 import { SearchModal } from '@/components/SearchModal';
 
@@ -36,13 +35,8 @@ const Header = () => {
         <div className="flex items-center justify-between py-4">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">
-            <img 
-              src={atteryLogo} 
-              alt="Attiry Logo" 
-              className="h-12 w-auto"
-            />
             <div className="flex flex-col">
-              <div className="text-2xl font-playfair font-bold text-foreground leading-none">
+              <div className="text-4xl font-great-vibes text-foreground leading-none">
                 Attiry
               </div>
               <div className="hidden sm:block text-xs text-muted-foreground uppercase tracking-widest">
