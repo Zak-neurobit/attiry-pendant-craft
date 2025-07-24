@@ -1,167 +1,190 @@
-import { useState, useEffect } from 'react';
-import { Heart, Search, ShoppingBag, User, Menu, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import atteryLogo from '@/assets/attiry-logo.png';
-import { useCart } from '@/stores/cart';
-import { SearchModal } from '@/components/SearchModal';
 
-const Header = () => {
-  const { getTotalItems, openCart } = useCart();
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { SearchModal } from './SearchModal';
+import { useCart } from '@/stores/cart';
+import { useFavourites } from '@/stores/favourites';
+import { Search, ShoppingBag, Heart, Menu, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const navigate = useNavigate();
+  const { items } = useCart();
+  const { items: favouriteItems } = useFavourites();
 
-  // Keyboard shortcut for search
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsSearchOpen(true);
-      }
-    };
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  const navigation = [
+    { name: 'Home', href: '/' },
+    { name: 'Shop', href: '/shop' },
+    { name: 'About', href: '/about' },
+    { name: 'FAQ', href: '/faq' },
+  ];
 
   return (
-    <header className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        {/* Top bar */}
-        <div className="text-center py-2 text-sm text-muted-foreground border-b border-border/50">
-          🎉 BIRTHDAY SALE! Flat 25% Off On ALL PRODUCTS! Use code: BIRTHDAY25
-        </div>
-        
-        {/* Main header */}
-        <div className="flex items-center justify-between py-4">
+    <>
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between px-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
-            <img 
-              src={atteryLogo} 
-              alt="Attiry Logo" 
-              className="h-12 w-auto"
-            />
-            <div className="flex flex-col">
-              <div className="text-2xl font-playfair font-bold text-foreground leading-none">
-                Attiry
-              </div>
-              <div className="hidden sm:block text-xs text-muted-foreground uppercase tracking-widest">
-                Custom Pendants
-              </div>
-            </div>
+          <Link to="/" className="flex items-center space-x-2">
+            <h1 className="text-2xl font-greatvibes text-foreground">
+              Attiry
+            </h1>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-foreground hover:text-accent transition-colors">
-              Home
-            </Link>
-            <Link to="/shop" className="text-foreground hover:text-accent transition-colors">
-              Shop
-            </Link>
-            <Link to="/about" className="text-foreground hover:text-accent transition-colors">
-              About
-            </Link>
-            <Link to="/blog" className="text-foreground hover:text-accent transition-colors">
-              Blog
-            </Link>
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {item.name}
+              </Link>
+            ))}
           </nav>
 
-          {/* Actions */}
-          <div className="flex items-center space-x-4">
-            <button 
-              className="p-2 hover:bg-muted rounded-lg transition-colors hidden sm:block"
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setIsSearchOpen(true)}
-              aria-label="Search products"
+              className="text-muted-foreground hover:text-foreground"
             >
               <Search className="h-5 w-5" />
-            </button>
-            <Link 
-              to="/favourites" 
-              className="p-2 hover:bg-muted rounded-lg transition-colors hidden sm:block"
-              aria-label="View favourites"
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/favourites')}
+              className="relative text-muted-foreground hover:text-foreground"
             >
               <Heart className="h-5 w-5" />
-            </Link>
-            <button 
-              className="p-2 hover:bg-muted rounded-lg transition-colors relative"
-              onClick={openCart}
+              {favouriteItems.length > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {favouriteItems.length}
+                </Badge>
+              )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/cart')}
+              className="relative text-muted-foreground hover:text-foreground"
             >
               <ShoppingBag className="h-5 w-5" />
-              {getTotalItems() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {getTotalItems()}
-                </span>
+              {totalItems > 0 && (
+                <Badge
+                  variant="default"
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {totalItems}
+                </Badge>
               )}
-            </button>
-            <Link to="/account" className="p-2 hover:bg-muted rounded-lg transition-colors">
-              <User className="h-5 w-5" />
-            </Link>
-            
-            {/* Mobile menu toggle */}
-            <button 
-              className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+            </Button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:hidden"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
         </div>
 
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border">
-            <nav className="flex flex-col space-y-4">
-              <Link 
-                to="/" 
-                className="text-foreground hover:text-accent transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link 
-                to="/shop" 
-                className="text-foreground hover:text-accent transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Shop
-              </Link>
-              <Link 
-                to="/about" 
-                className="text-foreground hover:text-accent transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                About
-              </Link>
-              <Link 
-                to="/blog" 
-                className="text-foreground hover:text-accent transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Blog
-              </Link>
-              <div className="flex items-center space-x-4 pt-4">
-                <button 
-                  className="p-2 hover:bg-muted rounded-lg transition-colors"
-                  onClick={() => setIsSearchOpen(true)}
-                  aria-label="Search products"
-                >
-                  <Search className="h-5 w-5" />
-                </button>
-                <Link 
-                  to="/favourites" 
-                  className="p-2 hover:bg-muted rounded-lg transition-colors"
-                  aria-label="View favourites"
-                >
-                  <Heart className="h-5 w-5" />
-                </Link>
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden border-t bg-background"
+            >
+              <div className="container px-4 py-4 space-y-4">
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="block text-sm font-medium text-muted-foreground hover:text-foreground"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+                
+                <div className="flex items-center space-x-4 pt-4 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setIsSearchOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center space-x-2"
+                  >
+                    <Search className="h-4 w-4" />
+                    <span>Search</span>
+                  </Button>
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      navigate('/favourites');
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center space-x-2 relative"
+                  >
+                    <Heart className="h-4 w-4" />
+                    <span>Favourites</span>
+                    {favouriteItems.length > 0 && (
+                      <Badge variant="destructive" className="ml-1">
+                        {favouriteItems.length}
+                      </Badge>
+                    )}
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      navigate('/cart');
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center space-x-2 relative"
+                  >
+                    <ShoppingBag className="h-4 w-4" />
+                    <span>Cart</span>
+                    {totalItems > 0 && (
+                      <Badge variant="default" className="ml-1">
+                        {totalItems}
+                      </Badge>
+                    )}
+                  </Button>
+                </div>
               </div>
-            </nav>
-          </div>
-        )}
-      </div>
-      {/* Search Modal */}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+
       <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-    </header>
+    </>
   );
 };
 

@@ -5,21 +5,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { useCart } from '@/stores/cart';
 import { useToast } from '@/hooks/use-toast';
 import { useFavourites } from '@/stores/favourites';
-import { ShoppingCart, ArrowLeft, Clock, Heart } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Heart } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import LivePreview from '@/components/product/LivePreview';
+import NameEngraving from '@/components/product/NameEngraving';
+import GiftWrapOption from '@/components/product/GiftWrapOption';
+import TrustBadges from '@/components/product/TrustBadges';
+import StockAlert from '@/components/product/StockAlert';
 
 interface Product {
   id: string;
   title: string;
   description: string;
   price: number;
+  stock: number;
   image_urls: string[];
   color_variants: string[];
   keywords: string[];
@@ -37,11 +42,11 @@ const colorNames: Record<string, string> = {
 };
 
 const fontOptions = [
-  { value: 'Great Vibes', label: 'Great Vibes', className: 'font-greatvibes' },
-  { value: 'Allura', label: 'Allura', className: 'font-allura' },
-  { value: 'Alex Brush', label: 'Alex Brush', className: 'font-alexbrush' },
-  { value: 'Dancing Script', label: 'Dancing Script', className: 'font-dancingscript' },
-  { value: 'Playfair Display', label: 'Playfair Display', className: 'font-playfair-italic' },
+  { value: 'Great Vibes', label: 'Great Vibes' },
+  { value: 'Allura', label: 'Allura' },
+  { value: 'Alex Brush', label: 'Alex Brush' },
+  { value: 'Dancing Script', label: 'Dancing Script' },
+  { value: 'Playfair Display', label: 'Playfair Display' },
 ];
 
 const formatPrice = (price: number) => {
@@ -66,10 +71,11 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedColor, setSelectedColor] = useState<string>('');
-  const [selectedFont, setSelectedFont] = useState<string>('');
-  const [customText, setCustomText] = useState<string>('');
+  const [selectedFont, setSelectedFont] = useState<string>('Great Vibes');
+  const [engravingName, setEngravingName] = useState<string>('');
+  const [includeGiftWrap, setIncludeGiftWrap] = useState<boolean>(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [textError, setTextError] = useState<string>('');
+  const [nameError, setNameError] = useState<string>('');
 
   useEffect(() => {
     fetchProduct();
@@ -81,17 +87,11 @@ const ProductDetail = () => {
     try {
       setLoading(true);
       
-      // Try to find product by converting slug back to title
-      const productTitle = slug
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('id', slug)
         .eq('is_active', true)
-        .ilike('title', `%${productTitle}%`)
         .single();
 
       if (error) throw error;
@@ -100,10 +100,6 @@ const ProductDetail = () => {
       
       if (data.color_variants && data.color_variants.length > 0) {
         setSelectedColor(data.color_variants[0]);
-      }
-      
-      if (fontOptions.length > 0) {
-        setSelectedFont(fontOptions[0].value);
       }
     } catch (error: any) {
       console.error('Error fetching product:', error);
@@ -114,6 +110,32 @@ const ProductDetail = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const validateEngravingName = (name: string) => {
+    if (name.length === 0) {
+      setNameError('Please enter a name to engrave');
+      return false;
+    }
+    if (name.length > 12) {
+      setNameError('Name must be 12 characters or less');
+      return false;
+    }
+    if (!/^[A-Za-z ]*$/.test(name)) {
+      setNameError('Only letters and spaces allowed');
+      return false;
+    }
+    setNameError('');
+    return true;
+  };
+
+  const handleEngravingNameChange = (value: string) => {
+    setEngravingName(value);
+    if (value.length > 0) {
+      validateEngravingName(value);
+    } else {
+      setNameError('');
     }
   };
 
@@ -145,50 +167,36 @@ const ProductDetail = () => {
     }
   };
 
-  const validateCustomText = (text: string) => {
-    const nameRegex = /^[A-Za-z ]{0,12}$/;
-    if (text.length === 0) {
-      setTextError('Please enter a name');
-      return false;
-    }
-    if (!nameRegex.test(text)) {
-      setTextError('Only letters and spaces allowed (max 12 characters)');
-      return false;
-    }
-    setTextError('');
-    return true;
+  const getImageUrl = (imagePath: string) => {
+    if (!imagePath) return '';
+    return supabase.storage
+      .from('product-images')
+      .getPublicUrl(imagePath).data.publicUrl;
   };
 
-  const handleCustomTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const text = e.target.value;
-    setCustomText(text);
-    if (text.length > 0) {
-      validateCustomText(text);
-    } else {
-      setTextError('');
-    }
-  };
-
-  const getFontClass = (fontValue: string) => {
-    const font = fontOptions.find(f => f.value === fontValue);
-    return font ? font.className : 'font-greatvibes';
+  const calculateTotalPrice = () => {
+    if (!product) return 0;
+    const basePrice = getSalePrice(product.price);
+    const giftWrapPrice = includeGiftWrap ? 5 : 0;
+    return basePrice + giftWrapPrice;
   };
 
   const handleAddToCart = () => {
     if (!product) return;
 
-    if (!validateCustomText(customText)) {
+    if (!validateEngravingName(engravingName)) {
       return;
     }
 
     const cartItem = {
       productId: product.id,
       title: product.title,
-      price: getSalePrice(product.price),
+      price: calculateTotalPrice(),
       originalPrice: product.price,
       color: selectedColor,
       font: selectedFont,
-      customText,
+      customText: engravingName,
+      giftWrap: includeGiftWrap,
       quantity: 1,
       image: product.image_urls[currentImageIndex],
     };
@@ -198,7 +206,7 @@ const ProductDetail = () => {
 
     toast({
       title: 'Added to cart!',
-      description: `${product.title} with "${customText}" has been added to your cart.`,
+      description: `${product.title} with "${engravingName}" has been added to your cart.`,
     });
   };
 
@@ -226,6 +234,7 @@ const ProductDetail = () => {
   const originalPrice = product.price;
   const salePrice = getSalePrice(originalPrice);
   const savings = originalPrice - salePrice;
+  const totalPrice = calculateTotalPrice();
 
   return (
     <div className="min-h-screen bg-background">
@@ -247,7 +256,7 @@ const ProductDetail = () => {
               <AnimatePresence mode="wait">
                 <motion.img
                   key={currentImageIndex}
-                  src={product.image_urls[currentImageIndex]}
+                  src={getImageUrl(product.image_urls[currentImageIndex])}
                   alt={`${product.title} - ${colorNames[selectedColor]}`}
                   className="w-full h-96 lg:h-[500px] object-cover"
                   initial={{ opacity: 0, scale: 1.05 }}
@@ -344,13 +353,16 @@ const ProductDetail = () => {
               </p>
             </div>
 
+            {/* Stock Alert */}
+            <StockAlert stock={product.stock} />
+
             {/* Price Section */}
             <Card className="border border-accent/20 bg-accent/5">
               <CardContent className="p-6">
                 <div className="space-y-2">
                   <div className="flex items-center space-x-3">
-                    <span className="text-3xl font-bold text-foreground">
-                      {formatPrice(salePrice)}
+                    <span className="text-3xl font-semibold text-foreground">
+                      {formatPrice(totalPrice)}
                     </span>
                     <span className="text-lg text-muted-foreground line-through">
                       {formatPrice(originalPrice)}
@@ -364,6 +376,11 @@ const ProductDetail = () => {
                       (25% off original price)
                     </span>
                   </div>
+                  {includeGiftWrap && (
+                    <p className="text-sm text-muted-foreground">
+                      Includes gift-wrap (+$5)
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -380,88 +397,49 @@ const ProductDetail = () => {
                 <SelectContent>
                   {fontOptions.map((font) => (
                     <SelectItem key={font.value} value={font.value}>
-                      <span className={font.className}>{font.label}</span>
+                      {font.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Custom Text Input */}
+            {/* Name Engraving */}
+            <NameEngraving
+              value={engravingName}
+              onChange={handleEngravingNameChange}
+              error={nameError}
+            />
+
+            {/* Live Preview */}
             <div className="space-y-3">
-              <Label htmlFor="custom-text" className="text-sm font-medium">
-                Your Name
-              </Label>
-              <Input
-                id="custom-text"
-                placeholder="Type the name (max 12 chars)"
-                value={customText}
-                onChange={handleCustomTextChange}
-                maxLength={12}
-                className={textError ? 'border-destructive' : ''}
-                aria-describedby={textError ? 'text-error' : undefined}
+              <Label className="text-sm font-medium">Preview</Label>
+              <LivePreview
+                text={engravingName}
+                font={selectedFont}
+                color={selectedColor}
               />
-              {textError && (
-                <p id="text-error" className="text-sm text-destructive">
-                  {textError}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                {customText.length}/12 characters • Only letters and spaces allowed
-              </p>
             </div>
 
-            {/* Font Preview */}
-            {customText && (
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Preview</Label>
-                <Card className="border border-muted bg-muted/30">
-                  <CardContent className="p-6 flex items-center justify-center min-h-[100px]">
-                    <motion.div
-                      key={`${customText}-${selectedFont}`}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className={`${getFontClass(selectedFont)} text-foreground text-center`}
-                      style={{
-                        fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
-                        lineHeight: '1.2'
-                      }}
-                    >
-                      {customText}
-                    </motion.div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+            {/* Gift Wrap Option */}
+            <GiftWrapOption
+              checked={includeGiftWrap}
+              onChange={setIncludeGiftWrap}
+            />
 
             {/* Add to Cart Button */}
             <Button
               onClick={handleAddToCart}
               size="lg"
               className="w-full"
-              disabled={!customText || !!textError}
+              disabled={!engravingName || !!nameError || product.stock === 0}
             >
               <ShoppingCart className="mr-2 h-5 w-5" />
-              Add to Cart - {formatPrice(salePrice)}
+              {product.stock === 0 ? 'Out of Stock' : `Add to Cart - ${formatPrice(totalPrice)}`}
             </Button>
 
-            {/* Upsell Strip */}
-            <Card className="border border-muted bg-muted/50">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3">
-                  <Clock className="h-5 w-5 text-accent flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-foreground">
-                      Need it in a hurry?
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Next-day dispatch available for urgent orders
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Trust Badges */}
+            <TrustBadges />
           </div>
         </div>
       </div>
