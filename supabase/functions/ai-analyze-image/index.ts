@@ -1,50 +1,86 @@
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { imageUrl } = await req.json();
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Get OpenAI API key from Supabase secrets
+    const { data: secretData, error: secretError } = await supabaseAdmin
+      .from('site_settings')  
+      .select('value')
+      .eq('key', 'openai_api_key')
+      .single();
+
+    if (secretError || !secretData?.value) {
+      console.error('OpenAI API key not found in site_settings');
+      return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const openAiApiKey = typeof secretData.value === 'string' ? secretData.value : (secretData.value as any).key;
+
+    const { imageUrl, productContext = '', model = 'gpt-4.1-mini', maxTokens = 1000, temperature = 0.7 } = await req.json();
 
     if (!imageUrl) {
-      throw new Error("Image URL is required");
+      return new Response(JSON.stringify({ error: 'Image URL is required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // Get OpenAI API key from Supabase Secrets
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    const model = 'gpt-4.1-mini';
+    const prompt = `Analyze this jewelry product image and provide detailed information for an e-commerce listing.${productContext ? ` Context: ${productContext}` : ''}
 
-    if (!OPENAI_API_KEY) {
-      throw new Error("OpenAI API key not configured in Supabase Secrets");
-    }
+Please provide:
+1. A detailed product description (100-150 words)
+2. Key features and materials visible
+3. Style and design elements
+4. Suggested product title
+5. Target audience/occasion
+6. SEO-friendly keywords
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
+Focus on luxury, craftsmanship, and personalization aspects.`;
+
+    console.log('Analyzing image with model: gpt-4.1-mini');
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
       headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
+        'Authorization': `Bearer ${openAiApiKey}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model,
+        model: 'gpt-4.1-mini', // Force gpt-4.1-mini
         messages: [
           {
-            role: "user",
+            role: 'system',
+            content: 'You are a luxury jewelry expert and e-commerce specialist. Analyze product images to create compelling product listings that highlight quality, craftsmanship, and emotional appeal.'
+          },
+          {
+            role: 'user',
             content: [
               {
-                type: "text",
-                text: "Analyze this jewelry product image. Provide a detailed description, identify the dominant colors, suggest product tags, and estimate the style/category. Return the response as JSON with keys: description, colors, tags, category, style."
+                type: 'text',
+                text: prompt
               },
               {
-                type: "image_url",
+                type: 'image_url',
                 image_url: {
                   url: imageUrl
                 }
@@ -52,64 +88,48 @@ serve(async (req) => {
             ]
           }
         ],
-        max_tokens: 500
+        max_tokens: maxTokens,
+        temperature: temperature,
       }),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || "Failed to analyze image");
+      const errorData = await response.text();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI vision API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const analysis = data.choices[0].message.content;
+    const analysis = data.choices[0]?.message?.content?.trim();
 
-    // Try to parse as JSON, fallback to text
-    let parsedAnalysis;
-    try {
-      parsedAnalysis = JSON.parse(analysis);
-    } catch {
-      parsedAnalysis = {
-        description: analysis,
-        colors: [],
-        tags: [],
-        category: "jewelry",
-        style: "modern"
-      };
+    if (!analysis) {
+      throw new Error('No analysis generated');
     }
 
-    // Update usage stats
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    console.log('Image analysis completed successfully');
 
-    await supabaseClient
-      .from('site_settings')
-      .upsert({
-        key: 'ai_usage_stats',
-        value: {
-          totalCalls: 1,
-          lastCall: new Date().toISOString(),
-          estimatedCost: 0.01
-        }
-      });
+    // Try to structure the response
+    const lines = analysis.split('\n').filter(line => line.trim());
+    
+    return new Response(JSON.stringify({
+      analysis,
+      structured: {
+        fullAnalysis: analysis,
+        summary: lines.slice(0, 3).join(' ').substring(0, 200) + '...'
+      },
+      model: 'gpt-4.1-mini' // Always return gpt-4.1-mini
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
-    return new Response(
-      JSON.stringify(parsedAnalysis),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
   } catch (error) {
-    console.error("Image analysis error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
-    );
+    console.error('Error in ai-analyze-image:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to analyze image',
+      details: error.message 
+    }), {
+      status: 500,  
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

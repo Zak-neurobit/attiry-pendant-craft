@@ -37,9 +37,9 @@ import Customers from "./pages/admin/Customers";
 import Analytics from "./pages/admin/Analytics";
 import Settings from "./pages/admin/Settings";
 import AISettings from "./pages/admin/AISettings";
-import APISettings from "./pages/admin/APISettings";
-import PaymentsDashboard from "./pages/admin/payments/PaymentsDashboard";
-import AllPayments from "./pages/admin/payments/AllPayments";
+import { APISettings } from "./pages/admin/APISettings";
+import { PaymentsDashboard } from "./pages/admin/payments/PaymentsDashboard";
+import { AllPayments } from "./pages/admin/payments/AllPayments";
 import { ProductForm } from "./pages/admin/products/ProductForm";
 
 const queryClient = new QueryClient();
@@ -58,6 +58,7 @@ const App = () => (
                 <Route index element={<Index />} />
                 <Route path="home" element={<Home />} />
                 <Route path="shop" element={<Shop />} />
+                <Route path="product/:slug" element={<ProductDetail />} />
                 <Route path="products/:slug" element={<ProductDetail />} />
                 <Route path="about" element={<About />} />
                 <Route path="faq" element={<FAQ />} />

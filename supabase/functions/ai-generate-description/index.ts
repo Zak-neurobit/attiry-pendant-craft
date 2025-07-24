@@ -1,106 +1,109 @@
 
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { currentDescription, productTitle, productType } = await req.json();
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    // Get OpenAI API key from Supabase Secrets
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    const model = 'gpt-4.1-mini';
+    // Get OpenAI API key from Supabase secrets
+    const { data: secretData, error: secretError } = await supabaseAdmin
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'openai_api_key')
+      .single();
 
-    if (!OPENAI_API_KEY) {
-      throw new Error("OpenAI API key not configured in Supabase Secrets");
+    if (secretError || !secretData?.value) {
+      console.error('OpenAI API key not found in site_settings');
+      return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const prompt = `Enhance this jewelry product description to be more engaging and professional:
+    const openAiApiKey = typeof secretData.value === 'string' ? secretData.value : (secretData.value as any).key;
 
-Product Title: ${productTitle}
-Product Type: ${productType || 'jewelry'}
-Current Description: ${currentDescription || 'No description provided'}
+    const { productName, features = [], model = 'gpt-4.1-mini', maxTokens = 1000, temperature = 0.7 } = await req.json();
 
-Please create an enhanced, marketing-focused description that:
-- Highlights the craftsmanship and quality
-- Appeals to emotions and lifestyle
-- Includes relevant keywords for SEO
-- Maintains a luxury brand tone
-- Is 2-3 paragraphs long
+    const featuresText = features.length > 0 ? `\nKey features: ${features.join(', ')}` : '';
+    
+    const prompt = `Write a compelling product description for "${productName}".${featuresText}
 
-Return only the enhanced description text.`;
+The description should be:
+- Engaging and persuasive
+- Highlight the luxury and premium quality
+- Appeal to customers looking for personalized jewelry
+- Be around 100-150 words
+- Focus on craftsmanship and emotional value`;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
+    console.log('Generating description with model:', model);
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
       headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
+        'Authorization': `Bearer ${openAiApiKey}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model,
+        model: 'gpt-4.1-mini', // Force gpt-4.1-mini
         messages: [
           {
-            role: "system",
-            content: "You are a professional copywriter specializing in luxury jewelry marketing. Create compelling product descriptions that convert browsers into buyers."
+            role: 'system',
+            content: 'You are a luxury jewelry copywriter specializing in personalized products. Write compelling, emotional product descriptions that highlight craftsmanship and personal connection.'
           },
           {
-            role: "user",
+            role: 'user',
             content: prompt
           }
         ],
-        max_tokens: 400,
-        temperature: 0.7
+        max_tokens: maxTokens,
+        temperature: temperature,
       }),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || "Failed to generate description");
+      const errorData = await response.text();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const enhancedDescription = data.choices[0].message.content.trim();
+    const description = data.choices[0]?.message?.content?.trim();
 
-    // Update usage stats
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    if (!description) {
+      throw new Error('No description generated');
+    }
 
-    await supabaseClient
-      .from('site_settings')
-      .upsert({
-        key: 'ai_usage_stats',
-        value: {
-          totalCalls: 1,
-          lastCall: new Date().toISOString(),
-          estimatedCost: 0.01
-        }
-      });
+    console.log('Generated description successfully');
 
-    return new Response(
-      JSON.stringify({ description: enhancedDescription }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return new Response(JSON.stringify({ 
+      description,
+      model: 'gpt-4.1-mini' // Always return gpt-4.1-mini
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   } catch (error) {
-    console.error("Description generation error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
-    );
+    console.error('Error in ai-generate-description:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to generate description',
+      details: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
