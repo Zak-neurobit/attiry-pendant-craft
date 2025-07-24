@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -26,12 +25,17 @@ import { AdminLogin } from '@/components/admin/AdminLogin';
 import { SecureAdminSetup } from '@/components/admin/SecureAdminSetup';
 import { Dashboard } from '@/pages/admin/Dashboard';
 import { Products } from '@/pages/admin/Products';
+import { ProductForm } from '@/pages/admin/products/ProductForm';
 import { Orders } from '@/pages/admin/Orders';
 import { Analytics } from '@/pages/admin/Analytics';
 import { Customers } from '@/pages/admin/Customers';
 import { APISettings } from '@/pages/admin/APISettings';
 import { AISettings } from '@/pages/admin/AISettings';
 import { Settings } from '@/pages/admin/Settings';
+
+// Payment admin pages
+import { PaymentsDashboard } from '@/pages/admin/payments/PaymentsDashboard';
+import { AllPayments } from '@/pages/admin/payments/AllPayments';
 
 // Auth components
 import { AuthPage } from '@/components/auth/AuthPage';
@@ -79,9 +83,20 @@ function App() {
               >
                 <Route index element={<Dashboard />} />
                 <Route path="products" element={<Products />} />
+                <Route path="products/new" element={<ProductForm />} />
+                <Route path="products/:id/edit" element={<ProductForm />} />
                 <Route path="orders" element={<Orders />} />
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="customers" element={<Customers />} />
+                
+                {/* Payment Routes */}
+                <Route path="payments" element={<PaymentsDashboard />} />
+                <Route path="payments/all" element={<AllPayments />} />
+                <Route path="payments/refunds" element={<div>Refunds Page Coming Soon</div>} />
+                <Route path="payments/settlements" element={<div>Settlements Page Coming Soon</div>} />
+                <Route path="payments/analytics" element={<div>Payment Analytics Coming Soon</div>} />
+                <Route path="payments/bulk" element={<div>Bulk Operations Coming Soon</div>} />
+                
                 <Route path="api-settings" element={<APISettings />} />
                 <Route path="ai-settings" element={<AISettings />} />
                 <Route path="settings" element={<Settings />} />

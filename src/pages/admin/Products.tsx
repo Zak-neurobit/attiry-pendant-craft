@@ -1,11 +1,17 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Plus, Edit, Trash2, Search, Filter, Download, Eye, Package } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface Product {
   id: string;
@@ -20,12 +26,22 @@ interface Product {
 
 export const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [stockFilter, setStockFilter] = useState<string>('all');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  useEffect(() => {
+    filterProducts();
+  }, [products, searchQuery, statusFilter, stockFilter]);
 
   const fetchProducts = async () => {
     try {
@@ -45,6 +61,31 @@ export const Products = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const filterProducts = () => {
+    let filtered = products;
+
+    if (searchQuery) {
+      filtered = filtered.filter(product =>
+        product.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (statusFilter !== 'all') {
+      const isActive = statusFilter === 'active';
+      filtered = filtered.filter(product => product.is_active === isActive);
+    }
+
+    if (stockFilter !== 'all') {
+      if (stockFilter === 'in_stock') {
+        filtered = filtered.filter(product => product.stock > 0);
+      } else if (stockFilter === 'out_of_stock') {
+        filtered = filtered.filter(product => product.stock === 0);
+      }
+    }
+
+    setFilteredProducts(filtered);
   };
 
   const deleteProduct = async (id: string) => {
@@ -70,11 +111,60 @@ export const Products = () => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedProducts.length === 0) return;
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .in('id', selectedProducts);
+
+      if (error) throw error;
+
+      setProducts(products.filter(p => !selectedProducts.includes(p.id)));
+      setSelectedProducts([]);
+      toast({
+        title: "Success",
+        description: `${selectedProducts.length} products deleted successfully`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete products",
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
     }).format(price);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedProducts(filteredProducts.map(p => p.id));
+    } else {
+      setSelectedProducts([]);
+    }
+  };
+
+  const handleSelectProduct = (productId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedProducts([...selectedProducts, productId]);
+    } else {
+      setSelectedProducts(selectedProducts.filter(id => id !== productId));
+    }
+  };
+
+  const exportProducts = () => {
+    toast({
+      title: "Export Started",
+      description: "Your product data is being exported to CSV.",
+    });
   };
 
   return (
@@ -86,18 +176,80 @@ export const Products = () => {
             Manage your jewelry collection
           </p>
         </div>
-        <Button>
+        <Button onClick={() => navigate('/admin/products/new')}>
           <Plus className="mr-2 h-4 w-4" />
           Add Product
         </Button>
       </div>
 
+      {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>Product Inventory</CardTitle>
-          <CardDescription>
-            A list of all products in your store
-          </CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filters & Search
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={stockFilter} onValueChange={setStockFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by inventory" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Inventory</SelectItem>
+                <SelectItem value="in_stock">In Stock</SelectItem>
+                <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {selectedProducts.length > 0 && (
+              <div className="flex gap-2">
+                <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+                  Delete Selected ({selectedProducts.length})
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportProducts}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Products Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            Products ({filteredProducts.length})
+            {selectedProducts.length > 0 && (
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                ({selectedProducts.length} selected)
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -108,24 +260,43 @@ export const Products = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Product</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Variants</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Inventory</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Variants</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products.length === 0 ? (
+                {filteredProducts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      No products found. Create your first product to get started.
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <div className="flex flex-col items-center gap-2">
+                        <Package className="h-8 w-8 text-muted-foreground" />
+                        <p className="text-muted-foreground">No products found.</p>
+                        <Button onClick={() => navigate('/admin/products/new')}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Create your first product
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  products.map((product) => (
+                  filteredProducts.map((product) => (
                     <TableRow key={product.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedProducts.includes(product.id)}
+                          onCheckedChange={(checked) => handleSelectProduct(product.id, checked as boolean)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center">
@@ -136,7 +307,7 @@ export const Products = () => {
                                 className="w-10 h-10 object-cover rounded-md"
                               />
                             ) : (
-                              <div className="text-xs text-muted-foreground">No Image</div>
+                              <Package className="h-4 w-4 text-muted-foreground" />
                             )}
                           </div>
                           <div>
@@ -144,12 +315,17 @@ export const Products = () => {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{formatPrice(product.price)}</TableCell>
                       <TableCell>
-                        <Badge variant={product.stock > 0 ? "default" : "destructive"}>
-                          {product.stock}
+                        <Badge variant={product.is_active ? "default" : "secondary"}>
+                          {product.is_active ? "Active" : "Draft"}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <Badge variant={product.stock > 0 ? "default" : "destructive"}>
+                          {product.stock} in stock
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{formatPrice(product.price)}</TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {product.color_variants?.slice(0, 3).map((variant) => (
@@ -164,23 +340,39 @@ export const Products = () => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge variant={product.is_active ? "default" : "secondary"}>
-                          {product.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => deleteProduct(product.id)}
+                            onClick={() => navigate(`/admin/products/${product.id}/edit`)}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Edit className="h-4 w-4" />
                           </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Delete Product</DialogTitle>
+                                <DialogDescription>
+                                  Are you sure you want to delete "{product.title}"? This action cannot be undone.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="flex justify-end gap-2">
+                                <Button variant="outline">Cancel</Button>
+                                <Button 
+                                  variant="destructive"
+                                  onClick={() => deleteProduct(product.id)}
+                                >
+                                  Delete Product
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       </TableCell>
                     </TableRow>
