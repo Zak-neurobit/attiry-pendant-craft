@@ -22,8 +22,9 @@ const chainTypes = [
   { id: '22_inch', label: '22 inch' },
 ];
 
+// Define valid color options with proper mapping
 const colorOptions = [
-  { id: 'gold_plated', label: 'Gold Plated' },
+  { id: 'gold', label: 'Gold Plated' },
   { id: 'matte_gold', label: 'Matte Gold' },
   { id: 'rose_gold', label: 'Rose Gold' },
   { id: 'silver', label: 'Silver' },
@@ -37,6 +38,9 @@ const fontOptions = [
   'Lobster', 'Satisfy', 'Kalam', 'Caveat', 'Indie Flower'
 ];
 
+// Define valid color type based on database schema
+type ValidColorVariant = 'gold' | 'rose_gold' | 'silver' | 'matte_gold' | 'matte_silver' | 'vintage_copper' | 'black';
+
 interface ProductFormData {
   title: string;
   description: string;
@@ -46,7 +50,7 @@ interface ProductFormData {
   is_active: boolean;
   image_urls: string[];
   chain_types: string[];
-  color_variants: string[];
+  color_variants: ValidColorVariant[];
   fonts: string[];
   meta_title: string;
   meta_description: string;
@@ -250,6 +254,23 @@ export const ProductForm = () => {
       ...formData,
       fonts: formData.fonts.filter(font => font !== fontToRemove)
     });
+  };
+
+  const handleColorChange = (colorId: string, checked: boolean) => {
+    const validColor = colorId as ValidColorVariant;
+    if (checked) {
+      if (!formData.color_variants.includes(validColor)) {
+        setFormData({
+          ...formData,
+          color_variants: [...formData.color_variants, validColor]
+        });
+      }
+    } else {
+      setFormData({
+        ...formData,
+        color_variants: formData.color_variants.filter(id => id !== validColor)
+      });
+    }
   };
 
   return (
@@ -528,20 +549,8 @@ export const ProductForm = () => {
                     <div key={color.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={color.id}
-                        checked={formData.color_variants.includes(color.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setFormData({
-                              ...formData,
-                              color_variants: [...formData.color_variants, color.id]
-                            });
-                          } else {
-                            setFormData({
-                              ...formData,
-                              color_variants: formData.color_variants.filter(id => id !== color.id)
-                            });
-                          }
-                        }}
+                        checked={formData.color_variants.includes(color.id as ValidColorVariant)}
+                        onCheckedChange={(checked) => handleColorChange(color.id, checked as boolean)}
                       />
                       <Label htmlFor={color.id} className="text-sm">
                         {color.label}

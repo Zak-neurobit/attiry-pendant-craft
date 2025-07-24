@@ -66,11 +66,15 @@ export const RazorpayPayment = ({ orderData, onSuccess, onError }: RazorpayPayme
 
       const { orderId, razorpayOrderId } = data;
 
+      // Convert USD to INR for Razorpay (approximate rate: 1 USD = 83 INR)
+      const usdToInrRate = 83;
+      const amountInInr = Math.round((orderData.total + orderData.shippingCost) * usdToInrRate * 100); // Convert to paise
+
       // Initialize Razorpay payment
       const options = {
         key: RAZORPAY_KEY_ID,
         order_id: razorpayOrderId,
-        amount: Math.round((orderData.total + orderData.shippingCost) * 100), // Convert to paise
+        amount: amountInInr,
         currency: 'INR',
         name: 'Attiry',
         description: 'Custom Pendant Order',
@@ -140,7 +144,7 @@ export const RazorpayPayment = ({ orderData, onSuccess, onError }: RazorpayPayme
       className="w-full"
       size="lg"
     >
-      {isProcessing ? 'Processing...' : `Pay $${orderData.total.toFixed(2)}`}
+      {isProcessing ? 'Processing...' : `Pay $${(orderData.total + orderData.shippingCost).toFixed(2)}`}
     </Button>
   );
 };
