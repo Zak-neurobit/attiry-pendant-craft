@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -92,12 +91,14 @@ export const Orders = () => {
   const handleReorder = (order: Order) => {
     order.order_items.forEach((item) => {
       addItem({
-        id: item.product_id,
+        productId: item.product_id,
         title: item.products.title,
         price: item.products.price,
-        image: item.products.image_urls[0],
+        originalPrice: item.products.price,
         color: item.color_variant,
         customText: item.custom_text || '',
+        quantity: item.quantity,
+        image: item.products.image_urls[0] || ''
       });
     });
   };
