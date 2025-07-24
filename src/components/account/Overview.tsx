@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,17 +8,9 @@ import { useAuth } from '@/stores/auth';
 import { Package, MapPin, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
-interface DefaultAddress {
-  name: string;
-  line1: string;
-  city: string;
-  state: string;
-}
-
 interface OverviewData {
   totalOrders: number;
   lastOrderDate: string | null;
-  defaultAddress: DefaultAddress | null;
 }
 
 export const Overview = () => {
@@ -27,7 +18,6 @@ export const Overview = () => {
   const [data, setData] = useState<OverviewData>({
     totalOrders: 0,
     lastOrderDate: null,
-    defaultAddress: null,
   });
   const [loading, setLoading] = useState(true);
 
@@ -43,18 +33,9 @@ export const Overview = () => {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        // Fetch default address
-        const { data: address } = await supabase
-          .from('addresses')
-          .select('name, line1, city, state')
-          .eq('user_id', user.id)
-          .eq('is_default', true)
-          .maybeSingle();
-
         setData({
           totalOrders: orders?.length || 0,
           lastOrderDate: orders?.[0]?.created_at || null,
-          defaultAddress: address || null,
         });
       } catch (error) {
         console.error('Error fetching overview data:', error);
@@ -126,28 +107,16 @@ export const Overview = () => {
           </CardContent>
         </Card>
 
-        {/* Default Address */}
+        {/* Address Placeholder */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Default Address</CardTitle>
+            <CardTitle className="text-sm font-medium">Addresses</CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {data.defaultAddress ? (
-              <div className="space-y-1">
-                <div className="font-semibold text-sm">{data.defaultAddress.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {data.defaultAddress.line1}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {data.defaultAddress.city}, {data.defaultAddress.state}
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                No default address set
-              </div>
-            )}
+            <div className="text-sm text-muted-foreground">
+              Address management coming soon
+            </div>
             <Button asChild variant="link" className="p-0 h-auto text-xs mt-2">
               <Link to="/account/addresses">Manage addresses</Link>
             </Button>
@@ -157,4 +126,3 @@ export const Overview = () => {
     </div>
   );
 };
-

@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,7 +66,7 @@ export const Orders = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+      setOrders((data as any) || []);
     } catch (error) {
       toast({
         title: 'Error',
@@ -251,15 +250,15 @@ export const Orders = () => {
                               <div>
                                 <h3 className="font-semibold mb-3">Shipping Address</h3>
                                 <div className="text-sm space-y-1">
-                                  <p>{selectedOrder.shipping_address.name}</p>
-                                  <p>{selectedOrder.shipping_address.line1}</p>
-                                  {selectedOrder.shipping_address.line2 && (
+                                  <p>{selectedOrder.shipping_address?.name || 'N/A'}</p>
+                                  <p>{selectedOrder.shipping_address?.line1 || 'N/A'}</p>
+                                  {selectedOrder.shipping_address?.line2 && (
                                     <p>{selectedOrder.shipping_address.line2}</p>
                                   )}
                                   <p>
-                                    {selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.state} {selectedOrder.shipping_address.zip}
+                                    {selectedOrder.shipping_address?.city || 'N/A'}, {selectedOrder.shipping_address?.state || 'N/A'} {selectedOrder.shipping_address?.zip || ''}
                                   </p>
-                                  <p>{selectedOrder.shipping_address.country}</p>
+                                  <p>{selectedOrder.shipping_address?.country || 'N/A'}</p>
                                 </div>
                               </div>
 
@@ -296,4 +295,3 @@ export const Orders = () => {
     </div>
   );
 };
-
