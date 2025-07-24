@@ -4,6 +4,16 @@ import { supabase } from '@/integrations/supabase/client';
 // Force gpt-4.1-mini as the default model
 const DEFAULT_MODEL = 'gpt-4.1-mini';
 
+export type OpenAIModel = 'gpt-4.1-mini' | 'gpt-4o-mini' | 'gpt-4o';
+
+export const OPENAI_MODELS = [
+  { value: 'gpt-4.1-mini' as OpenAIModel, label: 'GPT-4.1 Mini (Recommended)' },
+  { value: 'gpt-4o-mini' as OpenAIModel, label: 'GPT-4o Mini' },
+  { value: 'gpt-4o' as OpenAIModel, label: 'GPT-4o' },
+];
+
+export const defaultModel: OpenAIModel = DEFAULT_MODEL as OpenAIModel;
+
 interface OpenAISettings {
   model: string;
   maxTokens: number;
