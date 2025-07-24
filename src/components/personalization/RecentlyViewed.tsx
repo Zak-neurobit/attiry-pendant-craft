@@ -67,7 +67,15 @@ export const RecentlyViewed: React.FC = () => {
         <h2 className="text-2xl font-bold mb-8">Recently Viewed</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard 
+              key={product.id} 
+              id={product.id}
+              name={product.title}
+              price={product.price}
+              image={product.image_urls[0] || '/placeholder.svg'}
+              colors={product.color_variants}
+              slug={`product-${product.id}`}
+            />
           ))}
         </div>
       </div>

@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { SEOHead } from '@/components/SEOHead';
 import { supabase } from '@/integrations/supabase/client';
-import { ColorPicker } from '@/components/product/ColorPicker';
-import { FontPicker } from '@/components/product/FontPicker';
+import ColorPicker from '@/components/product/ColorPicker';
+import FontPicker from '@/components/product/FontPicker';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/stores/auth';
 import { LiveVisitorCount } from '@/components/conversion/LiveVisitorCount';
@@ -124,8 +124,10 @@ export default function ProductDetail() {
     deliveryDate?: Date;
   }) => {
     setGiftOptions({
-      ...options,
-      deliveryDate: options.deliveryDate || undefined,
+      isGift: options.isGift,
+      message: options.message,
+      giftWrap: options.giftWrap,
+      deliveryDate: options.deliveryDate,
     });
   };
 
@@ -183,17 +185,8 @@ export default function ProductDetail() {
                 )}
               </div>
 
-              <ColorPicker
-                colors={product?.color_variants || []}
-                selectedColor={selectedColor}
-                onColorChange={setSelectedColor}
-              />
-
-              <FontPicker
-                fonts={product?.fonts || []}
-                selectedFont={selectedFont}
-                onFontChange={setSelectedFont}
-              />
+              <ColorPicker />
+              <FontPicker />
             </div>
 
             {/* Gift Options */}
