@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -9,6 +10,7 @@ export interface CartItem {
   originalPrice: number;
   color: string;
   font?: string;
+  chain?: string;
   customText: string;
   quantity: number;
   image: string;
@@ -42,6 +44,7 @@ export const useCart = create<CartState>()(
             item.productId === newItem.productId &&
             item.color === newItem.color &&
             item.font === newItem.font &&
+            item.chain === newItem.chain &&
             item.customText === newItem.customText
         );
 
@@ -52,7 +55,7 @@ export const useCart = create<CartState>()(
           set({ items: updatedItems });
         } else {
           // Add new item
-          const id = `${newItem.productId}-${newItem.color}-${newItem.customText}-${Date.now()}`;
+          const id = `${newItem.productId}-${newItem.color}-${newItem.chain}-${newItem.customText}-${Date.now()}`;
           set({ items: [...items, { ...newItem, id }] });
         }
       },

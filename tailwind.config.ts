@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -73,6 +74,8 @@ export default {
 			fontFamily: {
 				'playfair': ['Playfair Display', 'serif'],
 				'inter': ['Inter', 'sans-serif'],
+				'great-vibes': ['Great Vibes', 'cursive'],
+				'source-serif': ['Source Serif 4', 'serif'],
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

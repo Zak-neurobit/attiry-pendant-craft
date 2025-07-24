@@ -1,0 +1,19 @@
+
+/* TEAM */
+Brand: Attiry Custom Pendants
+Business: Personalized Jewelry & Custom Name Pendants
+Location: Online Jewelry Store
+Contact: support@attiry.com
+
+/* SITE */
+Standards: HTML5, CSS3, JavaScript
+Framework: React, TypeScript
+Components: Tailwind CSS, Framer Motion
+Backend: Supabase
+Payment: Razorpay
+Software: Vite, React Router
+
+/* THANKS */
+To all our customers who trust us with their special moments
+To the craftsmen who create beautiful personalized jewelry
+To everyone who believes in the power of personalized gifts

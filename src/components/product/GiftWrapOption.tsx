@@ -1,28 +1,30 @@
 
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 
 interface GiftWrapOptionProps {
   checked: boolean;
-  onChange: (checked: boolean) => void;
+  onCheckedChange: (checked: boolean) => void;
 }
 
-const GiftWrapOption = ({ checked, onChange }: GiftWrapOptionProps) => {
+export const GiftWrapOption = ({ checked, onCheckedChange }: GiftWrapOptionProps) => {
   return (
-    <div className="flex items-center space-x-2">
-      <Checkbox
-        id="gift-wrap"
-        checked={checked}
-        onCheckedChange={onChange}
-      />
-      <Label
-        htmlFor="gift-wrap"
-        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-      >
-        Add gift-wrap for $5
-      </Label>
+    <div className="mb-6">
+      <div className="flex items-center space-x-2">
+        <Checkbox 
+          id="gift-wrap"
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+        />
+        <label 
+          htmlFor="gift-wrap" 
+          className="text-sm font-medium text-foreground cursor-pointer"
+        >
+          Add gift-wrap for $5
+        </label>
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">
+        Beautiful gift wrapping with premium materials
+      </p>
     </div>
   );
 };
-
-export default GiftWrapOption;

@@ -1,8 +1,21 @@
+
 User-agent: Googlebot
 Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /login/
+Disallow: /profile/
+Crawl-delay: 1
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /login/
+Disallow: /profile/
+Crawl-delay: 1
 
 User-agent: Twitterbot
 Allow: /
@@ -12,3 +25,11 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /login/
+Disallow: /profile/
+Crawl-delay: 2
+
+Sitemap: https://attiry-pendant-craft.lovable.app/sitemap.xml
