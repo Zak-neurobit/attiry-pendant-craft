@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import ProductCard from '@/components/ProductCard';
+import { ProductCard } from '@/components/ProductCard';
+import { Product } from '@/lib/products';
 
-interface Product {
+interface SupabaseProduct {
   id: string;
   title: string;
   description: string;
@@ -31,7 +32,7 @@ const getSalePrice = (originalPrice: number) => {
 };
 
 export const Shop = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<SupabaseProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -58,6 +59,26 @@ export const Shop = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const convertToProduct = (supabaseProduct: SupabaseProduct): Product => {
+    const originalPrice = supabaseProduct.price;
+    const salePrice = getSalePrice(originalPrice);
+
+    return {
+      id: supabaseProduct.id,
+      slug: `product-${supabaseProduct.id}`,
+      name: supabaseProduct.title,
+      price: salePrice,
+      originalPrice: originalPrice,
+      description: supabaseProduct.description || '',
+      images: supabaseProduct.image_urls || ['/placeholder.svg'],
+      rating: 5,
+      reviewCount: Math.floor(Math.random() * 200) + 50,
+      isNew: Math.random() > 0.7,
+      colors: supabaseProduct.color_variants || ['gold', 'rose-gold', 'silver'],
+      category: 'custom'
+    };
   };
 
   if (loading) {
@@ -93,25 +114,12 @@ export const Shop = () => {
           animate="show"
           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
         >
-          {products.map((product) => {
-            const originalPrice = product.price;
-            const salePrice = getSalePrice(originalPrice);
-
-            return (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                name={product.title}
-                price={salePrice}
-                originalPrice={originalPrice}
-                image={product.image_urls[0]}
-                rating={5}
-                reviewCount={Math.floor(Math.random() * 200) + 50}
-                isNew={Math.random() > 0.7}
-                colors={product.color_variants || ['gold', 'rose-gold', 'silver']}
-              />
-            );
-          })}
+          {products.map((supabaseProduct) => (
+            <ProductCard
+              key={supabaseProduct.id}
+              product={convertToProduct(supabaseProduct)}
+            />
+          ))}
         </motion.div>
 
         {products.length === 0 && (

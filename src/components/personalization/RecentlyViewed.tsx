@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/stores/auth';
-import ProductCard from '@/components/ProductCard';
+import { ProductCard } from '@/components/ProductCard';
+import { Product } from '@/lib/products';
 
-interface Product {
+interface SupabaseProduct {
   id: string;
   title: string;
   price: number;
@@ -13,7 +14,7 @@ interface Product {
 }
 
 export const RecentlyViewed: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<SupabaseProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
@@ -57,6 +58,19 @@ export const RecentlyViewed: React.FC = () => {
     }
   };
 
+  const convertToProduct = (supabaseProduct: SupabaseProduct): Product => ({
+    id: supabaseProduct.id,
+    slug: `product-${supabaseProduct.id}`,
+    name: supabaseProduct.title,
+    price: supabaseProduct.price,
+    description: '',
+    images: supabaseProduct.image_urls || ['/placeholder.svg'],
+    rating: 5,
+    reviewCount: Math.floor(Math.random() * 200) + 50,
+    colors: supabaseProduct.color_variants || ['gold', 'rose-gold', 'silver'],
+    category: 'custom'
+  });
+
   if (!user || loading || products.length === 0) {
     return null;
   }
@@ -69,12 +83,7 @@ export const RecentlyViewed: React.FC = () => {
           {products.map((product) => (
             <ProductCard 
               key={product.id} 
-              id={product.id}
-              name={product.title}
-              price={product.price}
-              image={product.image_urls[0] || '/placeholder.svg'}
-              colors={product.color_variants}
-              slug={`product-${product.id}`}
+              product={convertToProduct(product)}
             />
           ))}
         </div>

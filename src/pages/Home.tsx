@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { ChevronRight, Star, Quote } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import ProductCard from '@/components/ProductCard';
+import { ProductCard } from '@/components/ProductCard';
+import { Product } from '@/lib/products';
 import heroImage from '@/assets/hero-pendant.jpg';
 import collectionImage from '@/assets/collection-hero.jpg';
 import productGold from '@/assets/product-gold.jpg';
@@ -18,47 +18,59 @@ const Home = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const featuredProducts = [
+  const featuredProducts: Product[] = [
     {
       id: '1',
+      slug: 'custom-gold-name-pendant',
       name: 'Custom Gold Name Pendant',
       price: 74.99,
       originalPrice: 99.99,
-      image: productGold,
+      description: 'Elegant gold-plated pendant with custom name engraving.',
+      images: [productGold],
       rating: 5,
       reviewCount: 124,
       isNew: true,
-      colors: ['gold', 'rose-gold', 'silver']
+      colors: ['gold', 'rose-gold', 'silver'],
+      category: 'gold'
     },
     {
       id: '2',
+      slug: 'rose-gold-script-pendant',
       name: 'Rose Gold Script Pendant',
       price: 69.99,
       originalPrice: 92.99,
-      image: productRoseGold,
+      description: 'Beautiful rose gold pendant featuring elegant script lettering.',
+      images: [productRoseGold],
       rating: 5,
       reviewCount: 89,
-      colors: ['rose-gold', 'gold', 'silver']
+      colors: ['rose-gold', 'gold', 'silver'],
+      category: 'rose-gold'
     },
     {
       id: '3',
+      slug: 'classic-silver-nameplate',
       name: 'Classic Silver Nameplate',
       price: 59.99,
       originalPrice: 79.99,
-      image: productGold,
+      description: 'Timeless sterling silver nameplate with precision engraving.',
+      images: [productGold],
       rating: 5,
       reviewCount: 156,
-      colors: ['silver', 'gold', 'copper']
+      colors: ['silver', 'gold', 'copper'],
+      category: 'silver'
     },
     {
       id: '4',
+      slug: 'vintage-copper-pendant',
       name: 'Vintage Copper Pendant',
       price: 64.99,
       originalPrice: 86.99,
-      image: productRoseGold,
+      description: 'Unique copper finish pendant with vintage styling.',
+      images: [productRoseGold],
       rating: 5,
       reviewCount: 67,
-      colors: ['copper', 'gold', 'silver']
+      colors: ['copper', 'gold', 'silver'],
+      category: 'copper'
     }
   ];
 
@@ -207,7 +219,7 @@ const Home = () => {
                 className="fade-in"
                 style={{ animationDelay: `${index * 200}ms` }}
               >
-                <ProductCard {...product} />
+                <ProductCard product={product} />
               </div>
             ))}
           </div>
