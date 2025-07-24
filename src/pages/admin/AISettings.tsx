@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Bot, Key, Save, RefreshCw, Check, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { defaultModel } from '@/services/openai';
 
 interface KeyStatus {
   exists: boolean;
@@ -27,7 +28,7 @@ const AISettings = () => {
   const [apiKey, setApiKey] = useState('');
   const [keyStatus, setKeyStatus] = useState<KeyStatus>({ exists: false });
   const [showKeyInput, setShowKeyInput] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
+  const [selectedModel, setSelectedModel] = useState(defaultModel);
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -65,7 +66,7 @@ const AISettings = () => {
 
       if (modelData) {
         const modelValue = modelData.value as any;
-        setSelectedModel(modelValue?.model || 'gpt-4o-mini');
+        setSelectedModel(modelValue?.model || defaultModel);
       }
 
       // Get usage stats
@@ -176,13 +177,13 @@ const AISettings = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('ai-test-connection');
+      const { data, error } = await supabase.functions.invoke('ai-ping');
 
       if (error) throw error;
 
       toast({
         title: "Connection Successful",
-        description: "OpenAI API is working correctly",
+        description: `OpenAI API is working correctly with model: ${data.model}`,
       });
 
     } catch (error: any) {
@@ -221,7 +222,7 @@ const AISettings = () => {
                 <AlertDescription>
                   <div className="flex items-center justify-between">
                     <span>
-                      Key on file • Last updated{' '}
+                      Key on file ✓ (Supabase Secrets) • Last updated{' '}
                       {keyStatus.lastUpdated 
                         ? new Date(keyStatus.lastUpdated).toLocaleDateString()
                         : 'Unknown'
@@ -261,7 +262,7 @@ const AISettings = () => {
                   onChange={(e) => setApiKey(e.target.value)}
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Your API key will be securely stored and never exposed to the browser
+                  Your API key will be securely stored in Supabase Secrets and never exposed to the browser
                 </p>
               </div>
               <div className="flex gap-2">
@@ -305,13 +306,13 @@ const AISettings = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gpt-4o-mini">GPT-4o Mini (Fast & Efficient)</SelectItem>
+                <SelectItem value="gpt-4.1-mini">GPT-4.1 Mini (Recommended - Fast & Efficient)</SelectItem>
+                <SelectItem value="gpt-4o-mini">GPT-4o Mini (Vision Capable)</SelectItem>
                 <SelectItem value="gpt-4o">GPT-4o (Most Capable)</SelectItem>
-                <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground mt-1">
-              Choose the default model for AI-powered features
+              Default model: <code>{defaultModel}</code> - All AI features will use this model unless specified otherwise
             </p>
           </div>
           
