@@ -9,10 +9,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Upload, Sparkles, Save, ArrowLeft, Eye, Wand2 } from 'lucide-react';
+import { Save, ArrowLeft, Eye, Wand2, Sparkles } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ImageUploader } from '@/components/admin/ImageUploader';
 
 const chainTypes = [
   { id: '16_inch', label: '16 inch' },
@@ -450,29 +451,11 @@ export const ProductForm = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                <Upload className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground mb-4">
-                  Drag and drop images here, or click to select files
-                </p>
-                <Button variant="outline">
-                  Choose Files
-                </Button>
-              </div>
-              
-              {formData.image_urls.length > 0 && (
-                <div className="grid grid-cols-4 gap-4 mt-4">
-                  {formData.image_urls.map((url, index) => (
-                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
-                      <img
-                        src={url}
-                        alt={`Product ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+              <ImageUploader
+                imageUrls={formData.image_urls}
+                onImagesChange={(urls) => setFormData(prev => ({ ...prev, image_urls: urls }))}
+                productId={id}
+              />
             </CardContent>
           </Card>
 

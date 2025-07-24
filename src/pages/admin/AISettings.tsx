@@ -1,191 +1,190 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle2, RefreshCw, Zap, DollarSign, Clock } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Bot, Key, Save, RefreshCw, Check, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
-export default function AISettings() {
+export const AISettings = () => {
   const [apiKey, setApiKey] = useState('');
-  const [selectedModel, setSelectedModel] = useState('gpt-4.1-mini');
-  const [availableModels, setAvailableModels] = useState([
-    'gpt-4.1-mini',
-    'gpt-4o',
-    'gpt-4o-mini',
-    'gpt-4-turbo',
-    'gpt-4-vision-preview',
-    'gpt-3.5-turbo-0125',
-    'dalle-3',
-    'text-embedding-3-small'
-  ]);
-  const [isTestingConnection, setIsTestingConnection] = useState(false);
-  const [isRefreshingModels, setIsRefreshingModels] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [usageStats, setUsageStats] = useState({
-    totalCalls: 0,
-    lastCall: null as string | null,
-    estimatedCost: 0
-  });
-  const [isSaving, setIsSaving] = useState(false);
+  const [keyStatus, setKeyStatus] = useState<{
+    exists: boolean;
+    lastUpdated?: string;
+    updatedBy?: string;
+  }>({ exists: false });
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
+  const [usageStats, setUsageStats] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    loadSettings();
-    loadUsageStats();
+    fetchSettings();
   }, []);
 
-  const loadSettings = async () => {
+  const fetchSettings = async () => {
+    setLoading(true);
     try {
-      const { data: apiKeyData } = await supabase
+      // Check if API key exists (without exposing the actual key)
+      const { data: keyData, error: keyError } = await supabase
         .from('site_settings')
         .select('value')
         .eq('key', 'openai_api_key')
         .single();
 
+      if (!keyError && keyData) {
+        setKeyStatus({
+          exists: true,
+          lastUpdated: keyData.value.updated_at,
+          updatedBy: keyData.value.updated_by
+        });
+      }
+
+      // Get selected model
       const { data: modelData } = await supabase
         .from('site_settings')
         .select('value')
         .eq('key', 'ai_selected_model')
         .single();
 
-      if (apiKeyData?.value && typeof apiKeyData.value === 'object' && 'api_key' in apiKeyData.value) {
-        const key = apiKeyData.value.api_key as string;
-        setApiKey(`${key.substring(0, 8)}${'*'.repeat(Math.max(0, key.length - 12))}${key.substring(key.length - 4)}`);
+      if (modelData) {
+        setSelectedModel(modelData.value.model || 'gpt-4o-mini');
       }
 
-      if (modelData?.value && typeof modelData.value === 'object' && 'model' in modelData.value) {
-        setSelectedModel(modelData.value.model as string);
-      }
-    } catch (error) {
-      console.error('Error loading AI settings:', error);
-    }
-  };
-
-  const loadUsageStats = async () => {
-    try {
-      const { data } = await supabase
+      // Get usage stats
+      const { data: statsData } = await supabase
         .from('site_settings')
         .select('value')
         .eq('key', 'ai_usage_stats')
         .single();
 
-      if (data?.value && typeof data.value === 'object') {
-        setUsageStats(data.value as any);
-      }
-    } catch (error) {
-      console.error('Error loading usage stats:', error);
-    }
-  };
-
-  const testConnection = async () => {
-    if (!apiKey || apiKey.includes('*')) {
-      toast.error('Please enter a valid API key first');
-      return;
-    }
-
-    setIsTestingConnection(true);
-    setConnectionStatus('idle');
-
-    try {
-      const response = await supabase.functions.invoke('ai-test-connection', {
-        body: { apiKey }
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message);
+      if (statsData) {
+        setUsageStats(statsData.value);
       }
 
-      setConnectionStatus('success');
-      toast.success('OpenAI connection successful!');
-    } catch (error) {
-      setConnectionStatus('error');
-      toast.error(`Connection failed: ${error.message}`);
+    } catch (error: any) {
+      console.error('Error fetching settings:', error);
     } finally {
-      setIsTestingConnection(false);
+      setLoading(false);
     }
   };
 
-  const refreshModelList = async () => {
-    if (!apiKey || apiKey.includes('*')) {
-      toast.error('Please enter a valid API key first');
+  const saveApiKey = async () => {
+    if (!apiKey.trim() || !apiKey.startsWith('sk-')) {
+      toast({
+        title: "Invalid API Key",
+        description: "Please enter a valid OpenAI API key starting with 'sk-'",
+        variant: "destructive",
+      });
       return;
     }
 
-    setIsRefreshingModels(true);
-
+    setSaving(true);
     try {
-      const response = await fetch('https://api.openai.com/v1/models', {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const { data, error } = await supabase.functions.invoke('save-openai-key', {
+        body: { key: apiKey },
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch models');
-      }
+      if (error) throw error;
 
-      const data = await response.json();
-      const models = data.data
-        .map((model: any) => model.id)
-        .filter((id: string) => 
-          id.includes('gpt') || 
-          id.includes('dalle') || 
-          id.includes('embedding')
-        )
-        .sort();
+      setKeyStatus({
+        exists: true,
+        lastUpdated: data.updated_at
+      });
+      setApiKey('');
+      setShowKeyInput(false);
 
-      setAvailableModels(models);
-      toast.success('Model list refreshed successfully!');
-    } catch (error) {
-      toast.error("Couldn't fetch live model list—using default options.");
+      toast({
+        title: "API Key Saved",
+        description: "OpenAI API key has been securely saved",
+      });
+
+    } catch (error: any) {
+      toast({
+        title: "Save Failed",
+        description: error.message || "Failed to save API key",
+        variant: "destructive",
+      });
     } finally {
-      setIsRefreshingModels(false);
+      setSaving(false);
     }
   };
 
-  const saveSettings = async () => {
-    if (!apiKey.trim()) {
-      toast.error('Please enter an API key');
-      return;
-    }
-
-    setIsSaving(true);
-
+  const saveModelSettings = async () => {
+    setSaving(true);
     try {
-      // Save API key if it's not masked
-      if (!apiKey.includes('*')) {
-        const { error: apiKeyError } = await supabase
-          .from('site_settings')
-          .upsert({
-            key: 'openai_api_key',
-            value: { api_key: apiKey },
-            description: 'OpenAI API key for AI features'
-          });
-
-        if (apiKeyError) throw apiKeyError;
-      }
-
-      // Save selected model
-      const { error: modelError } = await supabase
+      const { error } = await supabase
         .from('site_settings')
         .upsert({
           key: 'ai_selected_model',
           value: { model: selectedModel },
-          description: 'Selected OpenAI model for AI operations'
+          description: 'Selected AI model for generation tasks'
         });
 
-      if (modelError) throw modelError;
+      if (error) throw error;
 
-      toast.success(`AI model set to ${selectedModel}.`);
-      loadSettings(); // Reload to mask the API key
-    } catch (error) {
-      toast.error(`Failed to save settings: ${error.message}`);
+      toast({
+        title: "Settings Saved",
+        description: "AI model settings have been updated",
+      });
+
+    } catch (error: any) {
+      toast({
+        title: "Save Failed",
+        description: error.message || "Failed to save settings",
+        variant: "destructive",
+      });
     } finally {
-      setIsSaving(false);
+      setSaving(false);
+    }
+  };
+
+  const testConnection = async () => {
+    if (!keyStatus.exists) {
+      toast({
+        title: "No API Key",
+        description: "Please save an OpenAI API key first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-test-connection');
+
+      if (error) throw error;
+
+      toast({
+        title: "Connection Successful",
+        description: "OpenAI API is working correctly",
+      });
+
+    } catch (error: any) {
+      toast({
+        title: "Connection Failed",
+        description: error.message || "Unable to connect to OpenAI API",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -193,177 +192,197 @@ export default function AISettings() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">AI Settings</h1>
-        <p className="text-gray-600 mt-2">
-          Configure OpenAI integration for AI-powered product descriptions and metadata generation.
+        <p className="text-muted-foreground">
+          Configure AI features and OpenAI integration
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5" />
-              OpenAI Configuration
-            </CardTitle>
-            <CardDescription>
-              Set up your OpenAI API key and model preferences
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="api-key">OpenAI API Key</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="api-key"
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="sk-..."
-                  className="flex-1"
-                />
-                <Button
-                  onClick={testConnection}
-                  disabled={isTestingConnection || !apiKey}
-                  variant="outline"
-                >
-                  {isTestingConnection ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                  ) : connectionStatus === 'success' ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  ) : connectionStatus === 'error' ? (
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                  ) : (
-                    'Test'
-                  )}
-                </Button>
-              </div>
-              {connectionStatus === 'success' && (
-                <p className="text-sm text-green-600">✓ Connection verified</p>
-              )}
-              {connectionStatus === 'error' && (
-                <p className="text-sm text-red-600">✗ Connection failed</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="model">Model</Label>
-              <div className="flex gap-2">
-                <Select value={selectedModel} onValueChange={setSelectedModel}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableModels.map((model) => (
-                      <SelectItem key={model} value={model}>
-                        {model}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={refreshModelList}
-                  disabled={isRefreshingModels || !apiKey || apiKey.includes('*')}
-                  variant="outline"
-                  size="sm"
-                >
-                  {isRefreshingModels ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                  ) : (
-                    'Refresh list'
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <Button 
-              onClick={saveSettings} 
-              disabled={isSaving}
-              className="w-full"
-            >
-              {isSaving ? 'Saving...' : 'Save Settings'}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Usage Statistics
-            </CardTitle>
-            <CardDescription>
-              Monitor your AI usage and estimated costs
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Total API Calls</span>
-                <Badge variant="secondary">{usageStats.totalCalls}</Badge>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Estimated Cost</span>
-                <Badge variant="secondary">${usageStats.estimatedCost.toFixed(2)}</Badge>
-              </div>
-
-              {usageStats.lastCall && (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Last Call</span>
-                  <span className="text-sm text-gray-600 flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {new Date(usageStats.lastCall).toLocaleDateString()}
-                  </span>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
+      {/* API Key Management */}
       <Card>
         <CardHeader>
-          <CardTitle>AI Features</CardTitle>
-          <CardDescription>
-            Available AI-powered features in your store
-          </CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Key className="h-5 w-5" />
+            OpenAI API Key
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {keyStatus.exists && !showKeyInput ? (
+            <div className="space-y-4">
+              <Alert>
+                <Check className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="flex items-center justify-between">
+                    <span>
+                      Key on file • Last updated{' '}
+                      {keyStatus.lastUpdated 
+                        ? new Date(keyStatus.lastUpdated).toLocaleDateString()
+                        : 'Unknown'
+                      }
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowKeyInput(true)}
+                      >
+                        Replace Key
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={testConnection}
+                        disabled={loading}
+                      >
+                        <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                        Test Connection
+                      </Button>
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="apiKey">OpenAI API Key</Label>
+                <Input
+                  id="apiKey"
+                  type="password"
+                  placeholder="sk-..."
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Your API key will be securely stored and never exposed to the browser
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={saveApiKey} 
+                  disabled={saving || !apiKey.trim()}
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {saving ? 'Saving...' : 'Save API Key'}
+                </Button>
+                {keyStatus.exists && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setShowKeyInput(false);
+                      setApiKey('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Model Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bot className="h-5 w-5" />
+            Model Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="model">Default AI Model</Label>
+            <Select value={selectedModel} onValueChange={setSelectedModel}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="gpt-4o-mini">GPT-4o Mini (Fast & Efficient)</SelectItem>
+                <SelectItem value="gpt-4o">GPT-4o (Most Capable)</SelectItem>
+                <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground mt-1">
+              Choose the default model for AI-powered features
+            </p>
+          </div>
+          
+          <Button onClick={saveModelSettings} disabled={saving}>
+            <Save className="mr-2 h-4 w-4" />
+            {saving ? 'Saving...' : 'Save Model Settings'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Usage Statistics */}
+      {usageStats && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Usage Statistics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-sm font-medium">Total API Calls</Label>
+                <p className="text-2xl font-bold">{usageStats.totalCalls || 0}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Last Call</Label>
+                <p className="text-sm text-muted-foreground">
+                  {usageStats.lastCall 
+                    ? new Date(usageStats.lastCall).toLocaleString()
+                    : 'Never'
+                  }
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Estimated Cost</Label>
+                <p className="text-2xl font-bold">
+                  ${(usageStats.estimatedCost || 0).toFixed(4)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Configuration Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Feature Status</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <div>
-                <p className="font-medium">Product Description Enhancement</p>
-                <p className="text-sm text-gray-600">AI-powered product description generation</p>
-              </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span>Product Description Enhancement</span>
+              <Badge variant={keyStatus.exists ? "default" : "secondary"}>
+                {keyStatus.exists ? "Enabled" : "Disabled"}
+              </Badge>
             </div>
-            
-            <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <div>
-                <p className="font-medium">SEO Metadata Generation</p>
-                <p className="text-sm text-gray-600">Automatic title and description optimization</p>
-              </div>
+            <div className="flex items-center justify-between">
+              <span>Image Analysis</span>
+              <Badge variant={keyStatus.exists ? "default" : "secondary"}>
+                {keyStatus.exists ? "Enabled" : "Disabled"}
+              </Badge>
             </div>
-            
-            <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <div>
-                <p className="font-medium">Image Analysis</p>
-                <p className="text-sm text-gray-600">Extract product details from images</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <div>
-                <p className="font-medium">Smart Recommendations</p>
-                <p className="text-sm text-gray-600">AI-driven product suggestions (Coming Soon)</p>
-              </div>
+            <div className="flex items-center justify-between">
+              <span>SEO Metadata Generation</span>
+              <Badge variant={keyStatus.exists ? "default" : "secondary"}>
+                {keyStatus.exists ? "Enabled" : "Disabled"}
+              </Badge>
             </div>
           </div>
+
+          {!keyStatus.exists && (
+            <Alert className="mt-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Configure your OpenAI API key to enable AI-powered features
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
     </div>
   );
-}
+};
