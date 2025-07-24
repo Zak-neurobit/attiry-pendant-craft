@@ -14,7 +14,7 @@ export const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
   const { items } = useCart();
-  const { items: favouriteItems } = useFavourites();
+  const { favourites } = useFavourites();
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -67,12 +67,12 @@ export const Header = () => {
               className="relative text-muted-foreground hover:text-foreground"
             >
               <Heart className="h-5 w-5" />
-              {favouriteItems.length > 0 && (
+              {favourites.length > 0 && (
                 <Badge
                   variant="destructive"
                   className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
                 >
-                  {favouriteItems.length}
+                  {favourites.length}
                 </Badge>
               )}
             </Button>
@@ -152,9 +152,9 @@ export const Header = () => {
                   >
                     <Heart className="h-4 w-4" />
                     <span>Favourites</span>
-                    {favouriteItems.length > 0 && (
+                    {favourites.length > 0 && (
                       <Badge variant="destructive" className="ml-1">
-                        {favouriteItems.length}
+                        {favourites.length}
                       </Badge>
                     )}
                   </Button>
