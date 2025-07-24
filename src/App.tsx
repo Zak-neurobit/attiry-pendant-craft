@@ -33,7 +33,7 @@ import NotFound from "./pages/NotFound";
 import { Dashboard } from "./pages/admin/Dashboard";
 import { Products } from "./pages/admin/Products";
 import { Orders } from "./pages/admin/Orders";
-import { Customers } from "./pages/admin/Customers";
+import Customers from "./pages/admin/Customers";
 import { Analytics } from "./pages/admin/Analytics";
 import { Settings } from "./pages/admin/Settings";
 import AISettings from "./pages/admin/AISettings";
