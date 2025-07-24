@@ -7,15 +7,43 @@ export type AuthUser = {
   role?: string;
 };
 
+// Input validation utilities
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  return emailRegex.test(email);
+};
+
+const validatePassword = (password: string): boolean => {
+  return password.length >= 8;
+};
+
+const sanitizeInput = (input: string): string => {
+  return input.trim().slice(0, 255); // Prevent excessively long inputs
+};
+
 export const authService = {
   async signUp(email: string, password: string, firstName?: string, lastName?: string) {
+    // Input validation
+    const sanitizedEmail = sanitizeInput(email);
+    const sanitizedFirstName = firstName ? sanitizeInput(firstName).slice(0, 50) : undefined;
+    const sanitizedLastName = lastName ? sanitizeInput(lastName).slice(0, 50) : undefined;
+
+    if (!validateEmail(sanitizedEmail)) {
+      throw new Error('Invalid email format');
+    }
+
+    if (!validatePassword(password)) {
+      throw new Error('Password must be at least 8 characters long');
+    }
+
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: sanitizedEmail,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/`,
         data: {
-          first_name: firstName,
-          last_name: lastName,
+          first_name: sanitizedFirstName,
+          last_name: sanitizedLastName,
         },
       },
     });
@@ -28,20 +56,34 @@ export const authService = {
         .from('profiles')
         .insert({
           user_id: data.user.id,
-          email: data.user.email!,
-          first_name: firstName,
-          last_name: lastName,
+          email: sanitizedEmail,
+          first_name: sanitizedFirstName,
+          last_name: sanitizedLastName,
         });
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.warn('Profile creation failed:', profileError);
+        // Don't throw here as the user was created successfully
+      }
     }
 
     return data;
   },
 
   async signIn(email: string, password: string) {
+    // Input validation
+    const sanitizedEmail = sanitizeInput(email);
+
+    if (!validateEmail(sanitizedEmail)) {
+      throw new Error('Invalid email format');
+    }
+
+    if (!password) {
+      throw new Error('Password is required');
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: sanitizedEmail,
       password,
     });
 
@@ -86,14 +128,5 @@ export const authService = {
       .single();
 
     return !!data;
-  },
-
-  // Create admin user helper
-  async createAdminUser(userId: string) {
-    const { error } = await supabase
-      .from('user_roles')
-      .insert({ user_id: userId, role: 'admin' });
-
-    if (error) throw error;
   },
 };

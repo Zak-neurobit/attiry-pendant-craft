@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_initialization: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          initialization_token: string
+          used: boolean
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          initialization_token: string
+          used?: boolean
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          initialization_token?: string
+          used?: boolean
+        }
+        Relationships: []
+      }
       analytics_events: {
         Row: {
           created_at: string
@@ -295,6 +319,39 @@ export type Database = {
         }
         Relationships: []
       }
+      security_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          resource: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          resource?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           description: string | null
@@ -345,6 +402,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_initial_admin: {
+        Args: {
+          p_email: string
+          p_password: string
+          p_initialization_token: string
+        }
+        Returns: Json
+      }
       get_current_user_profile: {
         Args: Record<PropertyKey, never>
         Returns: string
