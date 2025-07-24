@@ -29,6 +29,9 @@ import { Favourites } from "./pages/Favourites";
 import { Account } from "./pages/Account";
 import NotFound from "./pages/NotFound";
 
+// Auth Components
+import { AuthPage } from "./components/auth/AuthPage";
+
 // Admin Pages
 import { Dashboard } from "./pages/admin/Dashboard";
 import { Products } from "./pages/admin/Products";
@@ -72,6 +75,9 @@ const App = () => (
                 <Route path="design-request" element={<DesignRequest />} />
                 <Route path="favourites" element={<Favourites />} />
                 <Route path="account/*" element={<Account />} />
+                <Route path="auth" element={<AuthPage />} />
+                <Route path="login" element={<AuthPage />} />
+                <Route path="signup" element={<AuthPage />} />
               </Route>
 
               {/* Admin Routes */}

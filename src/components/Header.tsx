@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Heart, Search, ShoppingBag, User, Menu, X, Shield } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '@/stores/cart';
 import { useAuth } from '@/stores/auth';
 import { SearchModal } from '@/components/SearchModal';
@@ -11,6 +11,7 @@ const Header = () => {
   const { user, isAdmin } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Keyboard shortcut for search
   useEffect(() => {
@@ -24,6 +25,14 @@ const Header = () => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  const handleProfileClick = () => {
+    if (user) {
+      navigate('/account');
+    } else {
+      navigate('/auth');
+    }
+  };
 
   return (
     <header className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
@@ -93,9 +102,13 @@ const Header = () => {
                 </span>
               )}
             </button>
-            <Link to="/login" className="p-2 hover:bg-muted rounded-lg transition-colors">
+            <button 
+              onClick={handleProfileClick}
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+              aria-label={user ? "Go to account" : "Sign in"}
+            >
               <User className="h-5 w-5" />
-            </Link>
+            </button>
             
             {/* Mobile menu toggle */}
             <button 

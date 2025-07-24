@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { ChevronRight, Star, Quote } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -74,13 +75,6 @@ const Home = () => {
     }
   ];
 
-  const categories = [
-    { name: 'Gold', icon: '✨', color: 'bg-gold' },
-    { name: 'Rose Gold', icon: '🌹', color: 'bg-rose-gold' },
-    { name: 'Silver', icon: '💎', color: 'bg-silver' },
-    { name: 'Copper', icon: '🔥', color: 'bg-copper' },
-  ];
-
   const testimonials = [
     {
       name: 'Sarah Johnson',
@@ -154,40 +148,6 @@ const Home = () => {
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
           <div className="w-6 h-10 border-2 border-accent rounded-full flex justify-center">
             <div className="w-1 h-3 bg-accent rounded-full mt-2 animate-pulse" />
-          </div>
-        </div>
-      </section>
-
-      {/* Categories Section */}
-      <section className="py-20 bg-secondary/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12 slide-up">
-            <h2 className="text-4xl font-source-serif font-bold text-foreground mb-4">
-              Choose Your Style
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Discover our premium collection of custom name pendants in various finishes
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {categories.map((category, index) => (
-              <Link
-                key={category.name}
-                to={`/shop?category=${category.name.toLowerCase()}`}
-                className="group text-center"
-                style={{ animationDelay: `${index * 150}ms` }}
-              >
-                <div className="card-luxury p-8 mb-4 group-hover:scale-105 transition-all duration-300">
-                  <div className={`w-16 h-16 ${category.color} rounded-full mx-auto mb-4 flex items-center justify-center text-2xl`}>
-                    {category.icon}
-                  </div>
-                  <h3 className="font-medium text-foreground group-hover:text-accent transition-colors">
-                    {category.name}
-                  </h3>
-                </div>
-              </Link>
-            ))}
           </div>
         </div>
       </section>
