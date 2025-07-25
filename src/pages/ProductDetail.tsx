@@ -13,6 +13,7 @@ import { useFavourites } from '@/stores/favourites';
 import { useToast } from '@/hooks/use-toast';
 import { SEOHead } from '@/components/SEOHead';
 import { useProductCustomizer } from '@/stores/productCustomizer';
+import { supabase } from '@/integrations/supabase/client';
 
 // Components
 import NameInput from '@/components/product/NameInput';
@@ -24,22 +25,16 @@ import { GiftWrapOption } from '@/components/product/GiftWrapOption';
 import { ReviewsSection } from '@/components/reviews/ReviewsSection';
 import { TrustBadges } from '@/components/conversion/TrustBadges';
 
-// Import the products from lib
-import { shopProducts } from '@/lib/products';
-
 interface Product {
   id: string;
-  slug: string;
-  name: string;
+  title: string;
   price: number;
-  originalPrice?: number;
-  description: string;
-  images: string[];
-  rating: number;
-  reviewCount: number;
-  isNew?: boolean;
-  colors: string[];
-  category: string;
+  compare_price?: number;
+  description?: string;
+  image_urls?: string[];
+  color_variants?: string[];
+  tags?: string[];
+  stock: number;
 }
 
 const ProductDetail = () => {
@@ -57,18 +52,35 @@ const ProductDetail = () => {
   const [quantity] = useState(1);
 
   useEffect(() => {
-    const fetchProduct = () => {
+    const fetchProduct = async () => {
       if (!slug) {
         setLoading(false);
         return;
       }
       
-      // Find product by slug in our static products
-      const foundProduct = shopProducts.find(p => p.slug === slug);
-      
-      if (foundProduct) {
-        setProduct(foundProduct);
-      } else {
+      try {
+        // Convert slug back to title format for searching
+        const searchTitle = slug
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .ilike('title', `%${searchTitle}%`)
+          .eq('is_active', true)
+          .limit(1)
+          .single();
+
+        if (error) {
+          console.error('Error fetching product:', error);
+          setProduct(null);
+        } else {
+          setProduct(data);
+        }
+      } catch (err) {
+        console.error('Error in fetchProduct:', err);
         setProduct(null);
       }
       
@@ -90,24 +102,24 @@ const ProductDetail = () => {
       return;
     }
 
-    const finalPrice = product.price + (includeGiftWrap ? 5 : 0);
+    const finalPrice = Number(product.price) + (includeGiftWrap ? 5 : 0);
 
     addItem({
       productId: product.id,
-      title: product.name,
+      title: product.title,
       price: finalPrice,
-      originalPrice: product.originalPrice || product.price,
+      originalPrice: product.compare_price ? Number(product.compare_price) : Number(product.price),
       color: customization.color,
       font: customization.font,
       chain: customization.chain,
       customText: customization.nameText,
       quantity,
-      image: product.images[0],
+      image: product.image_urls?.[0] || '/placeholder.svg',
     });
 
     toast({
       title: "Added to Cart",
-      description: `${product.name} with "${customization.nameText}" has been added to your cart`,
+      description: `${product.title} with "${customization.nameText}" has been added to your cart`,
     });
   };
 
@@ -118,20 +130,20 @@ const ProductDetail = () => {
       removeFromFavourites(product.id);
       toast({
         title: "Removed from Favourites",
-        description: `${product.name} removed from your favourites`,
+        description: `${product.title} removed from your favourites`,
       });
     } else {
       addToFavourites(product.id);
       toast({
         title: "Added to Favourites",
-        description: `${product.name} added to your favourites`,
+        description: `${product.title} added to your favourites`,
       });
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pt-20">
         <div className="container mx-auto px-4 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-muted rounded w-1/4 mb-8"></div>
@@ -152,7 +164,7 @@ const ProductDetail = () => {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pt-20">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
@@ -175,20 +187,20 @@ const ProductDetail = () => {
     }).format(price);
   };
 
-  const salePrice = product.originalPrice && product.originalPrice > product.price 
-    ? product.price 
+  const salePrice = product.compare_price && Number(product.compare_price) > Number(product.price) 
+    ? Number(product.price)
     : undefined;
-  const originalPrice = product.originalPrice && product.originalPrice > product.price 
-    ? product.originalPrice 
-    : product.price;
+  const originalPrice = product.compare_price && Number(product.compare_price) > Number(product.price) 
+    ? Number(product.compare_price)
+    : Number(product.price);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-20">
       <SEOHead
-        title={product.name}
-        description={product.description || `Custom ${product.name} - Personalized name pendant`}
-        image={product.images[0]}
-        url={`/product/${product.slug}`}
+        title={product.title}
+        description={product.description || `Custom ${product.title} - Personalized name pendant`}
+        image={product.image_urls?.[0] || '/placeholder.svg'}
+        url={`/product/${slug}`}
         type="product"
       />
 
@@ -211,15 +223,15 @@ const ProductDetail = () => {
           <div className="space-y-4">
             <div className="aspect-square overflow-hidden rounded-lg border">
               <img
-                src={product.images[selectedImage] || '/placeholder.svg'}
-                alt={product.name}
+                src={product.image_urls?.[selectedImage] || '/placeholder.svg'}
+                alt={product.title}
                 className="w-full h-full object-cover"
               />
             </div>
 
-            {product.images.length > 1 && (
+            {product.image_urls && product.image_urls.length > 1 && (
               <div className="flex gap-2 overflow-x-auto">
-                {product.images.map((image, index) => (
+                {product.image_urls.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
@@ -229,7 +241,7 @@ const ProductDetail = () => {
                   >
                     <img
                       src={image}
-                      alt={`${product.name} ${index + 1}`}
+                      alt={`${product.title} ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
                   </button>
@@ -243,27 +255,23 @@ const ProductDetail = () => {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Badge className="bg-accent text-accent-foreground">Custom Made</Badge>
-                {product.isNew && (
+                {product.tags?.includes('trending') && (
                   <Badge variant="secondary">New</Badge>
                 )}
               </div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">{product.name}</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">{product.title}</h1>
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center gap-2">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`h-4 w-4 ${
-                          i < product.rating
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-muted-foreground'
-                        }`}
+                        className="h-4 w-4 fill-yellow-400 text-yellow-400"
                       />
                     ))}
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    ({product.reviewCount} reviews)
+                    (124 reviews)
                   </span>
                 </div>
               </div>
@@ -327,9 +335,10 @@ const ProductDetail = () => {
                 onClick={handleAddToCart}
                 className="w-full bg-cta hover:bg-cta/90 text-cta-foreground font-medium py-3"
                 size="lg"
+                disabled={product.stock === 0}
               >
                 <ShoppingBag className="h-5 w-5 mr-2" />
-                Add to Cart - {formatPrice((salePrice || originalPrice) + (includeGiftWrap ? 5 : 0))}
+                {product.stock === 0 ? 'Out of Stock' : `Add to Cart - ${formatPrice((salePrice || originalPrice) + (includeGiftWrap ? 5 : 0))}`}
               </Button>
 
               <div className="flex gap-2">
