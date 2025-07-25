@@ -13,7 +13,7 @@ const fadeInUp = {
   visible: { 
     opacity: 1, 
     y: 0,
-    transition: { duration: 0.6, ease: "easeOut" }
+    transition: { duration: 0.6 }
   }
 };
 
@@ -33,7 +33,7 @@ const staggerItem = {
   visible: { 
     opacity: 1, 
     y: 0,
-    transition: { duration: 0.5, ease: "easeOut" }
+    transition: { duration: 0.5 }
   }
 };
 
@@ -80,7 +80,7 @@ export const Home = () => {
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              transition={{ duration: 0.8 }}
               className="relative"
             >
               <div className="relative w-full max-w-md mx-auto aspect-square">
