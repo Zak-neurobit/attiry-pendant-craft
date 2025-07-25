@@ -3,15 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/stores/auth';
 import { ProductCard } from '@/components/ProductCard';
-import { Product } from '@/lib/products';
-
-interface SupabaseProduct {
-  id: string;
-  title: string;
-  price: number;
-  image_urls: string[];
-  color_variants: string[];
-}
+import { SupabaseProduct } from '@/hooks/useProducts';
 
 export const RecentlyViewed: React.FC = () => {
   const [products, setProducts] = useState<SupabaseProduct[]>([]);
@@ -38,7 +30,7 @@ export const RecentlyViewed: React.FC = () => {
       if (behavior?.viewed_products && behavior.viewed_products.length > 0) {
         const { data: products } = await supabase
           .from('products')
-          .select('id, title, price, image_urls, color_variants')
+          .select('*')
           .in('id', behavior.viewed_products.slice(0, 12))
           .eq('is_active', true);
 
@@ -47,7 +39,7 @@ export const RecentlyViewed: React.FC = () => {
           const orderedProducts = behavior.viewed_products
             .map(id => products.find(p => p.id === id))
             .filter(Boolean)
-            .slice(0, 12);
+            .slice(0, 12) as SupabaseProduct[];
           setProducts(orderedProducts);
         }
       }
@@ -57,19 +49,6 @@ export const RecentlyViewed: React.FC = () => {
       setLoading(false);
     }
   };
-
-  const convertToProduct = (supabaseProduct: SupabaseProduct): Product => ({
-    id: supabaseProduct.id,
-    slug: `product-${supabaseProduct.id}`,
-    name: supabaseProduct.title,
-    price: supabaseProduct.price,
-    description: '',
-    images: supabaseProduct.image_urls || ['/placeholder.svg'],
-    rating: 5,
-    reviewCount: Math.floor(Math.random() * 200) + 50,
-    colors: supabaseProduct.color_variants || ['gold', 'rose-gold', 'silver'],
-    category: 'custom'
-  });
 
   if (!user || loading || products.length === 0) {
     return null;
@@ -83,7 +62,7 @@ export const RecentlyViewed: React.FC = () => {
           {products.map((product) => (
             <ProductCard 
               key={product.id} 
-              product={convertToProduct(product)}
+              product={product}
             />
           ))}
         </div>

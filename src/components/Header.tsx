@@ -9,12 +9,10 @@ import { useFavourites } from '@/stores/favourites';
 import { useAuth } from '@/stores/auth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { SearchModal } from '@/components/SearchModal';
-import { CartDrawer } from '@/components/CartDrawer';
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const navigate = useNavigate();
   
   const { items } = useCart();
@@ -35,6 +33,11 @@ export const Header = () => {
 
   const handleAdminClick = () => {
     navigate('/admin');
+    setIsMenuOpen(false);
+  };
+
+  const handleCartClick = () => {
+    navigate('/cart');
     setIsMenuOpen(false);
   };
 
@@ -106,7 +109,7 @@ export const Header = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsCartOpen(true)}
+                onClick={handleCartClick}
                 className="relative"
               >
                 <ShoppingBag className="h-5 w-5" />
@@ -197,10 +200,7 @@ export const Header = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => {
-                      setIsCartOpen(true);
-                      setIsMenuOpen(false);
-                    }}
+                    onClick={handleCartClick}
                     className="relative"
                   >
                     <ShoppingBag className="h-5 w-5" />
@@ -236,10 +236,6 @@ export const Header = () => {
       <SearchModal 
         isOpen={isSearchOpen} 
         onClose={() => setIsSearchOpen(false)} 
-      />
-      <CartDrawer 
-        isOpen={isCartOpen} 
-        onClose={() => setIsCartOpen(false)} 
       />
     </>
   );
