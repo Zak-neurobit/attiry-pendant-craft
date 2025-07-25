@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   slug: string;
@@ -13,19 +14,16 @@ export interface Product {
   category: string;
 }
 
-// Mock product data
+// Updated mock product data for custom name pendants
 export const products: Product[] = [
   {
     id: '1',
-    slug: 'custom-gold-name-pendant',
-    name: 'Custom Gold Name Pendant',
-    price: 74.99,
+    slug: 'classic-gold-nameplate',
+    name: 'Classic Gold Nameplate',
+    price: 79.99,
     originalPrice: 99.99,
-    description: 'Elegant gold-plated pendant with custom name engraving. Perfect for special occasions and personal gifts.',
-    images: [
-      '/src/assets/product-gold.jpg',
-      '/src/assets/product-rose-gold.jpg'
-    ],
+    description: 'Elegant 18k gold-plated nameplate pendant with classic script engraving.',
+    images: ['/src/assets/product-gold.jpg', '/src/assets/product-rose-gold.jpg'],
     rating: 5,
     reviewCount: 124,
     isNew: true,
@@ -36,13 +34,10 @@ export const products: Product[] = [
     id: '2',
     slug: 'rose-gold-script-pendant',
     name: 'Rose Gold Script Pendant',
-    price: 69.99,
-    originalPrice: 92.99,
+    price: 74.99,
+    originalPrice: 94.99,
     description: 'Beautiful rose gold pendant featuring elegant script lettering.',
-    images: [
-      '/src/assets/product-rose-gold.jpg',
-      '/src/assets/product-gold.jpg'
-    ],
+    images: ['/src/assets/product-rose-gold.jpg', '/src/assets/product-gold.jpg'],
     rating: 5,
     reviewCount: 89,
     colors: ['rose-gold', 'gold', 'silver'],
@@ -50,35 +45,30 @@ export const products: Product[] = [
   },
   {
     id: '3',
-    slug: 'classic-silver-nameplate',
-    name: 'Classic Silver Nameplate',
-    price: 59.99,
-    originalPrice: 79.99,
-    description: 'Timeless sterling silver nameplate with precision engraving.',
-    images: [
-      '/src/assets/product-gold.jpg',
-      '/src/assets/product-rose-gold.jpg'
-    ],
+    slug: 'sterling-silver-nameplate',
+    name: 'Sterling Silver Nameplate',
+    price: 69.99,
+    originalPrice: 89.99,
+    description: 'Premium sterling silver nameplate with precision engraving.',
+    images: ['/src/assets/product-gold.jpg', '/src/assets/product-rose-gold.jpg'],
     rating: 5,
     reviewCount: 156,
-    colors: ['silver', 'gold', 'copper'],
+    colors: ['silver', 'gold', 'rose-gold'],
     category: 'silver'
   },
   {
     id: '4',
-    slug: 'vintage-copper-pendant',
-    name: 'Vintage Copper Pendant',
-    price: 64.99,
-    originalPrice: 86.99,
-    description: 'Unique copper finish pendant with vintage styling.',
-    images: [
-      '/src/assets/product-rose-gold.jpg',
-      '/src/assets/product-gold.jpg'
-    ],
+    slug: 'custom-cursive-pendant',
+    name: 'Custom Cursive Pendant',
+    price: 84.99,
+    originalPrice: 104.99,
+    description: 'Handcrafted cursive name pendant in your choice of metal finish.',
+    images: ['/src/assets/product-rose-gold.jpg', '/src/assets/product-gold.jpg'],
     rating: 5,
     reviewCount: 67,
-    colors: ['copper', 'gold', 'silver'],
-    category: 'copper'
+    isNew: true,
+    colors: ['gold', 'silver', 'rose-gold'],
+    category: 'custom'
   }
 ];
 

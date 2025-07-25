@@ -21,10 +21,13 @@ export const Header = () => {
   const navigate = useNavigate();
   const { items } = useCart();
   const { favourites } = useFavourites();
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { toast } = useToast();
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Check if current user is admin
+  const isAdmin = user && (user.email === 'zak.seid@gmail.com' || user.email === 'zakseid0@gmail.com');
 
   const handleSignOut = async () => {
     try {
@@ -76,19 +79,8 @@ export const Header = () => {
     <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center space-x-2">
-          <img 
-            src="/src/assets/attiry-logo.png" 
-            alt="Attiry" 
-            className="h-8 w-auto"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-              const fallback = target.parentElement?.querySelector('.fallback-logo');
-              if (fallback) (fallback as HTMLElement).style.display = 'block';
-            }}
-          />
-          <span className="fallback-logo text-2xl font-bold text-accent hidden">
+        <Link to="/" className="flex items-center">
+          <span className="text-3xl font-greatvibes text-accent">
             Attiry
           </span>
         </Link>
@@ -133,6 +125,15 @@ export const Header = () => {
             </Link>
           </Button>
 
+          {/* Admin Button (only for specific admin emails) */}
+          {isAdmin && (
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/admin">
+                Admin
+              </Link>
+            </Button>
+          )}
+
           {/* User Menu */}
           {user ? (
             <DropdownMenu>
@@ -157,14 +158,6 @@ export const Header = () => {
                     My Account
                   </Link>
                 </DropdownMenuItem>
-                {isAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin" className="cursor-pointer">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Admin Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />

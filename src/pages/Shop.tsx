@@ -1,24 +1,7 @@
 
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { ProductCard } from '@/components/ProductCard';
 import { Product } from '@/lib/products';
-import { useAuth } from '@/stores/auth';
-
-interface SupabaseProduct {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  image_urls: string[];
-  color_variants: string[];
-  keywords: string[];
-  sku: string;
-  compare_price?: number;
-  stock?: number;
-}
 
 const container = {
   hidden: { opacity: 0 },
@@ -30,128 +13,172 @@ const container = {
   },
 };
 
-const getSalePrice = (originalPrice: number, comparePrice?: number) => {
-  if (comparePrice && comparePrice > originalPrice) {
-    return originalPrice;
+// 12 custom name pendant products
+const shopProducts: Product[] = [
+  {
+    id: '1',
+    slug: 'classic-gold-nameplate',
+    name: 'Classic Gold Nameplate',
+    price: 79.99,
+    originalPrice: 99.99,
+    description: 'Elegant 18k gold-plated nameplate pendant with classic script engraving.',
+    images: ['/src/assets/product-gold.jpg'],
+    rating: 5,
+    reviewCount: 124,
+    isNew: true,
+    colors: ['gold', 'rose-gold', 'silver'],
+    category: 'gold'
+  },
+  {
+    id: '2',
+    slug: 'rose-gold-script-pendant',
+    name: 'Rose Gold Script Pendant',
+    price: 74.99,
+    originalPrice: 94.99,
+    description: 'Beautiful rose gold pendant featuring elegant script lettering.',
+    images: ['/src/assets/product-rose-gold.jpg'],
+    rating: 5,
+    reviewCount: 89,
+    colors: ['rose-gold', 'gold', 'silver'],
+    category: 'rose-gold'
+  },
+  {
+    id: '3',
+    slug: 'sterling-silver-nameplate',
+    name: 'Sterling Silver Nameplate',
+    price: 69.99,
+    originalPrice: 89.99,
+    description: 'Premium sterling silver nameplate with precision engraving.',
+    images: ['/src/assets/product-gold.jpg'],
+    rating: 5,
+    reviewCount: 156,
+    colors: ['silver', 'gold', 'rose-gold'],
+    category: 'silver'
+  },
+  {
+    id: '4',
+    slug: 'custom-cursive-pendant',
+    name: 'Custom Cursive Pendant',
+    price: 84.99,
+    originalPrice: 104.99,
+    description: 'Handcrafted cursive name pendant in your choice of metal finish.',
+    images: ['/src/assets/product-rose-gold.jpg'],
+    rating: 5,
+    reviewCount: 67,
+    isNew: true,
+    colors: ['gold', 'silver', 'rose-gold'],
+    category: 'custom'
+  },
+  {
+    id: '5',
+    slug: 'deluxe-gold-pendant',
+    name: 'Deluxe Gold Pendant',
+    price: 89.99,
+    originalPrice: 119.99,
+    description: 'Premium gold-plated pendant with diamond-cut edges.',
+    images: ['/src/assets/product-gold.jpg'],
+    rating: 5,
+    reviewCount: 203,
+    colors: ['gold', 'rose-gold'],
+    category: 'gold'
+  },
+  {
+    id: '6',
+    slug: 'minimalist-bar-pendant',
+    name: 'Minimalist Bar Pendant',
+    price: 64.99,
+    originalPrice: 84.99,
+    description: 'Sleek and modern bar-style name pendant in multiple finishes.',
+    images: ['/src/assets/product-rose-gold.jpg'],
+    rating: 5,
+    reviewCount: 98,
+    colors: ['silver', 'gold', 'rose-gold'],
+    category: 'minimalist'
+  },
+  {
+    id: '7',
+    slug: 'vintage-ornate-pendant',
+    name: 'Vintage Ornate Pendant',
+    price: 94.99,
+    originalPrice: 124.99,
+    description: 'Vintage-inspired pendant with ornate decorative borders.',
+    images: ['/src/assets/product-gold.jpg'],
+    rating: 5,
+    reviewCount: 142,
+    isNew: true,
+    colors: ['gold', 'silver', 'copper'],
+    category: 'vintage'
+  },
+  {
+    id: '8',
+    slug: 'heart-shaped-nameplate',
+    name: 'Heart-Shaped Nameplate',
+    price: 72.99,
+    originalPrice: 92.99,
+    description: 'Romantic heart-shaped pendant perfect for gifts.',
+    images: ['/src/assets/product-rose-gold.jpg'],
+    rating: 5,
+    reviewCount: 178,
+    colors: ['rose-gold', 'gold', 'silver'],
+    category: 'heart'
+  },
+  {
+    id: '9',
+    slug: 'infinity-name-pendant',
+    name: 'Infinity Name Pendant',
+    price: 79.99,
+    originalPrice: 99.99,
+    description: 'Elegant infinity symbol combined with custom name engraving.',
+    images: ['/src/assets/product-gold.jpg'],
+    rating: 5,
+    reviewCount: 134,
+    colors: ['gold', 'silver', 'rose-gold'],
+    category: 'infinity'
+  },
+  {
+    id: '10',
+    slug: 'double-layer-pendant',
+    name: 'Double Layer Pendant',
+    price: 104.99,
+    originalPrice: 134.99,
+    description: 'Sophisticated double-layer design with contrasting metals.',
+    images: ['/src/assets/product-rose-gold.jpg'],
+    rating: 5,
+    reviewCount: 87,
+    isNew: true,
+    colors: ['gold', 'silver'],
+    category: 'layered'
+  },
+  {
+    id: '11',
+    slug: 'birthstone-nameplate',
+    name: 'Birthstone Nameplate',
+    price: 99.99,
+    originalPrice: 129.99,
+    description: 'Personalized nameplate with genuine birthstone accent.',
+    images: ['/src/assets/product-gold.jpg'],
+    rating: 5,
+    reviewCount: 156,
+    colors: ['gold', 'rose-gold', 'silver'],
+    category: 'birthstone'
+  },
+  {
+    id: '12',
+    slug: 'family-tree-pendant',
+    name: 'Family Tree Pendant',
+    price: 114.99,
+    originalPrice: 149.99,
+    description: 'Beautiful family tree design with custom name engravings.',
+    images: ['/src/assets/product-rose-gold.jpg'],
+    rating: 5,
+    reviewCount: 92,
+    isNew: true,
+    colors: ['gold', 'silver', 'rose-gold'],
+    category: 'family'
   }
-  return originalPrice * 0.75; // 25% off as fallback
-};
+];
 
 export const Shop = () => {
-  const [products, setProducts] = useState<SupabaseProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
-
-  useEffect(() => {
-    // Wait for auth to initialize before fetching products
-    if (!authLoading) {
-      fetchProducts();
-    }
-  }, [authLoading]);
-
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('Fetching products, user:', user?.email || 'not logged in');
-      
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-
-      console.log('Fetched products successfully:', data?.length || 0);
-      setProducts(data || []);
-    } catch (error: any) {
-      console.error('Fetch error:', error);
-      setError(error.message || 'Failed to fetch products');
-      
-      // Show user-friendly error message
-      toast({
-        title: 'Error Loading Products',
-        description: 'Please try refreshing the page. If the problem persists, contact support.',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const convertToProduct = (supabaseProduct: SupabaseProduct): Product => {
-    const originalPrice = supabaseProduct.compare_price || supabaseProduct.price;
-    const salePrice = getSalePrice(supabaseProduct.price, supabaseProduct.compare_price);
-
-    return {
-      id: supabaseProduct.id,
-      slug: supabaseProduct.id,
-      name: supabaseProduct.title,
-      price: salePrice,
-      originalPrice: originalPrice > salePrice ? originalPrice : undefined,
-      description: supabaseProduct.description || '',
-      images: supabaseProduct.image_urls || ['/placeholder.svg'],
-      rating: 5,
-      reviewCount: Math.floor(Math.random() * 200) + 50,
-      isNew: Math.random() > 0.7,
-      colors: supabaseProduct.color_variants || ['gold', 'rose-gold', 'silver'],
-      category: 'custom'
-    };
-  };
-
-  // Show loading while auth is initializing
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Initializing...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading products...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center py-12">
-            <h2 className="text-xl font-semibold mb-2 text-destructive">Error Loading Products</h2>
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <button 
-              onClick={fetchProducts}
-              className="px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -167,36 +194,32 @@ export const Shop = () => {
         </div>
 
         {/* Products Grid */}
-        {products.length > 0 ? (
-          <motion.div
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
-          >
-            {products.map((supabaseProduct) => (
-              <ProductCard
-                key={supabaseProduct.id}
-                product={convertToProduct(supabaseProduct)}
-              />
-            ))}
-          </motion.div>
-        ) : (
-          <div className="text-center py-12">
-            <h2 className="text-xl font-semibold mb-2">No products found</h2>
-            <p className="text-muted-foreground">Check back soon for new pendant designs!</p>
-          </div>
-        )}
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+        >
+          {shopProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+            />
+          ))}
+        </motion.div>
 
-        {/* Debug info for development */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-8 p-4 bg-muted rounded-lg text-sm">
-            <p>Debug Info:</p>
-            <p>User: {user?.email || 'Not logged in'}</p>
-            <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
-            <p>Products Count: {products.length}</p>
-          </div>
-        )}
+        {/* Call to Action */}
+        <div className="text-center mt-16 py-12 bg-gradient-to-r from-background to-secondary rounded-2xl">
+          <h2 className="text-3xl font-heading text-foreground mb-4">
+            Can't Find What You're Looking For?
+          </h2>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            Let us create something special just for you. Our custom design service brings your vision to life.
+          </p>
+          <button className="btn-cta">
+            Request Custom Design
+          </button>
+        </div>
       </div>
     </div>
   );
