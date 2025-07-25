@@ -1,18 +1,21 @@
 
 import React from 'react';
-import { Outlet } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { CartDrawer } from '@/components/CartDrawer';
 import { SEOHead } from '@/components/SEOHead';
 import Footer from '@/components/Footer';
 
-export const Layout = () => {
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-background">
       <SEOHead />
       <Header />
       <main>
-        <Outlet />
+        {children}
       </main>
       <Footer />
       <CartDrawer />
