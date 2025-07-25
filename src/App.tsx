@@ -12,7 +12,6 @@ import { ProtectedRoute } from "./components/admin/ProtectedRoute";
 
 // Public Pages
 import Index from "./pages/Index";
-import Home from "./pages/Home";
 import { Shop } from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import { About } from "./pages/About";
@@ -59,7 +58,6 @@ const App = () => (
               {/* Public Routes */}
               <Route path="/" element={<Layout />}>
                 <Route index element={<Index />} />
-                <Route path="home" element={<Home />} />
                 <Route path="shop" element={<Shop />} />
                 <Route path="product/:slug" element={<ProductDetail />} />
                 <Route path="products/:slug" element={<ProductDetail />} />

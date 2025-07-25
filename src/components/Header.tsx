@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, User, Heart, Menu, LogOut, Settings } from 'lucide-react';
+import { ShoppingCart, Search, User, Heart, Menu, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -78,9 +78,9 @@ export const Header = () => {
   return (
     <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Logo */}
+        {/* Logo - Made bigger */}
         <Link to="/" className="flex items-center">
-          <span className="text-3xl font-greatvibes text-accent">
+          <span className="text-4xl md:text-5xl font-greatvibes text-accent font-bold">
             Attiry
           </span>
         </Link>

@@ -10,7 +10,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="text-2xl font-playfair font-bold">
+              <div className="text-3xl font-greatvibes font-bold">
                 Attiry
               </div>
               <div className="text-xs text-primary-foreground/70 uppercase tracking-widest">
