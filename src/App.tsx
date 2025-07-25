@@ -4,15 +4,14 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import Home from '@/pages/Home';
-import Shop from '@/pages/Shop';
+import { Shop } from '@/pages/Shop';
 import ProductDetail from '@/pages/ProductDetail';
-import Favourites from '@/pages/Favourites';
+import { Favourites } from '@/pages/Favourites';
 import Auth from '@/pages/Auth';
-import { AdminLayout } from '@/components/admin/AdminLayout';
-import AdminProducts from '@/pages/admin/Products';
+import { Products as AdminProducts } from '@/pages/admin/Products';
 import AdminProductEdit from '@/pages/admin/ProductEdit';
 import AdminProductCreate from '@/pages/admin/ProductCreate';
-import AdminDashboard from '@/pages/admin/Dashboard';
+import { Dashboard as AdminDashboard } from '@/pages/admin/Dashboard';
 import { Layout } from '@/components/layout/Layout';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
@@ -34,10 +33,10 @@ function App() {
               <Route path="/product/:slug" element={<Layout><ProductDetail /></Layout>} />
               <Route path="/favourites" element={<Layout><Favourites /></Layout>} />
 
-              <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-              <Route path="/admin/products" element={<AdminLayout><AdminProducts /></AdminLayout>} />
-              <Route path="/admin/products/new" element={<AdminLayout><AdminProductCreate /></AdminLayout>} />
-              <Route path="/admin/products/:productId/edit" element={<AdminLayout><AdminProductEdit /></AdminLayout>} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/products" element={<AdminProducts />} />
+              <Route path="/admin/products/new" element={<AdminProductCreate />} />
+              <Route path="/admin/products/:productId/edit" element={<AdminProductEdit />} />
             </Routes>
           </div>
         </AuthProvider>
