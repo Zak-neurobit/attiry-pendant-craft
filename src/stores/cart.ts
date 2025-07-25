@@ -2,6 +2,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+import { mapFrontendColorToDatabase } from '@/lib/products';
+
 export interface CartItem {
   id: string;
   productId: string;
@@ -15,6 +17,21 @@ export interface CartItem {
   quantity: number;
   image: string;
 }
+
+// Format cart item for database insertion
+export const formatCartItemForDatabase = (item: CartItem) => {
+  return {
+    product_id: item.productId,
+    quantity: item.quantity,
+    unit_price: item.price,
+    color_variant: mapFrontendColorToDatabase(item.color),
+    custom_text: item.customText.length > 12 ? item.customText.substring(0, 12) : item.customText,
+    // Note: font and chain are not in the current database schema
+    // If needed, add these fields to the order_items table with SQL:
+    // ALTER TABLE public.order_items ADD COLUMN font_choice TEXT;
+    // ALTER TABLE public.order_items ADD COLUMN chain_type TEXT;
+  };
+};
 
 interface CartState {
   items: CartItem[];

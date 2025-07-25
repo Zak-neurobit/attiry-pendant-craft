@@ -19,7 +19,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get OpenAI API key from Supabase secrets
+    // Get OpenAI API key and model from Supabase settings
     const { data: secretData, error: secretError } = await supabaseAdmin
       .from('site_settings')  
       .select('value')
@@ -34,9 +34,17 @@ serve(async (req) => {
       });
     }
 
-    const openAiApiKey = typeof secretData.value === 'string' ? secretData.value : (secretData.value as any).key;
+    // Get the selected model
+    const { data: modelData } = await supabaseAdmin
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'openai_model')
+      .single();
 
-    const { imageUrl, productContext = '', model = 'gpt-4.1-mini', maxTokens = 1000, temperature = 0.7 } = await req.json();
+    const openAiApiKey = typeof secretData.value === 'string' ? secretData.value : (secretData.value as any).api_key;
+    const selectedModel = modelData?.value ? (typeof modelData.value === 'string' ? modelData.value : (modelData.value as any).model) : 'gpt-4.1-mini';
+
+    const { imageUrl, productContext = '', title = '', colors = [], chainTypes = [], maxTokens = 1000, temperature = 0.7 } = await req.json();
 
     if (!imageUrl) {
       return new Response(JSON.stringify({ error: 'Image URL is required' }), {
@@ -45,19 +53,37 @@ serve(async (req) => {
       });
     }
 
-    const prompt = `Analyze this jewelry product image and provide detailed information for an e-commerce listing.${productContext ? ` Context: ${productContext}` : ''}
+    // Build comprehensive product context
+    const contextParts = [];
+    if (title) contextParts.push(`Product Title: ${title}`);
+    if (colors.length > 0) contextParts.push(`Available Colors: ${colors.join(', ')}`);
+    if (chainTypes.length > 0) contextParts.push(`Chain Types: ${chainTypes.join(', ')}`);
+    if (productContext) contextParts.push(`Additional Context: ${productContext}`);
+    
+    const fullContext = contextParts.length > 0 ? `\n\nProduct Context:\n${contextParts.join('\n')}` : '';
 
-Please provide:
-1. A detailed product description (100-150 words)
-2. Key features and materials visible
-3. Style and design elements
-4. Suggested product title
-5. Target audience/occasion
-6. SEO-friendly keywords
+    const prompt = `Analyze this jewelry product image and create compelling e-commerce content.${fullContext}
 
-Focus on luxury, craftsmanship, and personalization aspects.`;
+Please provide a JSON response with the following structure:
+{
+  "description": "A compelling 150-200 word product description that highlights luxury, craftsmanship, and emotional appeal",
+  "metaTitle": "SEO-optimized meta title (50-60 characters)",
+  "metaDescription": "SEO meta description (150-160 characters)",
+  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
+  "suggestedTitle": "Improved product title if different from current",
+  "targetAudience": "Primary target customer segment",
+  "occasions": ["occasion1", "occasion2", "occasion3"]
+}
 
-    console.log('Analyzing image with model: gpt-4.1-mini');
+Focus on:
+- Luxury positioning and premium materials
+- Personalization and customization benefits
+- Emotional appeal and gift-giving occasions
+- SEO optimization for jewelry search terms
+- Professional e-commerce language that converts`;
+
+    console.log(`Analyzing image with model: ${selectedModel}`);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -66,11 +92,11 @@ Focus on luxury, craftsmanship, and personalization aspects.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-mini', // Force gpt-4.1-mini
+        model: selectedModel,
         messages: [
           {
             role: 'system',
-            content: 'You are a luxury jewelry expert and e-commerce specialist. Analyze product images to create compelling product listings that highlight quality, craftsmanship, and emotional appeal.'
+            content: 'You are a luxury jewelry expert and e-commerce specialist. Analyze product images to create compelling product listings that highlight quality, craftsmanship, and emotional appeal. Always respond with valid JSON format only.'
           },
           {
             role: 'user',
@@ -108,16 +134,30 @@ Focus on luxury, craftsmanship, and personalization aspects.`;
 
     console.log('Image analysis completed successfully');
 
-    // Try to structure the response
-    const lines = analysis.split('\n').filter(line => line.trim());
+    // Try to parse the JSON response
+    let structuredResponse;
+    try {
+      structuredResponse = JSON.parse(analysis);
+    } catch (parseError) {
+      console.warn('Failed to parse JSON response, falling back to text parsing');
+      // Fallback to text parsing if JSON parsing fails
+      const lines = analysis.split('\n').filter(line => line.trim());
+      structuredResponse = {
+        description: analysis.substring(0, 500),
+        metaTitle: lines.find(line => line.toLowerCase().includes('title'))?.substring(0, 60) || '',
+        metaDescription: lines.find(line => line.toLowerCase().includes('description'))?.substring(0, 160) || '',
+        tags: [],
+        keywords: [],
+        suggestedTitle: '',
+        targetAudience: '',
+        occasions: []
+      };
+    }
     
     return new Response(JSON.stringify({
-      analysis,
-      structured: {
-        fullAnalysis: analysis,
-        summary: lines.slice(0, 3).join(' ').substring(0, 200) + '...'
-      },
-      model: 'gpt-4.1-mini' // Always return gpt-4.1-mini
+      ...structuredResponse,
+      rawAnalysis: analysis,
+      model: selectedModel
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

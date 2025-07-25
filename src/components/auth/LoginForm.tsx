@@ -48,8 +48,9 @@ export const LoginForm = () => {
     
     if (!validateInput()) return;
     
-    // Reset attempt count for admin emails
-    if (email.toLowerCase() === 'zak.seid@gmail.com' || email.toLowerCase() === 'zakseid0@gmail.com') {
+    // Bypass rate limiting for admin emails
+    const isAdminEmail = email.toLowerCase() === 'zak.seid@gmail.com' || email.toLowerCase() === 'zakseid0@gmail.com';
+    if (isAdminEmail) {
       setAttemptCount(0);
     }
     
@@ -80,7 +81,7 @@ export const LoginForm = () => {
       window.location.href = '/';
     } catch (error: any) {
       // Only increment attempt count for non-admin emails
-      if (email.toLowerCase() !== 'zak.seid@gmail.com' && email.toLowerCase() !== 'zakseid0@gmail.com') {
+      if (!isAdminEmail) {
         setAttemptCount(prev => prev + 1);
       }
       
@@ -170,7 +171,7 @@ export const LoginForm = () => {
           
           <div className="mt-4 text-center">
             <p className="text-sm text-muted-foreground">
-              For demo purposes, you can use: zak.seid@gmail.com with any password
+              Enter your registered email and password to sign in
             </p>
           </div>
         </CardContent>

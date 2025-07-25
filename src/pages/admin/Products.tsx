@@ -8,22 +8,34 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Search, Filter, Download, Eye, Package } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, Download, Eye, Package, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { toggleProductFeatured, bulkUpdateFeatured } from '@/lib/featuredProducts';
 
 interface Product {
   id: string;
   title: string;
+  description: string | null;
   price: number;
   compare_price: number;
   stock: number;
+  sku: string | null;
   is_active: boolean;
+  is_featured: boolean;
+  featured_order: number;
   image_urls: string[] | null;
   color_variants: string[] | null;
   chain_types: string[] | null;
+  fonts: string[] | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  keywords: string[] | null;
+  tags: string[] | null;
+  cogs: number;
   created_at: string;
+  updated_at: string;
 }
 
 export const Products = () => {
@@ -34,6 +46,7 @@ export const Products = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [stockFilter, setStockFilter] = useState<string>('all');
+  const [featuredFilter, setFeaturedFilter] = useState<string>('all');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -43,7 +56,7 @@ export const Products = () => {
 
   useEffect(() => {
     filterProducts();
-  }, [products, searchQuery, statusFilter, stockFilter]);
+  }, [products, searchQuery, statusFilter, stockFilter, featuredFilter]);
 
   const fetchProducts = async () => {
     try {
@@ -85,6 +98,11 @@ export const Products = () => {
       } else if (stockFilter === 'out_of_stock') {
         filtered = filtered.filter(product => product.stock === 0);
       }
+    }
+
+    if (featuredFilter !== 'all') {
+      const isFeatured = featuredFilter === 'featured';
+      filtered = filtered.filter(product => product.is_featured === isFeatured);
     }
 
     setFilteredProducts(filtered);
@@ -169,6 +187,65 @@ export const Products = () => {
     });
   };
 
+  const handleToggleFeatured = async (productId: string, currentFeatured: boolean) => {
+    try {
+      const result = await toggleProductFeatured(productId, !currentFeatured);
+      
+      if (result.success) {
+        // Update the local state
+        setProducts(products.map(product => 
+          product.id === productId 
+            ? { ...product, is_featured: !currentFeatured }
+            : product
+        ));
+        
+        toast({
+          title: "Success",
+          description: `Product ${!currentFeatured ? 'featured' : 'unfeatured'} successfully`,
+        });
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update featured status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkFeature = async (featured: boolean) => {
+    if (selectedProducts.length === 0) return;
+
+    try {
+      const result = await bulkUpdateFeatured(selectedProducts, featured);
+      
+      if (result.success) {
+        // Update the local state
+        setProducts(products.map(product => 
+          selectedProducts.includes(product.id) 
+            ? { ...product, is_featured: featured }
+            : product
+        ));
+        
+        setSelectedProducts([]);
+        toast({
+          title: "Success",
+          description: `${selectedProducts.length} products ${featured ? 'featured' : 'unfeatured'} successfully`,
+        });
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update featured status",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -193,7 +270,7 @@ export const Products = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-5">
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -226,10 +303,28 @@ export const Products = () => {
               </SelectContent>
             </Select>
 
+            <Select value={featuredFilter} onValueChange={setFeaturedFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by featured" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Products</SelectItem>
+                <SelectItem value="featured">Featured Only</SelectItem>
+                <SelectItem value="not_featured">Not Featured</SelectItem>
+              </SelectContent>
+            </Select>
+
             {selectedProducts.length > 0 && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
                   Delete Selected ({selectedProducts.length})
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleBulkFeature(true)}>
+                  <Star className="mr-2 h-4 w-4" />
+                  Feature Selected
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleBulkFeature(false)}>
+                  Unfeature Selected
                 </Button>
                 <Button variant="outline" size="sm" onClick={exportProducts}>
                   <Download className="mr-2 h-4 w-4" />
@@ -270,6 +365,7 @@ export const Products = () => {
                   </TableHead>
                   <TableHead>Product</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Featured</TableHead>
                   <TableHead>Inventory</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Options</TableHead>
@@ -279,7 +375,7 @@ export const Products = () => {
               <TableBody>
                 {filteredProducts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
+                    <TableCell colSpan={8} className="text-center py-8">
                       <div className="flex flex-col items-center gap-2">
                         <Package className="h-8 w-8 text-muted-foreground" />
                         <p className="text-muted-foreground">No products found.</p>
@@ -313,7 +409,12 @@ export const Products = () => {
                             )}
                           </div>
                           <div>
-                            <div className="font-medium">{product.title}</div>
+                            <div className="font-medium flex items-center gap-2">
+                              {product.title}
+                              {product.is_featured && (
+                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              )}
+                            </div>
                             {product.compare_price > 0 && product.compare_price > product.price && (
                               <div className="text-sm text-muted-foreground line-through">
                                 {formatPrice(product.compare_price)}
@@ -326,6 +427,29 @@ export const Products = () => {
                         <Badge variant={product.is_active ? "default" : "secondary"}>
                           {product.is_active ? "Active" : "Draft"}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleToggleFeatured(product.id, product.is_featured)}
+                          >
+                            <Star
+                              className={`h-4 w-4 ${
+                                product.is_featured
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-400 hover:text-yellow-400'
+                              }`}
+                            />
+                          </Button>
+                          {product.is_featured && (
+                            <Badge variant="outline" className="text-xs">
+                              Featured
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={product.stock > 0 ? "default" : "destructive"}>

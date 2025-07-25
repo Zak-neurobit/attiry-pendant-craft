@@ -7,6 +7,7 @@ import { Heart, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Product } from '@/lib/products';
 import { useFavourites } from '@/stores/favourites';
+import { usePrice, useComparePrice } from '@/hooks/usePrice';
 
 interface ProductCardProps {
   product: Product;
@@ -16,6 +17,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { favourites, addToFavourites, removeFromFavourites } = useFavourites();
   const isFavourite = favourites.includes(product.id);
 
+  // Use our new price formatting hooks
+  const hasOriginalPrice = product.originalPrice && product.originalPrice > product.price;
+  const priceData = hasOriginalPrice 
+    ? useComparePrice(product.originalPrice!, product.price)
+    : usePrice(product.price);
+
   const toggleFavourite = (e: React.MouseEvent) => {
     e.preventDefault();
     if (isFavourite) {
@@ -23,13 +30,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     } else {
       addToFavourites(product.id);
     }
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price);
   };
 
   return (
@@ -88,10 +88,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
           <div className="flex items-center justify-between mt-auto">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-lg">{formatPrice(product.price)}</span>
-              {product.originalPrice && product.originalPrice > product.price && (
-                <span className="text-sm text-muted-foreground line-through">
-                  {formatPrice(product.originalPrice)}
+              {hasOriginalPrice ? (
+                <>
+                  <span className="font-bold text-lg">{priceData.salePrice}</span>
+                  <span className="text-sm text-muted-foreground line-through">
+                    {priceData.originalPrice}
+                  </span>
+                </>
+              ) : (
+                <span className="font-bold text-lg">
+                  {priceData.isLoading ? 'Loading...' : priceData.formattedPrice}
                 </span>
               )}
             </div>

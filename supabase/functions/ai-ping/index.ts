@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,17 +13,40 @@ serve(async (req) => {
   }
 
   try {
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    const model = 'gpt-4.1-mini';
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
 
-    if (!OPENAI_API_KEY) {
-      throw new Error('OpenAI API key not configured in Supabase Secrets');
+    // Get OpenAI API key from site_settings
+    const { data: secretData, error: secretError } = await supabaseAdmin
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'openai_api_key')
+      .single();
+
+    if (secretError || !secretData?.value) {
+      throw new Error('OpenAI API key not configured in site_settings');
+    }
+
+    // Get the selected model
+    const { data: modelData } = await supabaseAdmin
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'openai_model')
+      .single();
+
+    const openAiApiKey = typeof secretData.value === 'string' ? secretData.value : (secretData.value as any).api_key;
+    const selectedModel = modelData?.value ? (typeof modelData.value === 'string' ? modelData.value : (modelData.value as any).model) : 'gpt-4.1-mini';
+
+    if (!openAiApiKey) {
+      throw new Error('OpenAI API key not found');
     }
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        model,
+        model: selectedModel,
         keyStatus: 'configured',
         timestamp: new Date().toISOString()
       }),

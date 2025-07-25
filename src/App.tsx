@@ -4,14 +4,18 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { Layout } from "./components/layout/Layout";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { ProtectedRoute } from "./components/admin/ProtectedRoute";
+import { ScrollToTop } from "./components/ScrollToTop";
+
+// i18n and currency initialization
+import "./i18n";
+import { CurrencyProvider } from "./components/providers/CurrencyProvider";
 
 // Public Pages
-import Index from "./pages/Index";
+import Home from "./pages/Home";
 import { Shop } from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import { About } from "./pages/About";
@@ -48,16 +52,17 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <HelmetProvider>
-      <TooltipProvider>
+    <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <AuthProvider>
+            <CurrencyProvider>
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<Layout />}>
-                <Route index element={<Index />} />
+                <Route index element={<Home />} />
                 <Route path="shop" element={<Shop />} />
                 <Route path="product/:slug" element={<ProductDetail />} />
                 <Route path="products/:slug" element={<ProductDetail />} />
@@ -102,10 +107,10 @@ const App = () => (
               {/* 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </CurrencyProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
-    </HelmetProvider>
   </QueryClientProvider>
 );
 

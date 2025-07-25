@@ -19,7 +19,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get OpenAI API key from Supabase secrets
+    // Get OpenAI API key and model from Supabase settings
     const { data: secretData, error: secretError } = await supabaseAdmin
       .from('site_settings')
       .select('value')
@@ -34,7 +34,15 @@ serve(async (req) => {
       });
     }
 
-    const openAiApiKey = typeof secretData.value === 'string' ? secretData.value : (secretData.value as any).key;
+    // Get the selected model
+    const { data: modelData } = await supabaseAdmin
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'openai_model')
+      .single();
+
+    const openAiApiKey = typeof secretData.value === 'string' ? secretData.value : (secretData.value as any).api_key;
+    const selectedModel = modelData?.value ? (typeof modelData.value === 'string' ? modelData.value : (modelData.value as any).model) : 'gpt-4.1-mini';
 
     const { productName, description, model = 'gpt-4.1-mini', maxTokens = 500, temperature = 0.3 } = await req.json();
 
@@ -57,7 +65,7 @@ Return the response in this exact JSON format:
   "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"]
 }`;
 
-    console.log('Generating metadata with model: gpt-4.1-mini');
+    console.log('Generating metadata with model:', selectedModel);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -66,7 +74,7 @@ Return the response in this exact JSON format:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-mini', // Force gpt-4.1-mini
+        model: selectedModel,
         messages: [
           {
             role: 'system',
@@ -117,7 +125,7 @@ Return the response in this exact JSON format:
 
     return new Response(JSON.stringify({
       ...metadata,
-      model: 'gpt-4.1-mini' // Always return gpt-4.1-mini
+      model: selectedModel
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

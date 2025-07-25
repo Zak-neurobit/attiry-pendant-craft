@@ -1,20 +1,10 @@
 
-export interface Product {
-  id: string;
-  slug: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  description: string;
-  images: string[];
-  rating: number;
-  reviewCount: number;
-  isNew?: boolean;
-  colors: string[];
-  category: string;
-}
+// Re-export types and utilities from the new useProducts hook
+export type { Product, DatabaseProduct } from '@/hooks/useProducts';
+export { mapFrontendColorToDatabase } from '@/hooks/useProducts';
 
-// 12 custom name pendant products
+// Static fallback products (kept as backup when database is unavailable)
+// In production, use the useProducts hook to fetch from Supabase
 export const shopProducts: Product[] = [
   {
     id: '1',
@@ -179,12 +169,11 @@ export const shopProducts: Product[] = [
   }
 ];
 
-// Export individual product by slug for easier access
-export const getProductBySlug = (slug: string): Product | undefined => {
-  return shopProducts.find(product => product.slug === slug);
-};
-
-// Export product by ID for easier access
+// Utility functions for backward compatibility (use these when not using the hook)
 export const getProductById = (id: string): Product | undefined => {
   return shopProducts.find(product => product.id === id);
+};
+
+export const getProductBySlug = (slug: string): Product | undefined => {
+  return shopProducts.find(product => product.slug === slug);
 };

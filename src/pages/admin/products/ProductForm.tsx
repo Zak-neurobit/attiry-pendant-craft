@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { ImageUploader } from '@/components/admin/ImageUploader';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Sparkles, Eye, Tag, Save, X } from 'lucide-react';
+import { ArrowLeft, Sparkles, Eye, Tag, Save, X, Star } from 'lucide-react';
 import { defaultModel } from '@/services/openai';
 
 type ColorVariant = 'gold' | 'silver' | 'black' | 'rose_gold' | 'matte_gold' | 'matte_silver' | 'vintage_copper';
@@ -24,6 +24,8 @@ interface ProductFormData {
   stock: number;
   sku: string;
   is_active: boolean;
+  is_featured: boolean;
+  featured_order: number;
   image_urls: string[];
   color_variants: ColorVariant[];
   chain_types: string[];
@@ -43,6 +45,8 @@ const defaultFormData: ProductFormData = {
   stock: 0,
   sku: '',
   is_active: true,
+  is_featured: false,
+  featured_order: 0,
   image_urls: [],
   color_variants: ['gold'],
   chain_types: [],
@@ -60,7 +64,7 @@ export const ProductForm = () => {
   const isEditing = Boolean(id);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<ProductFormData>(defaultFormData);
-  const [aiLoading, setAiLoading] = useState({ description: false, metadata: false, image: false });
+  const [aiLoading, setAiLoading] = useState({ description: false, metadata: false, image: false, generateAll: false });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -88,6 +92,8 @@ export const ProductForm = () => {
         stock: data.stock || 0,
         sku: data.sku || '',
         is_active: data.is_active || true,
+        is_featured: data.is_featured || false,
+        featured_order: data.featured_order || 0,
         image_urls: data.image_urls || [],
         color_variants: (data.color_variants || ['gold']) as ColorVariant[],
         chain_types: data.chain_types || [],
@@ -186,23 +192,30 @@ export const ProductForm = () => {
       const { data, error } = await supabase.functions.invoke('ai-analyze-image', {
         body: { 
           imageUrl: formData.image_urls[0],
-          model: defaultModel
+          title: formData.title,
+          colors: formData.color_variants,
+          chainTypes: formData.chain_types,
+          productContext: formData.description ? `Existing description: ${formData.description}` : ''
         }
       });
 
       if (error) throw error;
 
-      // Update form with AI suggestions
+      // Update form with comprehensive AI suggestions
       setFormData(prev => ({
         ...prev,
         description: data.description || prev.description,
+        meta_title: data.metaTitle || prev.meta_title,
+        meta_description: data.metaDescription || prev.meta_description,
         tags: [...new Set([...prev.tags, ...(data.tags || [])])],
-        keywords: [...new Set([...prev.keywords, ...(data.tags || [])])],
+        keywords: [...new Set([...prev.keywords, ...(data.keywords || [])])],
+        // Update title if AI suggests a better one and current title is generic
+        title: (data.suggestedTitle && (!prev.title || prev.title.length < 10)) ? data.suggestedTitle : prev.title,
       }));
 
       toast({
         title: "Analysis Complete",
-        description: "Product information updated with AI insights",
+        description: "Product information updated with AI insights including SEO metadata",
       });
     } catch (error: any) {
       toast({
@@ -301,6 +314,65 @@ export const ProductForm = () => {
       });
     } finally {
       setAiLoading(prev => ({ ...prev, metadata: false }));
+    }
+  };
+
+  const handleGenerateAll = async () => {
+    if (formData.image_urls.length === 0) {
+      toast({
+        title: "No Images",
+        description: "Please upload at least one image to start AI generation",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.title.trim()) {
+      toast({
+        title: "Missing Title",
+        description: "Please enter a product title first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAiLoading(prev => ({ ...prev, generateAll: true }));
+    try {
+      // First analyze the image with full context
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('ai-analyze-image', {
+        body: { 
+          imageUrl: formData.image_urls[0],
+          title: formData.title,
+          colors: formData.color_variants,
+          chainTypes: formData.chain_types,
+          productContext: formData.description ? `Existing description: ${formData.description}` : ''
+        }
+      });
+
+      if (analysisError) throw analysisError;
+
+      // Update form with all AI-generated content
+      setFormData(prev => ({
+        ...prev,
+        description: analysisData.description || prev.description,
+        meta_title: analysisData.metaTitle || prev.meta_title,
+        meta_description: analysisData.metaDescription || prev.meta_description,
+        tags: [...new Set([...prev.tags, ...(analysisData.tags || [])])],
+        keywords: [...new Set([...prev.keywords, ...(analysisData.keywords || [])])],
+      }));
+
+      toast({
+        title: "AI Generation Complete",
+        description: "All product fields have been enhanced with AI-generated content",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate content",
+        variant: "destructive",
+      });
+    } finally {
+      setAiLoading(prev => ({ ...prev, generateAll: false }));
     }
   };
 
@@ -408,12 +480,12 @@ export const ProductForm = () => {
                   productId={id}
                 />
                 {formData.image_urls.length > 0 && (
-                  <div className="mt-4" id="analyze-button-container">
+                  <div className="mt-4 flex gap-2" id="ai-button-container">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={handleImageAnalysis}
-                      disabled={aiLoading.image}
+                      disabled={aiLoading.image || aiLoading.generateAll}
                       id="analyze-image-button"
                     >
                       {aiLoading.image ? (
@@ -421,8 +493,24 @@ export const ProductForm = () => {
                       ) : (
                         <Eye className="h-4 w-4 mr-2" />
                       )}
-                      Analyze with AI
+                      Analyze Image
                     </Button>
+                    {formData.title.trim() && (
+                      <Button
+                        type="button"
+                        onClick={handleGenerateAll}
+                        disabled={aiLoading.generateAll || aiLoading.image}
+                        id="generate-all-button"
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                      >
+                        {aiLoading.generateAll ? (
+                          <div className="animate-spin h-4 w-4 mr-2" />
+                        ) : (
+                          <Sparkles className="h-4 w-4 mr-2" />
+                        )}
+                        Generate All with AI
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -438,13 +526,20 @@ export const ProductForm = () => {
               </CardHeader>
               <CardContent className="space-y-4" id="seo-content">
                 <div className="flex items-center justify-between" id="metadata-header">
-                  <Label>Meta Information</Label>
+                  <div>
+                    <Label>Meta Information</Label>
+                    {(aiLoading.generateAll || aiLoading.metadata) && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        AI is generating SEO-optimized metadata...
+                      </p>
+                    )}
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={generateMetadata}
-                    disabled={aiLoading.metadata}
+                    disabled={aiLoading.metadata || aiLoading.generateAll}
                     id="generate-metadata-button"
                   >
                     {aiLoading.metadata ? (
@@ -507,6 +602,39 @@ export const ProductForm = () => {
                     }))}
                   />
                 </div>
+                
+                <div className="flex items-center justify-between" id="featured-toggle">
+                  <div className="flex items-center gap-2">
+                    <Star className="h-4 w-4 text-yellow-400" />
+                    <Label htmlFor="is_featured">Featured Product</Label>
+                  </div>
+                  <Switch
+                    id="is_featured"
+                    checked={formData.is_featured}
+                    onCheckedChange={(checked) => setFormData(prev => ({
+                      ...prev,
+                      is_featured: checked,
+                      // Set featured_order when featuring a product
+                      featured_order: checked ? Math.floor(Date.now() / 1000) : prev.featured_order
+                    }))}
+                  />
+                </div>
+
+                {formData.is_featured && (
+                  <div className="space-y-2" id="featured-order">
+                    <Label htmlFor="featured_order">Featured Order (lower numbers show first)</Label>
+                    <Input
+                      id="featured_order"
+                      type="number"
+                      value={formData.featured_order}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        featured_order: parseInt(e.target.value) || 0
+                      }))}
+                      placeholder="0"
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
 

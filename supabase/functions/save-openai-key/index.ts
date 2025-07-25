@@ -92,7 +92,7 @@ serve(async (req) => {
 
     // Enhanced input validation
     const body = await req.json();
-    const { key } = body;
+    const { key, model } = body;
 
     if (!key || typeof key !== 'string') {
       throw new Error('API key is required and must be a string');
@@ -108,12 +108,12 @@ serve(async (req) => {
       throw new Error('Invalid API key format - contains whitespace');
     }
 
-    // Store the key securely in site_settings
+    // Store the key securely in site_settings (for AI functions)
     const { error: upsertError } = await supabaseAdmin
       .from('site_settings')
       .upsert({
         key: 'openai_api_key',
-        value: { 
+        value: {
           api_key: key,
           updated_at: new Date().toISOString(),
           updated_by: user.id
@@ -126,6 +126,24 @@ serve(async (req) => {
       throw new Error(`Failed to save API key: ${upsertError.message}`);
     }
 
+    // Store the selected model separately
+    const { error: modelError } = await supabaseAdmin
+      .from('site_settings')
+      .upsert({
+        key: 'openai_model',
+        value: {
+          model: model || 'gpt-4.1-mini',
+          updated_at: new Date().toISOString(),
+          updated_by: user.id
+        },
+        description: 'Selected OpenAI Model for AI features'
+      });
+
+    if (modelError) {
+      console.error('Model save error:', modelError);
+      throw new Error(`Failed to save model preference: ${modelError.message}`);
+    }
+
     // Log the API key update for security audit
     await supabaseAdmin
       .from('security_audit_log')
@@ -134,7 +152,8 @@ serve(async (req) => {
         user_id: user.id,
         details: { 
           updated_by_email: user.email,
-          key_preview: `${key.substring(0, 7)}...${key.substring(key.length - 4)}`
+          key_preview: `${key.substring(0, 7)}...${key.substring(key.length - 4)}`,
+          model: model || 'gpt-4.1-mini'
         },
         ip_address: req.headers.get('x-forwarded-for') || 'unknown',
         user_agent: req.headers.get('user-agent') || 'unknown',
@@ -143,7 +162,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'OpenAI API key saved successfully',
+        message: 'OpenAI API key and model saved successfully',
+        model: model || 'gpt-4.1-mini',
         updated_at: new Date().toISOString()
       }),
       {

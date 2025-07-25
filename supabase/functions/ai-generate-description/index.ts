@@ -19,7 +19,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get OpenAI API key from Supabase secrets
+    // Get OpenAI API key and model from Supabase settings
     const { data: secretData, error: secretError } = await supabaseAdmin
       .from('site_settings')
       .select('value')
@@ -34,7 +34,15 @@ serve(async (req) => {
       });
     }
 
-    const openAiApiKey = typeof secretData.value === 'string' ? secretData.value : (secretData.value as any).key;
+    // Get the selected model
+    const { data: modelData } = await supabaseAdmin
+      .from('site_settings')
+      .select('value')
+      .eq('key', 'openai_model')
+      .single();
+
+    const openAiApiKey = typeof secretData.value === 'string' ? secretData.value : (secretData.value as any).api_key;
+    const selectedModel = modelData?.value ? (typeof modelData.value === 'string' ? modelData.value : (modelData.value as any).model) : 'gpt-4.1-mini';
 
     const { productName, features = [], model = 'gpt-4.1-mini', maxTokens = 1000, temperature = 0.7 } = await req.json();
 
@@ -49,7 +57,7 @@ The description should be:
 - Be around 100-150 words
 - Focus on craftsmanship and emotional value`;
 
-    console.log('Generating description with model:', model);
+    console.log('Generating description with model:', selectedModel);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -58,7 +66,7 @@ The description should be:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-mini', // Force gpt-4.1-mini
+        model: selectedModel,
         messages: [
           {
             role: 'system',
@@ -91,7 +99,7 @@ The description should be:
 
     return new Response(JSON.stringify({ 
       description,
-      model: 'gpt-4.1-mini' // Always return gpt-4.1-mini
+      model: selectedModel
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

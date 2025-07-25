@@ -22,10 +22,9 @@ import ChainPicker from '@/components/product/ChainPicker';
 import PreviewName from '@/components/product/PreviewName';
 import { GiftWrapOption } from '@/components/product/GiftWrapOption';
 import { ReviewsSection } from '@/components/reviews/ReviewsSection';
-import { TrustBadges } from '@/components/conversion/TrustBadges';
 
-// Import the products from lib
-import { shopProducts } from '@/lib/products';
+// Import the products hook
+import { useProducts } from '@/hooks/useProducts';
 
 interface Product {
   id: string;
@@ -49,34 +48,14 @@ const ProductDetail = () => {
   const { favourites, addToFavourites, removeFromFavourites } = useFavourites();
   const { toast } = useToast();
   const { customization, isValid, reset } = useProductCustomizer();
+  const { getProductBySlug, loading: productsLoading } = useProducts();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [includeGiftWrap, setIncludeGiftWrap] = useState(false);
   const [quantity] = useState(1);
 
-  useEffect(() => {
-    const fetchProduct = () => {
-      if (!slug) {
-        setLoading(false);
-        return;
-      }
-      
-      // Find product by slug in our static products
-      const foundProduct = shopProducts.find(p => p.slug === slug);
-      
-      if (foundProduct) {
-        setProduct(foundProduct);
-      } else {
-        setProduct(null);
-      }
-      
-      setLoading(false);
-    };
-
-    fetchProduct();
-  }, [slug]);
+  const product = slug ? getProductBySlug(slug) : null;
+  const loading = productsLoading;
 
   const isFavourite = product ? favourites.includes(product.id) : false;
 
@@ -341,7 +320,6 @@ const ProductDetail = () => {
             </motion.div>
 
             {/* Trust Badges */}
-            <TrustBadges />
           </div>
         </div>
 

@@ -21,13 +21,10 @@ export const Header = () => {
   const navigate = useNavigate();
   const { items } = useCart();
   const { favourites } = useFavourites();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
   const { toast } = useToast();
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-
-  // Check if current user is admin
-  const isAdmin = user && (user.email === 'zak.seid@gmail.com' || user.email === 'zakseid0@gmail.com');
 
   const handleSignOut = async () => {
     try {

@@ -3,23 +3,23 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { createOrder, type OrderData } from '@/lib/orderService';
+
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  customization?: {
+    name?: string;
+    font?: string;
+    color?: string;
+    chain?: string;
+  };
+}
 
 interface RazorpayPaymentProps {
-  orderData: {
-    items: any[];
-    customerInfo: {
-      firstName: string;
-      lastName: string;
-      email: string;
-      street: string;
-      city: string;
-      state: string;
-      zip: string;
-      country: string;
-    };
-    total: number;
-    shippingCost: number;
-  };
+  orderData: OrderData;
   onSuccess: (orderId: string) => void;
   onError: (error: string) => void;
 }
@@ -46,12 +46,25 @@ export const RazorpayPayment = ({ orderData, onSuccess, onError }: RazorpayPayme
         });
       }
 
-      // Create order in Supabase first
+      // Create order in Supabase first using our order service
+      const orderResult = await createOrder({
+        ...orderData,
+        subtotal: orderData.total - (orderData.shippingCost || 0)
+      });
+
+      if (!orderResult.success) {
+        throw new Error(orderResult.error || 'Failed to create order');
+      }
+
+      const orderId = orderResult.orderId!;
+
+      // For Razorpay integration, we'll use the existing create-order function as fallback
       const { data, error } = await supabase.functions.invoke('create-order', {
         body: {
+          orderId: orderId, // Pass our Supabase order ID
           items: orderData.items.map(item => ({
             ...item,
-            customText: item.customText,
+            customText: item.customization?.name || item.customText,
             color: item.color,
             font: item.font,
             chain: item.chain,
@@ -64,7 +77,7 @@ export const RazorpayPayment = ({ orderData, onSuccess, onError }: RazorpayPayme
 
       if (error) throw error;
 
-      const { orderId, razorpayOrderId } = data;
+      const razorpayOrderId = data?.razorpayOrderId || `order_${orderId}`;
 
       // Convert USD to INR for Razorpay (approximate rate: 1 USD = 83 INR)
       const usdToInrRate = 83;
@@ -85,7 +98,11 @@ export const RazorpayPayment = ({ orderData, onSuccess, onError }: RazorpayPayme
         theme: {
           color: '#C4A07A',
         },
-        handler: async function (response: any) {
+        handler: async function (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) {
           try {
             // Verify payment
             const { error: verifyError } = await supabase.functions.invoke('verify-payment', {
@@ -124,12 +141,13 @@ export const RazorpayPayment = ({ orderData, onSuccess, onError }: RazorpayPayme
 
       const rzp = new window.Razorpay(options);
       rzp.open();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Payment error:', error);
-      onError(error.message || 'Payment failed');
+      const errorMessage = error instanceof Error ? error.message : 'Payment failed';
+      onError(errorMessage);
       toast({
         title: 'Payment Error',
-        description: error.message || 'Failed to process payment',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -150,8 +168,36 @@ export const RazorpayPayment = ({ orderData, onSuccess, onError }: RazorpayPayme
 };
 
 // Add Razorpay types to window object
+interface RazorpayOptions {
+  key: string;
+  order_id: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  prefill: {
+    name: string;
+    email: string;
+  };
+  theme: {
+    color: string;
+  };
+  handler: (response: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  }) => void;
+  modal: {
+    ondismiss: () => void;
+  };
+}
+
+interface RazorpayInstance {
+  open: () => void;
+}
+
 declare global {
   interface Window {
-    Razorpay: any;
+    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
   }
 }
