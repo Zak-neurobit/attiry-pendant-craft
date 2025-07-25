@@ -33,7 +33,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   };
 
   return (
-    <Link to={`/product/${product.id}`}>
+    <Link to={`/product/${product.slug}`}>
       <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 h-full">
         <div className="relative overflow-hidden">
           <img
@@ -124,5 +124,4 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   );
 };
 
-// Default export for compatibility
 export default ProductCard;

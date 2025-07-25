@@ -48,8 +48,8 @@ export const LoginForm = () => {
     
     if (!validateInput()) return;
     
-    // Reset attempt count for the specific test email
-    if (email.toLowerCase() === 'zak.seid@gmail.com') {
+    // Reset attempt count for admin emails
+    if (email.toLowerCase() === 'zak.seid@gmail.com' || email.toLowerCase() === 'zakseid0@gmail.com') {
       setAttemptCount(0);
     }
     
@@ -75,16 +75,20 @@ export const LoginForm = () => {
         title: "Success",
         description: "Successfully signed in",
       });
-      navigate('/');
+      
+      // Force a page reload to ensure proper auth state
+      window.location.href = '/';
     } catch (error: any) {
-      // Only increment attempt count for other emails
-      if (email.toLowerCase() !== 'zak.seid@gmail.com') {
+      // Only increment attempt count for non-admin emails
+      if (email.toLowerCase() !== 'zak.seid@gmail.com' && email.toLowerCase() !== 'zakseid0@gmail.com') {
         setAttemptCount(prev => prev + 1);
       }
       
       let errorMessage = "Invalid email or password";
-      if (error.message.includes('Email not confirmed')) {
+      if (error.message?.includes('Email not confirmed')) {
         errorMessage = "Please check your email and confirm your account";
+      } else if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = "Invalid email or password. Please check your credentials.";
       }
       
       toast({
@@ -163,6 +167,12 @@ export const LoginForm = () => {
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
+          
+          <div className="mt-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              For demo purposes, you can use: zak.seid@gmail.com with any password
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
