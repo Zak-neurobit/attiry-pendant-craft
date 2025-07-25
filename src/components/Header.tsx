@@ -1,184 +1,205 @@
 
-import { useState, useEffect } from 'react';
-import { Heart, Search, ShoppingBag, User, Menu, X, Shield } from 'lucide-react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Search, User, Heart, Menu, LogOut, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 import { useCart } from '@/stores/cart';
+import { useFavourites } from '@/stores/favourites';
 import { useAuth } from '@/stores/auth';
-import { SearchModal } from '@/components/SearchModal';
+import { useToast } from '@/hooks/use-toast';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
-const Header = () => {
-  const { getTotalItems, openCart } = useCart();
-  const { user, isAdmin } = useAuth();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+export const Header = () => {
   const navigate = useNavigate();
+  const { items } = useCart();
+  const { favourites } = useFavourites();
+  const { user, isAdmin, signOut } = useAuth();
+  const { toast } = useToast();
 
-  // Keyboard shortcut for search
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsSearchOpen(true);
-      }
-    };
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const handleProfileClick = () => {
-    if (user) {
-      navigate('/account');
-    } else {
-      navigate('/auth');
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out successfully",
+        description: "You have been logged out of your account.",
+      });
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: "Error signing out",
+        description: "Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
+  const Navigation = ({ mobile = false }) => (
+    <nav className={`${mobile ? 'flex flex-col space-y-4' : 'hidden md:flex space-x-8'}`}>
+      <Link 
+        to="/" 
+        className="text-foreground hover:text-accent transition-colors"
+      >
+        Home
+      </Link>
+      <Link 
+        to="/shop" 
+        className="text-foreground hover:text-accent transition-colors"
+      >
+        Shop
+      </Link>
+      <Link 
+        to="/about" 
+        className="text-foreground hover:text-accent transition-colors"
+      >
+        About
+      </Link>
+      <Link 
+        to="/faq" 
+        className="text-foreground hover:text-accent transition-colors"
+      >
+        FAQ
+      </Link>
+    </nav>
+  );
+
   return (
-    <header className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        {/* Top bar */}
-        <div className="text-center py-2 text-sm text-muted-foreground border-b border-border/50">
-          🎉 BIRTHDAY SALE! Flat 25% Off On ALL PRODUCTS! Use code: BIRTHDAY25
-        </div>
-        
-        {/* Main header */}
-        <div className="flex items-center justify-between py-4">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
-            <div className="flex flex-col">
-              <div className="text-4xl font-great-vibes text-foreground leading-none">
-                Attiry
-              </div>
-              <div className="hidden sm:block text-xs text-muted-foreground uppercase tracking-widest">
-                Custom Pendants
-              </div>
-            </div>
-          </Link>
+    <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        {/* Logo */}
+        <Link to="/" className="flex items-center space-x-2">
+          <img 
+            src="/src/assets/attiry-logo.png" 
+            alt="Attiry" 
+            className="h-8 w-auto"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              const fallback = target.parentElement?.querySelector('.fallback-logo');
+              if (fallback) (fallback as HTMLElement).style.display = 'block';
+            }}
+          />
+          <span className="fallback-logo text-2xl font-bold text-accent hidden">
+            Attiry
+          </span>
+        </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-foreground hover:text-accent transition-colors">
-              Home
-            </Link>
-            <Link to="/shop" className="text-foreground hover:text-accent transition-colors">
-              Shop
-            </Link>
-            <Link to="/about" className="text-foreground hover:text-accent transition-colors">
-              About
-            </Link>
-            {isAdmin && (
-              <Link to="/admin" className="text-foreground hover:text-accent transition-colors flex items-center space-x-1">
-                <Shield className="h-4 w-4" />
-                <span>Admin</span>
-              </Link>
-            )}
-          </nav>
+        {/* Desktop Navigation */}
+        <Navigation />
 
-          {/* Actions */}
-          <div className="flex items-center space-x-4">
-            <button 
-              className="p-2 hover:bg-muted rounded-lg transition-colors hidden sm:block"
-              onClick={() => setIsSearchOpen(true)}
-              aria-label="Search products"
-            >
-              <Search className="h-5 w-5" />
-            </button>
-            <Link 
-              to="/favourites" 
-              className="p-2 hover:bg-muted rounded-lg transition-colors hidden sm:block"
-              aria-label="View favourites"
-            >
+        {/* Right Actions */}
+        <div className="flex items-center space-x-4">
+          {/* Search */}
+          <Button variant="ghost" size="icon">
+            <Search className="h-5 w-5" />
+          </Button>
+
+          {/* Favourites */}
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/favourites" className="relative">
               <Heart className="h-5 w-5" />
+              {favourites.length > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {favourites.length}
+                </Badge>
+              )}
             </Link>
-            <button 
-              className="p-2 hover:bg-muted rounded-lg transition-colors relative"
-              onClick={openCart}
-            >
-              <ShoppingBag className="h-5 w-5" />
-              {getTotalItems() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {getTotalItems()}
-                </span>
-              )}
-            </button>
-            <button 
-              onClick={handleProfileClick}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-              aria-label={user ? "Go to account" : "Sign in"}
-            >
-              <User className="h-5 w-5" />
-            </button>
-            
-            {/* Mobile menu toggle */}
-            <button 
-              className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
-          </div>
-        </div>
+          </Button>
 
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border">
-            <nav className="flex flex-col space-y-4">
-              <Link 
-                to="/" 
-                className="text-foreground hover:text-accent transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link 
-                to="/shop" 
-                className="text-foreground hover:text-accent transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Shop
-              </Link>
-              <Link 
-                to="/about" 
-                className="text-foreground hover:text-accent transition-colors py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                About
-              </Link>
-              {isAdmin && (
-                <Link 
-                  to="/admin" 
-                  className="text-foreground hover:text-accent transition-colors py-2 flex items-center space-x-2"
-                  onClick={() => setIsMenuOpen(false)}
+          {/* Cart */}
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/cart" className="relative">
+              <ShoppingCart className="h-5 w-5" />
+              {totalItems > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
                 >
-                  <Shield className="h-4 w-4" />
-                  <span>Admin</span>
-                </Link>
+                  {totalItems}
+                </Badge>
               )}
-              <div className="flex items-center space-x-4 pt-4">
-                <button 
-                  className="p-2 hover:bg-muted rounded-lg transition-colors"
-                  onClick={() => setIsSearchOpen(true)}
-                  aria-label="Search products"
-                >
-                  <Search className="h-5 w-5" />
-                </button>
-                <Link 
-                  to="/favourites" 
-                  className="p-2 hover:bg-muted rounded-lg transition-colors"
-                  aria-label="View favourites"
-                >
-                  <Heart className="h-5 w-5" />
-                </Link>
+            </Link>
+          </Button>
+
+          {/* User Menu */}
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium text-sm">{user.email}</p>
+                    {isAdmin && (
+                      <p className="text-xs text-muted-foreground">Administrator</p>
+                    )}
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/account" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    My Account
+                  </Link>
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Admin Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button asChild>
+              <Link to="/login">Sign In</Link>
+            </Button>
+          )}
+
+          {/* Mobile Menu */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-80">
+              <div className="flex flex-col space-y-6 mt-6">
+                <Navigation mobile />
+                {!user && (
+                  <div className="flex flex-col space-y-2">
+                    <Button asChild>
+                      <Link to="/login">Sign In</Link>
+                    </Button>
+                  </div>
+                )}
               </div>
-            </nav>
-          </div>
-        )}
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
-      {/* Search Modal */}
-      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </header>
   );
 };
-
-export default Header;

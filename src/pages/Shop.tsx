@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ProductCard } from '@/components/ProductCard';
 import { Product } from '@/lib/products';
+import { useAuth } from '@/stores/auth';
 
 interface SupabaseProduct {
   id: string;
@@ -41,15 +42,21 @@ export const Shop = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    // Wait for auth to initialize before fetching products
+    if (!authLoading) {
+      fetchProducts();
+    }
+  }, [authLoading]);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
       setError(null);
+      
+      console.log('Fetching products, user:', user?.email || 'not logged in');
       
       const { data, error } = await supabase
         .from('products')
@@ -59,18 +66,19 @@ export const Shop = () => {
 
       if (error) {
         console.error('Supabase error:', error);
-        setError(error.message);
-        return;
+        throw error;
       }
 
-      console.log('Fetched products:', data);
+      console.log('Fetched products successfully:', data?.length || 0);
       setProducts(data || []);
     } catch (error: any) {
       console.error('Fetch error:', error);
       setError(error.message || 'Failed to fetch products');
+      
+      // Show user-friendly error message
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to fetch products',
+        title: 'Error Loading Products',
+        description: 'Please try refreshing the page. If the problem persists, contact support.',
         variant: 'destructive',
       });
     } finally {
@@ -84,7 +92,7 @@ export const Shop = () => {
 
     return {
       id: supabaseProduct.id,
-      slug: supabaseProduct.id, // Use ID as slug for simpler routing
+      slug: supabaseProduct.id,
       name: supabaseProduct.title,
       price: salePrice,
       originalPrice: originalPrice > salePrice ? originalPrice : undefined,
@@ -97,6 +105,20 @@ export const Shop = () => {
       category: 'custom'
     };
   };
+
+  // Show loading while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Initializing...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -163,6 +185,16 @@ export const Shop = () => {
           <div className="text-center py-12">
             <h2 className="text-xl font-semibold mb-2">No products found</h2>
             <p className="text-muted-foreground">Check back soon for new pendant designs!</p>
+          </div>
+        )}
+
+        {/* Debug info for development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-8 p-4 bg-muted rounded-lg text-sm">
+            <p>Debug Info:</p>
+            <p>User: {user?.email || 'Not logged in'}</p>
+            <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
+            <p>Products Count: {products.length}</p>
           </div>
         )}
       </div>
