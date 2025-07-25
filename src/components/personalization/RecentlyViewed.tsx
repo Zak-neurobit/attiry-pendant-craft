@@ -9,8 +9,14 @@ interface SupabaseProduct {
   id: string;
   title: string;
   price: number;
+  compare_price: number;
   image_urls: string[];
   color_variants: string[];
+  slug: string;
+  description: string;
+  rating: number;
+  review_count: number;
+  created_at: string;
 }
 
 export const RecentlyViewed: React.FC = () => {
@@ -38,7 +44,7 @@ export const RecentlyViewed: React.FC = () => {
       if (behavior?.viewed_products && behavior.viewed_products.length > 0) {
         const { data: products } = await supabase
           .from('products')
-          .select('id, title, price, image_urls, color_variants')
+          .select('*')
           .in('id', behavior.viewed_products.slice(0, 12))
           .eq('is_active', true);
 
@@ -60,15 +66,17 @@ export const RecentlyViewed: React.FC = () => {
 
   const convertToProduct = (supabaseProduct: SupabaseProduct): Product => ({
     id: supabaseProduct.id,
-    slug: `product-${supabaseProduct.id}`,
+    slug: supabaseProduct.slug || `product-${supabaseProduct.id}`,
     name: supabaseProduct.title,
     price: supabaseProduct.price,
-    description: '',
+    originalPrice: supabaseProduct.compare_price > 0 ? supabaseProduct.compare_price : undefined,
+    description: supabaseProduct.description || '',
     images: supabaseProduct.image_urls || ['/placeholder.svg'],
-    rating: 5,
-    reviewCount: Math.floor(Math.random() * 200) + 50,
+    rating: supabaseProduct.rating || 5,
+    reviewCount: supabaseProduct.review_count || 0,
     colors: supabaseProduct.color_variants || ['gold', 'rose-gold', 'silver'],
-    category: 'custom'
+    category: 'custom',
+    isNew: new Date(supabaseProduct.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   });
 
   if (!user || loading || products.length === 0) {

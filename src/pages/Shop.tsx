@@ -1,225 +1,196 @@
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Search, Filter, SortAsc } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProductCard } from '@/components/ProductCard';
+import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
 import { Product } from '@/lib/products';
 
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-// 12 custom name pendant products
-const shopProducts: Product[] = [
-  {
-    id: '1',
-    slug: 'classic-gold-nameplate',
-    name: 'Classic Gold Nameplate',
-    price: 79.99,
-    originalPrice: 99.99,
-    description: 'Elegant 18k gold-plated nameplate pendant with classic script engraving.',
-    images: ['/src/assets/product-gold.jpg'],
-    rating: 5,
-    reviewCount: 124,
-    isNew: true,
-    colors: ['gold', 'rose-gold', 'silver'],
-    category: 'gold'
-  },
-  {
-    id: '2',
-    slug: 'rose-gold-script-pendant',
-    name: 'Rose Gold Script Pendant',
-    price: 74.99,
-    originalPrice: 94.99,
-    description: 'Beautiful rose gold pendant featuring elegant script lettering.',
-    images: ['/src/assets/product-rose-gold.jpg'],
-    rating: 5,
-    reviewCount: 89,
-    colors: ['rose-gold', 'gold', 'silver'],
-    category: 'rose-gold'
-  },
-  {
-    id: '3',
-    slug: 'sterling-silver-nameplate',
-    name: 'Sterling Silver Nameplate',
-    price: 69.99,
-    originalPrice: 89.99,
-    description: 'Premium sterling silver nameplate with precision engraving.',
-    images: ['/src/assets/product-gold.jpg'],
-    rating: 5,
-    reviewCount: 156,
-    colors: ['silver', 'gold', 'rose-gold'],
-    category: 'silver'
-  },
-  {
-    id: '4',
-    slug: 'custom-cursive-pendant',
-    name: 'Custom Cursive Pendant',
-    price: 84.99,
-    originalPrice: 104.99,
-    description: 'Handcrafted cursive name pendant in your choice of metal finish.',
-    images: ['/src/assets/product-rose-gold.jpg'],
-    rating: 5,
-    reviewCount: 67,
-    isNew: true,
-    colors: ['gold', 'silver', 'rose-gold'],
-    category: 'custom'
-  },
-  {
-    id: '5',
-    slug: 'deluxe-gold-pendant',
-    name: 'Deluxe Gold Pendant',
-    price: 89.99,
-    originalPrice: 119.99,
-    description: 'Premium gold-plated pendant with diamond-cut edges.',
-    images: ['/src/assets/product-gold.jpg'],
-    rating: 5,
-    reviewCount: 203,
-    colors: ['gold', 'rose-gold'],
-    category: 'gold'
-  },
-  {
-    id: '6',
-    slug: 'minimalist-bar-pendant',
-    name: 'Minimalist Bar Pendant',
-    price: 64.99,
-    originalPrice: 84.99,
-    description: 'Sleek and modern bar-style name pendant in multiple finishes.',
-    images: ['/src/assets/product-rose-gold.jpg'],
-    rating: 5,
-    reviewCount: 98,
-    colors: ['silver', 'gold', 'rose-gold'],
-    category: 'minimalist'
-  },
-  {
-    id: '7',
-    slug: 'vintage-ornate-pendant',
-    name: 'Vintage Ornate Pendant',
-    price: 94.99,
-    originalPrice: 124.99,
-    description: 'Vintage-inspired pendant with ornate decorative borders.',
-    images: ['/src/assets/product-gold.jpg'],
-    rating: 5,
-    reviewCount: 142,
-    isNew: true,
-    colors: ['gold', 'silver', 'copper'],
-    category: 'vintage'
-  },
-  {
-    id: '8',
-    slug: 'heart-shaped-nameplate',
-    name: 'Heart-Shaped Nameplate',
-    price: 72.99,
-    originalPrice: 92.99,
-    description: 'Romantic heart-shaped pendant perfect for gifts.',
-    images: ['/src/assets/product-rose-gold.jpg'],
-    rating: 5,
-    reviewCount: 178,
-    colors: ['rose-gold', 'gold', 'silver'],
-    category: 'heart'
-  },
-  {
-    id: '9',
-    slug: 'infinity-name-pendant',
-    name: 'Infinity Name Pendant',
-    price: 79.99,
-    originalPrice: 99.99,
-    description: 'Elegant infinity symbol combined with custom name engraving.',
-    images: ['/src/assets/product-gold.jpg'],
-    rating: 5,
-    reviewCount: 134,
-    colors: ['gold', 'silver', 'rose-gold'],
-    category: 'infinity'
-  },
-  {
-    id: '10',
-    slug: 'double-layer-pendant',
-    name: 'Double Layer Pendant',
-    price: 104.99,
-    originalPrice: 134.99,
-    description: 'Sophisticated double-layer design with contrasting metals.',
-    images: ['/src/assets/product-rose-gold.jpg'],
-    rating: 5,
-    reviewCount: 87,
-    isNew: true,
-    colors: ['gold', 'silver'],
-    category: 'layered'
-  },
-  {
-    id: '11',
-    slug: 'birthstone-nameplate',
-    name: 'Birthstone Nameplate',
-    price: 99.99,
-    originalPrice: 129.99,
-    description: 'Personalized nameplate with genuine birthstone accent.',
-    images: ['/src/assets/product-gold.jpg'],
-    rating: 5,
-    reviewCount: 156,
-    colors: ['gold', 'rose-gold', 'silver'],
-    category: 'birthstone'
-  },
-  {
-    id: '12',
-    slug: 'family-tree-pendant',
-    name: 'Family Tree Pendant',
-    price: 114.99,
-    originalPrice: 149.99,
-    description: 'Beautiful family tree design with custom name engravings.',
-    images: ['/src/assets/product-rose-gold.jpg'],
-    rating: 5,
-    reviewCount: 92,
-    isNew: true,
-    colors: ['gold', 'silver', 'rose-gold'],
-    category: 'family'
-  }
-];
-
 export const Shop = () => {
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold font-heading text-foreground mb-4">
-            Custom Name Pendants
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Personalize your style with our handcrafted name pendants. Choose from elegant designs
-            in premium finishes, each piece uniquely yours.
-          </p>
+  const { products, loading, error } = useSupabaseProducts();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+
+  // Convert Supabase product to Product interface
+  const convertToProduct = (supabaseProduct: any): Product => ({
+    id: supabaseProduct.id,
+    slug: supabaseProduct.slug || `product-${supabaseProduct.id}`,
+    name: supabaseProduct.title,
+    price: supabaseProduct.price,
+    originalPrice: supabaseProduct.compare_price > 0 ? supabaseProduct.compare_price : undefined,
+    description: supabaseProduct.description || '',
+    images: supabaseProduct.image_urls || ['/placeholder.svg'],
+    rating: supabaseProduct.rating || 5,
+    reviewCount: supabaseProduct.review_count || 0,
+    colors: supabaseProduct.color_variants || ['gold', 'rose-gold', 'silver'],
+    category: supabaseProduct.category || 'custom',
+    isNew: new Date(supabaseProduct.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  });
+
+  useEffect(() => {
+    if (products) {
+      let filtered = products.map(convertToProduct);
+
+      // Filter by search query
+      if (searchQuery) {
+        filtered = filtered.filter(product =>
+          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+
+      // Sort products
+      switch (sortBy) {
+        case 'price-low':
+          filtered.sort((a, b) => a.price - b.price);
+          break;
+        case 'price-high':
+          filtered.sort((a, b) => b.price - a.price);
+          break;
+        case 'rating':
+          filtered.sort((a, b) => b.rating - a.rating);
+          break;
+        case 'newest':
+        default:
+          // Already sorted by created_at desc from the query
+          break;
+      }
+
+      setFilteredProducts(filtered);
+    }
+  }, [products, searchQuery, sortBy]);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+      },
+    },
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading products...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg text-red-600 mb-4">Error loading products</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen py-12">
+      <div className="max-w-7xl mx-auto px-6">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">
+            Our Collection
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Discover our beautiful collection of personalized jewelry pieces
+          </p>
+        </motion.div>
+
+        {/* Filters */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8 flex flex-col md:flex-row gap-4 items-center justify-between"
+        >
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="flex gap-2">
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-40">
+                <SortAsc className="h-4 w-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="price-low">Price: Low to High</SelectItem>
+                <SelectItem value="price-high">Price: High to Low</SelectItem>
+                <SelectItem value="rating">Highest Rated</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </motion.div>
 
         {/* Products Grid */}
         <motion.div
-          variants={container}
+          variants={containerVariants}
           initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+          animate="visible"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
         >
-          {shopProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-            />
-          ))}
+          {filteredProducts.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-lg text-muted-foreground">No products found</p>
+            </div>
+          ) : (
+            filteredProducts.map((product) => (
+              <motion.div key={product.id} variants={itemVariants}>
+                <ProductCard product={product} />
+              </motion.div>
+            ))
+          )}
         </motion.div>
 
         {/* Call to Action */}
-        <div className="text-center mt-16 py-12 bg-gradient-to-r from-background to-secondary rounded-2xl">
-          <h2 className="text-3xl font-heading text-foreground mb-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="mt-20 text-center bg-card rounded-lg p-8 shadow-soft"
+        >
+          <h2 className="text-2xl font-serif font-bold mb-4">
             Can't Find What You're Looking For?
           </h2>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            Let us create something special just for you. Our custom design service brings your vision to life.
+          <p className="text-muted-foreground mb-6">
+            Let us create a custom piece just for you. Our skilled artisans can bring your vision to life.
           </p>
-          <button className="btn-cta">
+          <Button size="lg" className="bg-accent hover:bg-accent/90">
             Request Custom Design
-          </button>
-        </div>
+          </Button>
+        </motion.div>
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
   const toggleFavourite = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (isFavourite) {
       removeFromFavourites(product.id);
     } else {
