@@ -13,7 +13,6 @@ import { useFavourites } from '@/stores/favourites';
 import { useToast } from '@/hooks/use-toast';
 import { SEOHead } from '@/components/SEOHead';
 import { useProductCustomizer } from '@/stores/productCustomizer';
-import { useProducts, SupabaseProduct } from '@/hooks/useProducts';
 
 // Components
 import NameInput from '@/components/product/NameInput';
@@ -25,6 +24,24 @@ import { GiftWrapOption } from '@/components/product/GiftWrapOption';
 import { ReviewsSection } from '@/components/reviews/ReviewsSection';
 import { TrustBadges } from '@/components/conversion/TrustBadges';
 
+// Import the products from lib
+import { shopProducts } from '@/lib/products';
+
+interface Product {
+  id: string;
+  slug: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  description: string;
+  images: string[];
+  rating: number;
+  reviewCount: number;
+  isNew?: boolean;
+  colors: string[];
+  category: string;
+}
+
 const ProductDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -32,34 +49,34 @@ const ProductDetail = () => {
   const { favourites, addToFavourites, removeFromFavourites } = useFavourites();
   const { toast } = useToast();
   const { customization, isValid, reset } = useProductCustomizer();
-  const { getProductBySlug } = useProducts();
 
-  const [product, setProduct] = useState<SupabaseProduct | null>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [includeGiftWrap, setIncludeGiftWrap] = useState(false);
   const [quantity] = useState(1);
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProduct = () => {
       if (!slug) {
         setLoading(false);
         return;
       }
       
-      try {
-        const fetchedProduct = await getProductBySlug(slug);
-        setProduct(fetchedProduct);
-      } catch (error) {
-        console.error('Error fetching product:', error);
+      // Find product by slug in our static products
+      const foundProduct = shopProducts.find(p => p.slug === slug);
+      
+      if (foundProduct) {
+        setProduct(foundProduct);
+      } else {
         setProduct(null);
-      } finally {
-        setLoading(false);
       }
+      
+      setLoading(false);
     };
 
     fetchProduct();
-  }, [slug, getProductBySlug]);
+  }, [slug]);
 
   const isFavourite = product ? favourites.includes(product.id) : false;
 
@@ -77,20 +94,20 @@ const ProductDetail = () => {
 
     addItem({
       productId: product.id,
-      title: product.title,
+      title: product.name,
       price: finalPrice,
-      originalPrice: product.compare_price || product.price,
+      originalPrice: product.originalPrice || product.price,
       color: customization.color,
       font: customization.font,
       chain: customization.chain,
       customText: customization.nameText,
       quantity,
-      image: product.image_urls?.[0] || '/placeholder.svg',
+      image: product.images[0],
     });
 
     toast({
       title: "Added to Cart",
-      description: `${product.title} with "${customization.nameText}" has been added to your cart`,
+      description: `${product.name} with "${customization.nameText}" has been added to your cart`,
     });
   };
 
@@ -101,13 +118,13 @@ const ProductDetail = () => {
       removeFromFavourites(product.id);
       toast({
         title: "Removed from Favourites",
-        description: `${product.title} removed from your favourites`,
+        description: `${product.name} removed from your favourites`,
       });
     } else {
       addToFavourites(product.id);
       toast({
         title: "Added to Favourites",
-        description: `${product.title} added to your favourites`,
+        description: `${product.name} added to your favourites`,
       });
     }
   };
@@ -158,21 +175,19 @@ const ProductDetail = () => {
     }).format(price);
   };
 
-  const salePrice = product.compare_price && product.compare_price > product.price 
+  const salePrice = product.originalPrice && product.originalPrice > product.price 
     ? product.price 
     : undefined;
-  const originalPrice = product.compare_price && product.compare_price > product.price 
-    ? product.compare_price 
+  const originalPrice = product.originalPrice && product.originalPrice > product.price 
+    ? product.originalPrice 
     : product.price;
-
-  const images = product.image_urls || ['/placeholder.svg'];
 
   return (
     <div className="min-h-screen bg-background">
       <SEOHead
-        title={product.title}
-        description={product.description || `Custom ${product.title} - Personalized name pendant`}
-        image={images[0]}
+        title={product.name}
+        description={product.description || `Custom ${product.name} - Personalized name pendant`}
+        image={product.images[0]}
         url={`/product/${product.slug}`}
         type="product"
       />
@@ -196,15 +211,15 @@ const ProductDetail = () => {
           <div className="space-y-4">
             <div className="aspect-square overflow-hidden rounded-lg border">
               <img
-                src={images[selectedImage] || '/placeholder.svg'}
-                alt={product.title}
+                src={product.images[selectedImage] || '/placeholder.svg'}
+                alt={product.name}
                 className="w-full h-full object-cover"
               />
             </div>
 
-            {images.length > 1 && (
+            {product.images.length > 1 && (
               <div className="flex gap-2 overflow-x-auto">
-                {images.map((image, index) => (
+                {product.images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
@@ -214,7 +229,7 @@ const ProductDetail = () => {
                   >
                     <img
                       src={image}
-                      alt={`${product.title} ${index + 1}`}
+                      alt={`${product.name} ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
                   </button>
@@ -228,11 +243,11 @@ const ProductDetail = () => {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Badge className="bg-accent text-accent-foreground">Custom Made</Badge>
-                {product.is_new && (
+                {product.isNew && (
                   <Badge variant="secondary">New</Badge>
                 )}
               </div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">{product.title}</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-2">{product.name}</h1>
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center gap-2">
                   <div className="flex items-center">
@@ -240,7 +255,7 @@ const ProductDetail = () => {
                       <Star
                         key={i}
                         className={`h-4 w-4 ${
-                          i < (product.rating || 5)
+                          i < product.rating
                             ? 'fill-yellow-400 text-yellow-400'
                             : 'text-muted-foreground'
                         }`}
@@ -248,7 +263,7 @@ const ProductDetail = () => {
                     ))}
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    ({product.review_count || 0} reviews)
+                    ({product.reviewCount} reviews)
                   </span>
                 </div>
               </div>
@@ -276,9 +291,7 @@ const ProductDetail = () => {
                   />
                 </Button>
               </div>
-              <p className="text-muted-foreground">
-                {product.description || 'Beautiful custom name pendant crafted with precision and care.'}
-              </p>
+              <p className="text-muted-foreground">{product.description}</p>
             </div>
 
             <Separator />

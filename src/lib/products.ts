@@ -1,20 +1,21 @@
 
-import { motion } from 'framer-motion';
-import { ProductCard } from '@/components/ProductCard';
-import { Product } from '@/lib/products';
-
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
+export interface Product {
+  id: string;
+  slug: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  description: string;
+  images: string[];
+  rating: number;
+  reviewCount: number;
+  isNew?: boolean;
+  colors: string[];
+  category: string;
+}
 
 // 12 custom name pendant products
-const shopProducts: Product[] = [
+export const shopProducts: Product[] = [
   {
     id: '1',
     slug: 'classic-gold-nameplate',
@@ -178,49 +179,12 @@ const shopProducts: Product[] = [
   }
 ];
 
-export const Shop = () => {
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold font-heading text-foreground mb-4">
-            Custom Name Pendants
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Personalize your style with our handcrafted name pendants. Choose from elegant designs
-            in premium finishes, each piece uniquely yours.
-          </p>
-        </div>
+// Export individual product by slug for easier access
+export const getProductBySlug = (slug: string): Product | undefined => {
+  return shopProducts.find(product => product.slug === slug);
+};
 
-        {/* Products Grid */}
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-        >
-          {shopProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-            />
-          ))}
-        </motion.div>
-
-        {/* Call to Action */}
-        <div className="text-center mt-16 py-12 bg-gradient-to-r from-background to-secondary rounded-2xl">
-          <h2 className="text-3xl font-heading text-foreground mb-4">
-            Can't Find What You're Looking For?
-          </h2>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            Let us create something special just for you. Our custom design service brings your vision to life.
-          </p>
-          <button className="btn-cta">
-            Request Custom Design
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+// Export product by ID for easier access
+export const getProductById = (id: string): Product | undefined => {
+  return shopProducts.find(product => product.id === id);
 };

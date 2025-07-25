@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_tests: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          end_at: string | null
+          id: string
+          is_active: boolean | null
+          results: Json | null
+          start_at: string
+          test_id: string
+          variant: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          end_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          results?: Json | null
+          start_at: string
+          test_id: string
+          variant: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          end_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          results?: Json | null
+          start_at?: string
+          test_id?: string
+          variant?: string
+        }
+        Relationships: []
+      }
       addresses: {
         Row: {
           city: string
@@ -351,6 +387,41 @@ export type Database = {
           },
         ]
       }
+      gift_messages: {
+        Row: {
+          created_at: string | null
+          delivery_date: string | null
+          gift_wrap: boolean | null
+          id: string
+          message: string | null
+          order_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_date?: string | null
+          gift_wrap?: boolean | null
+          id?: string
+          message?: string | null
+          order_id: string
+        }
+        Update: {
+          created_at?: string | null
+          delivery_date?: string | null
+          gift_wrap?: boolean | null
+          id?: string
+          message?: string | null
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_points: {
         Row: {
           id: string
@@ -486,7 +557,6 @@ export type Database = {
       }
       products: {
         Row: {
-          category: string | null
           chain_types: string[] | null
           cogs: number | null
           color_variants: Database["public"]["Enums"]["color_variant"][] | null
@@ -497,22 +567,17 @@ export type Database = {
           id: string
           image_urls: string[] | null
           is_active: boolean
-          is_new: boolean | null
           keywords: string[] | null
           meta_description: string | null
           meta_title: string | null
           price: number
-          rating: number | null
-          review_count: number | null
           sku: string | null
-          slug: string | null
           stock: number
           tags: string[] | null
           title: string
           updated_at: string
         }
         Insert: {
-          category?: string | null
           chain_types?: string[] | null
           cogs?: number | null
           color_variants?: Database["public"]["Enums"]["color_variant"][] | null
@@ -523,22 +588,17 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           is_active?: boolean
-          is_new?: boolean | null
           keywords?: string[] | null
           meta_description?: string | null
           meta_title?: string | null
           price: number
-          rating?: number | null
-          review_count?: number | null
           sku?: string | null
-          slug?: string | null
           stock?: number
           tags?: string[] | null
           title: string
           updated_at?: string
         }
         Update: {
-          category?: string | null
           chain_types?: string[] | null
           cogs?: number | null
           color_variants?: Database["public"]["Enums"]["color_variant"][] | null
@@ -549,15 +609,11 @@ export type Database = {
           id?: string
           image_urls?: string[] | null
           is_active?: boolean
-          is_new?: boolean | null
           keywords?: string[] | null
           meta_description?: string | null
           meta_title?: string | null
           price?: number
-          rating?: number | null
-          review_count?: number | null
           sku?: string | null
-          slug?: string | null
           stock?: number
           tags?: string[] | null
           title?: string
