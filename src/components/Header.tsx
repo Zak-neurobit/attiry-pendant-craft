@@ -1,198 +1,248 @@
 
-import React from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, User, Heart, Menu, LogOut } from 'lucide-react';
+import { ShoppingBag, Search, User, Heart, Menu, X, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
 import { useCart } from '@/stores/cart';
 import { useFavourites } from '@/stores/favourites';
 import { useAuth } from '@/stores/auth';
-import { useToast } from '@/hooks/use-toast';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useUserRole } from '@/hooks/useUserRole';
+import { SearchModal } from '@/components/SearchModal';
+import { CartDrawer } from '@/components/CartDrawer';
 
 export const Header = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const navigate = useNavigate();
+  
   const { items } = useCart();
   const { favourites } = useFavourites();
-  const { user, signOut } = useAuth();
-  const { toast } = useToast();
-
+  const { user } = useAuth();
+  const { isAdmin, loading: roleLoading } = useUserRole();
+  
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Check if current user is admin
-  const isAdmin = user && (user.email === 'zak.seid@gmail.com' || user.email === 'zakseid0@gmail.com');
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Signed out successfully",
-        description: "You have been logged out of your account.",
-      });
-      navigate('/');
-    } catch (error) {
-      toast({
-        title: "Error signing out",
-        description: "Please try again.",
-        variant: "destructive",
-      });
+  const handleAccountClick = () => {
+    if (user) {
+      navigate('/account');
+    } else {
+      navigate('/login');
     }
+    setIsMenuOpen(false);
   };
 
-  const Navigation = ({ mobile = false }) => (
-    <nav className={`${mobile ? 'flex flex-col space-y-4' : 'hidden md:flex space-x-8'}`}>
-      <Link 
-        to="/" 
-        className="text-foreground hover:text-accent transition-colors"
-      >
-        Home
-      </Link>
-      <Link 
-        to="/shop" 
-        className="text-foreground hover:text-accent transition-colors"
-      >
-        Shop
-      </Link>
-      <Link 
-        to="/about" 
-        className="text-foreground hover:text-accent transition-colors"
-      >
-        About
-      </Link>
-      <Link 
-        to="/faq" 
-        className="text-foreground hover:text-accent transition-colors"
-      >
-        FAQ
-      </Link>
-    </nav>
-  );
+  const handleAdminClick = () => {
+    navigate('/admin');
+    setIsMenuOpen(false);
+  };
+
+  const navLinks = [
+    { name: 'Shop', path: '/shop' },
+    { name: 'About', path: '/about' },
+    { name: 'FAQ', path: '/faq' },
+  ];
 
   return (
-    <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        {/* Logo - Made smaller and black */}
-        <Link to="/" className="flex items-center">
-          <span className="text-3xl md:text-4xl font-greatvibes text-black font-bold">
-            Attiry
-          </span>
-        </Link>
-
-        {/* Desktop Navigation */}
-        <Navigation />
-
-        {/* Right Actions */}
-        <div className="flex items-center space-x-4">
-          {/* Search */}
-          <Button variant="ghost" size="icon">
-            <Search className="h-5 w-5" />
-          </Button>
-
-          {/* Favourites */}
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/favourites" className="relative">
-              <Heart className="h-5 w-5" />
-              {favourites.length > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {favourites.length}
-                </Badge>
-              )}
+    <>
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-4">
+          <div className="flex h-16 items-center justify-between">
+            {/* Logo */}
+            <Link to="/" className="flex items-center">
+              <span className="text-2xl font-bold font-['Great_Vibes'] text-foreground">
+                Attiry
+              </span>
             </Link>
-          </Button>
 
-          {/* Cart */}
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/cart" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {totalItems > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-8">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  className="text-foreground hover:text-accent transition-colors font-medium"
                 >
-                  {totalItems}
-                </Badge>
-              )}
-            </Link>
-          </Button>
+                  {link.name}
+                </Link>
+              ))}
+            </nav>
 
-          {/* Admin Button (only for specific admin emails) */}
-          {isAdmin && (
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/admin">
-                Admin
-              </Link>
-            </Button>
-          )}
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSearchOpen(true)}
+                className="relative"
+              >
+                <Search className="h-5 w-5" />
+              </Button>
 
-          {/* User Menu */}
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <User className="h-5 w-5" />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleAccountClick}
+                className="relative"
+              >
+                <User className="h-5 w-5" />
+              </Button>
+
+              <Link to="/favourites">
+                <Button variant="ghost" size="icon" className="relative">
+                  <Heart className="h-5 w-5" />
+                  {favourites.length > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                    >
+                      {favourites.length}
+                    </Badge>
+                  )}
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="flex items-center justify-start gap-2 p-2">
-                  <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium text-sm">{user.email}</p>
-                    {isAdmin && (
-                      <p className="text-xs text-muted-foreground">Administrator</p>
-                    )}
-                  </div>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/account" className="cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    My Account
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button asChild>
-              <Link to="/login">Sign In</Link>
+              </Link>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsCartOpen(true)}
+                className="relative"
+              >
+                <ShoppingBag className="h-5 w-5" />
+                {totalItems > 0 && (
+                  <Badge 
+                    variant="default" 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-accent text-accent-foreground"
+                  >
+                    {totalItems}
+                  </Badge>
+                )}
+              </Button>
+
+              {/* Admin Button - Only show for admin users */}
+              {!roleLoading && isAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAdminClick}
+                  className="ml-2"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Admin
+                </Button>
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-          )}
+          </div>
 
           {/* Mobile Menu */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-80">
-              <div className="flex flex-col space-y-6 mt-6">
-                <Navigation mobile />
-                {!user && (
-                  <div className="flex flex-col space-y-2">
-                    <Button asChild>
-                      <Link to="/login">Sign In</Link>
+          {isMenuOpen && (
+            <div className="md:hidden border-t bg-background">
+              <div className="px-4 py-4 space-y-4">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.name}
+                    to={link.path}
+                    className="block text-foreground hover:text-accent transition-colors font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+                
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setIsSearchOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <Search className="h-5 w-5" />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleAccountClick}
+                  >
+                    <User className="h-5 w-5" />
+                  </Button>
+
+                  <Link to="/favourites" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="ghost" size="icon" className="relative">
+                      <Heart className="h-5 w-5" />
+                      {favourites.length > 0 && (
+                        <Badge 
+                          variant="destructive" 
+                          className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                        >
+                          {favourites.length}
+                        </Badge>
+                      )}
                     </Button>
-                  </div>
-                )}
+                  </Link>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setIsCartOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="relative"
+                  >
+                    <ShoppingBag className="h-5 w-5" />
+                    {totalItems > 0 && (
+                      <Badge 
+                        variant="default" 
+                        className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-accent text-accent-foreground"
+                      >
+                        {totalItems}
+                      </Badge>
+                    )}
+                  </Button>
+
+                  {/* Admin Button for Mobile - Only show for admin users */}
+                  {!roleLoading && isAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAdminClick}
+                    >
+                      <Settings className="h-4 w-4 mr-1" />
+                      Admin
+                    </Button>
+                  )}
+                </div>
               </div>
-            </SheetContent>
-          </Sheet>
+            </div>
+          )}
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Modals */}
+      <SearchModal 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+      />
+      <CartDrawer 
+        isOpen={isCartOpen} 
+        onClose={() => setIsCartOpen(false)} 
+      />
+    </>
   );
 };
+
+export default Header;
