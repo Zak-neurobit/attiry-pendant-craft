@@ -3,23 +3,21 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Use the Supabase generated types
-type SupabaseProduct = {
+interface Product {
   id: string;
   title: string;
   price: number;
-  compare_price: number | null;
-  description: string | null;
-  image_urls: string[] | null;
-  color_variants: string[] | null;
-  tags: string[] | null;
+  compare_price: number;
   stock: number;
   is_active: boolean;
+  image_urls: string[] | null;
+  color_variants: string[] | null;
+  chain_types: string[] | null;
   created_at: string;
-};
+}
 
 export const useProducts = () => {
-  const [products, setProducts] = useState<SupabaseProduct[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -31,7 +29,6 @@ export const useProducts = () => {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

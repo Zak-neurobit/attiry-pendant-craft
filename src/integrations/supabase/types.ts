@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_tests: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          end_at: string | null
+          id: string
+          is_active: boolean | null
+          results: Json | null
+          start_at: string
+          test_id: string
+          variant: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          end_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          results?: Json | null
+          start_at: string
+          test_id: string
+          variant: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          end_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          results?: Json | null
+          start_at?: string
+          test_id?: string
+          variant?: string
+        }
+        Relationships: []
+      }
       addresses: {
         Row: {
           city: string
@@ -347,6 +383,41 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gift_messages: {
+        Row: {
+          created_at: string | null
+          delivery_date: string | null
+          gift_wrap: boolean | null
+          id: string
+          message: string | null
+          order_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_date?: string | null
+          gift_wrap?: boolean | null
+          id?: string
+          message?: string | null
+          order_id: string
+        }
+        Update: {
+          created_at?: string | null
+          delivery_date?: string | null
+          gift_wrap?: boolean | null
+          id?: string
+          message?: string | null
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gift_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
