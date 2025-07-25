@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, ShoppingBag } from 'lucide-react';
@@ -5,24 +6,30 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useFavourites } from '@/stores/favourites';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/stores/auth';
 
 interface Product {
   id: string;
   title: string;
   description: string;
   price: number;
+  compare_price: number;
   image_urls: string[];
   color_variants: string[];
+  slug: string;
 }
 
 export const Favourites = () => {
-  const { favourites, loadFavourites, isLoading } = useFavourites();
+  const { user } = useAuth();
+  const { favourites, loadFavourites, isLoading, removeFromFavourites } = useFavourites();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadFavourites();
-  }, [loadFavourites]);
+    if (user) {
+      loadFavourites();
+    }
+  }, [user, loadFavourites]);
 
   useEffect(() => {
     const fetchFavouriteProducts = async () => {
@@ -52,16 +59,20 @@ export const Favourites = () => {
     fetchFavouriteProducts();
   }, [favourites]);
 
+  const handleRemoveFromFavourites = (productId: string) => {
+    removeFromFavourites(productId);
+  };
+
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-IN', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'INR',
+      currency: 'USD',
       minimumFractionDigits: 0,
     }).format(price);
   };
 
-  const getSalePrice = (originalPrice: number) => {
-    return originalPrice * 0.75; // 25% discount
+  const getSalePrice = (originalPrice: number, comparePrice: number) => {
+    return comparePrice > originalPrice ? originalPrice : originalPrice;
   };
 
   const containerVariants = {
@@ -78,6 +89,27 @@ export const Favourites = () => {
       y: 0,
     },
   };
+
+  if (!user) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="min-h-screen flex items-center justify-center"
+      >
+        <div className="text-center max-w-md mx-auto px-6">
+          <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
+          <h1 className="text-2xl font-serif font-bold mb-4">Sign In Required</h1>
+          <p className="text-muted-foreground mb-8">
+            Please sign in to view your favourites.
+          </p>
+          <Button asChild size="lg">
+            <Link to="/auth">Sign In</Link>
+          </Button>
+        </div>
+      </motion.div>
+    );
+  }
 
   if (loading || isLoading) {
     return (
@@ -147,8 +179,7 @@ export const Favourites = () => {
               className="group"
             >
               <Link
-                to={`/product/${product.title.toLowerCase().replace(/\s+/g, '-')}`}
-                state={{ product }}
+                to={`/product/${product.slug}`}
                 className="block"
               >
                 <div className="bg-card rounded-lg shadow-soft overflow-hidden border transition-transform duration-300 group-hover:scale-105">
@@ -159,9 +190,17 @@ export const Favourites = () => {
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute top-3 right-3">
-                      <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 bg-white/90 rounded-full hover:bg-white"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleRemoveFromFavourites(product.id);
+                        }}
+                      >
                         <Heart className="h-4 w-4 text-accent fill-accent" />
-                      </div>
+                      </Button>
                     </div>
                   </div>
                   
@@ -175,14 +214,18 @@ export const Favourites = () => {
                     
                     <div className="flex items-center space-x-2">
                       <span className="text-lg font-bold text-primary">
-                        {formatPrice(getSalePrice(product.price))}
+                        {formatPrice(getSalePrice(product.price, product.compare_price))}
                       </span>
-                      <span className="text-sm text-muted-foreground line-through">
-                        {formatPrice(product.price)}
-                      </span>
-                      <span className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded">
-                        25% OFF
-                      </span>
+                      {product.compare_price > product.price && (
+                        <>
+                          <span className="text-sm text-muted-foreground line-through">
+                            {formatPrice(product.compare_price)}
+                          </span>
+                          <span className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded">
+                            {Math.round(((product.compare_price - product.price) / product.compare_price) * 100)}% OFF
+                          </span>
+                        </>
+                      )}
                     </div>
 
                     {product.color_variants && product.color_variants.length > 0 && (
