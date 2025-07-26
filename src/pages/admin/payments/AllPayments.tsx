@@ -105,25 +105,51 @@ export const AllPayments = () => {
     });
   };
 
-  const refreshPayments = async () => {
+  const fetchRealPayments = async () => {
     setLoading(true);
     try {
-      // TODO: Call actual API to fetch payments
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast({
-        title: "Data Refreshed",
-        description: "Payment data has been updated.",
+      const { razorpayService } = await import('@/services/api/razorpayService');
+      const response = await razorpayService.fetchPayments({
+        count: 100,
       });
-    } catch (error) {
+
+      const realPayments: Payment[] = response.items.map(payment => ({
+        id: payment.id,
+        orderId: payment.order_id || 'N/A',
+        customerId: 'N/A',
+        customerEmail: payment.email || 'N/A',
+        amount: payment.amount,
+        status: payment.status as any,
+        method: payment.method as any,
+        createdAt: new Date(payment.created_at * 1000).toISOString(),
+        razorpayPaymentId: payment.id,
+      }));
+
+      setPayments(realPayments);
       toast({
-        title: "Error",
-        description: "Failed to refresh payments",
+        title: "Success",
+        description: "Real payment data loaded from Razorpay",
+      });
+    } catch (error: any) {
+      console.error('Failed to fetch real payments:', error);
+      toast({
+        title: "Razorpay Error",
+        description: "Using mock data. Configure Razorpay in Settings to see real data.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
+
+  const refreshPayments = async () => {
+    await fetchRealPayments();
+  };
+
+  // Load real payments on mount
+  useEffect(() => {
+    fetchRealPayments();
+  }, []);
 
   return (
     <div className="space-y-6">

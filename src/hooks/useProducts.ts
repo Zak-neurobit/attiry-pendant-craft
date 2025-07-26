@@ -6,6 +6,7 @@ export interface DatabaseProduct {
   title: string;
   description: string | null;
   price: number;
+  compare_price?: number;
   stock: number;
   sku: string | null;
   image_urls: string[] | null;
@@ -82,6 +83,9 @@ const convertDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
     slug,
     name: dbProduct.title,
     price: Number(dbProduct.price),
+    originalPrice: dbProduct.compare_price && Number(dbProduct.compare_price) > Number(dbProduct.price) 
+      ? Number(dbProduct.compare_price) 
+      : undefined,
     description: dbProduct.description || '',
     images,
     rating: 5, // Default rating - could be enhanced with reviews system

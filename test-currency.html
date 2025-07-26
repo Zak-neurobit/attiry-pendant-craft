@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency System Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .currency-test {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .currency-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+            min-width: 150px;
+        }
+        .currency-item strong {
+            color: #007bff;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .price-example {
+            font-size: 18px;
+            font-weight: bold;
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌍 Multi-Currency System Test</h1>
+    
+    <div class="status success">
+        <h3>✅ Supported Countries & Currencies</h3>
+        <p>The system now supports automatic currency detection and conversion for 14 countries:</p>
+    </div>
+
+    <div class="test-section">
+        <h2>📍 Supported Locations</h2>
+        <div class="currency-test">
+            <div class="currency-item">
+                <strong>🇺🇸 United States</strong><br>
+                USD ($)<br>
+                <span class="price-example">$55.00</span>
+            </div>
+            <div class="currency-item">
+                <strong>🇮🇳 India</strong><br>
+                INR (₹)<br>
+                <span class="price-example">₹4,648</span>
+            </div>
+            <div class="currency-item">
+                <strong>🇦🇪 UAE</strong><br>
+                AED (د.إ)<br>
+                <span class="price-example">د.إ202</span>
+            </div>
+            <div class="currency-item">
+                <strong>🇸🇦 Saudi Arabia</strong><br>
+                SAR (﷼)<br>
+                <span class="price-example">﷼206</span>
+            </div>
+            <div class="currency-item">
+                <strong>🇶🇦 Qatar</strong><br>
+                QAR (ر.ق)<br>
+                <span class="price-example">ر.ق200</span>
+            </div>
+            <div class="currency-item">
+                <strong>🇰🇼 Kuwait</strong><br>
+                KWD (د.ك)<br>
+                <span class="price-example">د.ك17</span>
+            </div>
+            <div class="currency-item">
+                <strong>🇨🇦 Canada</strong><br>
+                CAD (C$)<br>
+                <span class="price-example">C$79</span>
+            </div>
+            <div class="currency-item">
+                <strong>🇦🇺 Australia</strong><br>
+                AUD (A$)<br>
+                <span class="price-example">A$89</span>
+            </div>
+            <div class="currency-item">
+                <strong>🇴🇲 Oman</strong><br>
+                OMR (ر.ع.)<br>
+                <span class="price-example">ر.ع.21</span>
+            </div>
+            <div class="currency-item">
+                <strong>🇲🇾 Malaysia</strong><br>
+                MYR (RM)<br>
+                <span class="price-example">RM246</span>
+            </div>
+            <div class="currency-item">
+                <strong>🇲🇽 Mexico</strong><br>
+                MXN ($)<br>
+                <span class="price-example">$1,114</span>
+            </div>
+            <div class="currency-item">
+                <strong>🇪🇬 Egypt</strong><br>
+                EGP (ج.م)<br>
+                <span class="price-example">ج.م2,794</span>
+            </div>
+            <div class="currency-item">
+                <strong>🇹🇷 Turkey</strong><br>
+                TRY (₺)<br>
+                <span class="price-example">₺1,936</span>
+            </div>
+            <div class="currency-item">
+                <strong>🇯🇵 Japan</strong><br>
+                JPY (¥)<br>
+                <span class="price-example">¥8,608</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>⚡ How It Works</h2>
+        <ol>
+            <li><strong>Automatic Detection:</strong> When a user visits the website, their location is detected using IP geolocation</li>
+            <li><strong>Currency Assignment:</strong> Based on the detected country, the appropriate currency is automatically selected</li>
+            <li><strong>Price Conversion:</strong> All product prices (originally in USD) are converted to the user's local currency using real-time exchange rates</li>
+            <li><strong>Local Formatting:</strong> Prices are formatted according to local standards (symbol position, decimal places, etc.)</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Technical Features</h2>
+        <div class="status success">
+            <ul>
+                <li>✅ Real-time exchange rate API integration</li>
+                <li>✅ Fallback static rates when API is unavailable</li>
+                <li>✅ Local currency formatting with proper symbols</li>
+                <li>✅ IP-based geolocation detection</li>
+                <li>✅ Browser geolocation as primary option</li>
+                <li>✅ Caching system for performance</li>
+                <li>✅ Compare prices (scratched) also converted</li>
+                <li>✅ Admin dashboard multi-currency support</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test Instructions</h2>
+        <div class="status warning">
+            <p><strong>To test the currency system:</strong></p>
+            <ol>
+                <li>Open the website at <code>http://localhost:8082</code></li>
+                <li>Check the product prices - they should show in your local currency</li>
+                <li>Use a VPN to change your location and refresh to see different currencies</li>
+                <li>Check that both regular prices and compare prices (scratched) are converted</li>
+                <li>Look for the currency indicator in the top navigation</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Simple JavaScript to show current estimated location
+        fetch('http://ip-api.com/json')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const currencyMap = {
+                        'US': 'USD ($)',
+                        'IN': 'INR (₹)',
+                        'AE': 'AED (د.إ)',
+                        'SA': 'SAR (﷼)',
+                        'QA': 'QAR (ر.ق)',
+                        'KW': 'KWD (د.ك)',
+                        'CA': 'CAD (C$)',
+                        'AU': 'AUD (A$)',
+                        'OM': 'OMR (ر.ع.)',
+                        'MY': 'MYR (RM)',
+                        'MX': 'MXN ($)',
+                        'EG': 'EGP (ج.م)',
+                        'TR': 'TRY (₺)',
+                        'JP': 'JPY (¥)'
+                    };
+                    
+                    const currency = currencyMap[data.countryCode] || 'USD ($)';
+                    
+                    document.body.insertAdjacentHTML('afterbegin', `
+                        <div class="status success">
+                            <h3>📍 Your Detected Location</h3>
+                            <p><strong>Country:</strong> ${data.country} (${data.countryCode})</p>
+                            <p><strong>Expected Currency:</strong> ${currency}</p>
+                            <p><strong>City:</strong> ${data.city}, ${data.regionName}</p>
+                        </div>
+                    `);
+                }
+            })
+            .catch(error => {
+                console.log('Location detection failed:', error);
+            });
+    </script>
+</body>
+</html>

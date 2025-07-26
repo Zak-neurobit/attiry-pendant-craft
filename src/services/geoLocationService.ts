@@ -34,28 +34,35 @@ class GeoLocationService {
   private locationCache: LocationInfo | null = null;
   private readonly CACHE_KEY = 'attiry_user_location';
   private readonly CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-  private readonly IP_API_URL = 'http://ip-api.com/json';
-  private readonly FALLBACK_API_URL = 'https://ipapi.co/json';
+  private readonly IP_API_URL = 'https://ipapi.co/json/';
+  private readonly FALLBACK_API_URL = 'https://api.ipgeolocation.io/ipgeo?apiKey=free';
 
   /**
    * Get user's location and currency preference
    */
   async getUserLocation(): Promise<LocationInfo> {
+    console.log('🎯 Getting user location...');
+    
     // Check cache first
     const cached = this.getCachedLocation();
     if (cached && this.isCacheValid(cached)) {
+      console.log('💾 Using cached location:', cached);
       this.locationCache = cached;
       return cached;
     }
+
+    console.log('🔍 Cache invalid or missing, detecting location...');
 
     // Try to detect location
     try {
       const location = await this.detectLocation();
       this.cacheLocation(location);
       this.locationCache = location;
+      console.log('✅ Location detection successful:', location);
       return location;
     } catch (error) {
-      console.warn('Location detection failed, using default:', error);
+      console.error('❌ Location detection failed:', error);
+      console.warn('🏠 Using default location (US/USD)');
       const defaultLocation = this.getDefaultLocation();
       this.locationCache = defaultLocation;
       return defaultLocation;
@@ -92,9 +99,20 @@ class GeoLocationService {
    * Clear cached location (force re-detection)
    */
   clearLocationCache(): void {
+    console.log('🗑️ Clearing location cache...');
     localStorage.removeItem(this.CACHE_KEY);
     localStorage.removeItem(`${this.CACHE_KEY}_timestamp`);
     this.locationCache = null;
+    console.log('✅ Location cache cleared');
+  }
+
+  /**
+   * Force location re-detection (for testing)
+   */
+  async forceLocationDetection(): Promise<LocationInfo> {
+    console.log('🔄 Forcing location re-detection...');
+    this.clearLocationCache();
+    return await this.getUserLocation();
   }
 
   /**
@@ -104,7 +122,18 @@ class GeoLocationService {
     return [
       { code: 'US', name: 'United States', currency: 'USD' },
       { code: 'SA', name: 'Saudi Arabia', currency: 'SAR' },
-      { code: 'AE', name: 'United Arab Emirates', currency: 'AED' }
+      { code: 'AE', name: 'United Arab Emirates', currency: 'AED' },
+      { code: 'IN', name: 'India', currency: 'INR' },
+      { code: 'QA', name: 'Qatar', currency: 'QAR' },
+      { code: 'KW', name: 'Kuwait', currency: 'KWD' },
+      { code: 'CA', name: 'Canada', currency: 'CAD' },
+      { code: 'AU', name: 'Australia', currency: 'AUD' },
+      { code: 'OM', name: 'Oman', currency: 'OMR' },
+      { code: 'MY', name: 'Malaysia', currency: 'MYR' },
+      { code: 'MX', name: 'Mexico', currency: 'MXN' },
+      { code: 'EG', name: 'Egypt', currency: 'EGP' },
+      { code: 'TR', name: 'Turkey', currency: 'TRY' },
+      { code: 'JP', name: 'Japan', currency: 'JPY' }
     ];
   }
 
@@ -202,56 +231,67 @@ class GeoLocationService {
   }
 
   /**
-   * Fetch location from primary IP API
+   * Fetch location from primary IP API (ipapi.co)
    */
   private async fetchFromIPAPI(): Promise<LocationInfo> {
-    const response = await fetch(`${this.IP_API_URL}?fields=status,country,countryCode,region,regionName,city,timezone,query`);
+    console.log('🌍 Detecting location using ipapi.co...');
+    
+    const response = await fetch(this.IP_API_URL);
     
     if (!response.ok) {
+      console.error('❌ Primary IP API failed:', response.status, response.statusText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const data: IPApiResponse = await response.json();
+    const data = await response.json();
+    console.log('📍 Location API response:', data);
     
-    if (data.status !== 'success') {
-      throw new Error('IP API returned error status');
-    }
-
-    const currency = currencyService.getCurrencyByCountry(data.countryCode);
+    // ipapi.co returns country_code instead of countryCode
+    const countryCode = data.country_code || data.country || 'US';
+    const currency = currencyService.getCurrencyByCountry(countryCode);
+    
+    console.log(`✅ Location detected: ${data.country_name || data.country} (${countryCode}) → ${currency}`);
     
     return {
-      country: data.country,
-      countryCode: data.countryCode,
+      country: data.country_name || data.country || 'United States',
+      countryCode: countryCode,
       currency,
-      city: data.city,
-      region: data.regionName,
-      ip: data.query,
-      timezone: data.timezone
+      city: data.city || 'Unknown',
+      region: data.region || 'Unknown',
+      ip: data.ip,
+      timezone: data.timezone || 'UTC'
     };
   }
 
   /**
-   * Fetch location from fallback API
+   * Fetch location from fallback API (ipgeolocation.io)
    */
   private async fetchFromFallbackAPI(): Promise<LocationInfo> {
+    console.log('🔄 Trying fallback API: ipgeolocation.io...');
+    
     const response = await fetch(this.FALLBACK_API_URL);
     
     if (!response.ok) {
+      console.error('❌ Fallback IP API failed:', response.status, response.statusText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const data: IPInfoResponse = await response.json();
+    const data = await response.json();
+    console.log('📍 Fallback API response:', data);
     
-    const currency = currencyService.getCurrencyByCountry(data.country);
+    const countryCode = data.country_code2 || data.country_code || 'US';
+    const currency = currencyService.getCurrencyByCountry(countryCode);
+    
+    console.log(`✅ Fallback location detected: ${data.country_name} (${countryCode}) → ${currency}`);
     
     return {
-      country: this.getCountryName(data.country),
-      countryCode: data.country,
+      country: data.country_name || this.getCountryName(countryCode),
+      countryCode: countryCode,
       currency,
-      city: data.city,
-      region: data.region,
+      city: data.city || 'Unknown',
+      region: data.state_prov || 'Unknown',
       ip: data.ip,
-      timezone: data.timezone
+      timezone: data.time_zone?.name || 'UTC'
     };
   }
 
@@ -330,7 +370,29 @@ class GeoLocationService {
       'SAU': 'Saudi Arabia',
       'AE': 'United Arab Emirates',
       'ARE': 'United Arab Emirates',
-      'UAE': 'United Arab Emirates'
+      'UAE': 'United Arab Emirates',
+      'IN': 'India',
+      'IND': 'India',
+      'QA': 'Qatar',
+      'QAT': 'Qatar',
+      'KW': 'Kuwait',
+      'KWT': 'Kuwait',
+      'CA': 'Canada',
+      'CAN': 'Canada',
+      'AU': 'Australia',
+      'AUS': 'Australia',
+      'OM': 'Oman',
+      'OMN': 'Oman',
+      'MY': 'Malaysia',
+      'MYS': 'Malaysia',
+      'MX': 'Mexico',
+      'MEX': 'Mexico',
+      'EG': 'Egypt',
+      'EGY': 'Egypt',
+      'TR': 'Turkey',
+      'TUR': 'Turkey',
+      'JP': 'Japan',
+      'JPN': 'Japan'
     };
     
     return countryNames[countryCode.toUpperCase()] || countryCode;

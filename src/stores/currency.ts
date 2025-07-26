@@ -62,10 +62,12 @@ export const useCurrency = create<CurrencyState>()(
 
       // Detect user's location and set currency accordingly
       detectUserLocation: async () => {
+        console.log('💰 Starting currency detection...');
         set({ isLoading: true, error: null });
         
         try {
           const location = await geoLocationService.getUserLocation();
+          console.log('💱 Setting currency based on location:', location);
           
           get()._setUserLocation(location);
           set({
@@ -73,10 +75,12 @@ export const useCurrency = create<CurrencyState>()(
             error: null
           });
 
+          console.log(`✅ Currency set to ${location.currency} for ${location.country}`);
+
           // Refresh exchange rates for detected currency
           await get().refreshExchangeRates();
         } catch (error) {
-          console.error('Failed to detect user location:', error);
+          console.error('❌ Failed to detect user location:', error);
           set({
             isLoading: false,
             error: 'Failed to detect location. Using default currency.'
@@ -88,15 +92,23 @@ export const useCurrency = create<CurrencyState>()(
       convertPrice: async (amount: number, fromCurrency: SupportedCurrency = 'USD'): Promise<number> => {
         const { currentCurrency } = get();
         
+        if (fromCurrency === currentCurrency) {
+          return amount;
+        }
+        
+        console.log(`💸 Converting ${amount} ${fromCurrency} → ${currentCurrency}`);
+        
         try {
           const convertedAmount = await currencyService.convertCurrency(
             amount,
             fromCurrency,
             currentCurrency
           );
+          console.log(`✅ Conversion result: ${amount} ${fromCurrency} = ${convertedAmount} ${currentCurrency}`);
           return convertedAmount;
         } catch (error) {
-          console.error('Currency conversion failed:', error);
+          console.error('❌ Currency conversion failed:', error);
+          console.warn(`🔄 Using original amount: ${amount} ${fromCurrency}`);
           return amount; // Return original amount if conversion fails
         }
       },
