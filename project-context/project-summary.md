@@ -19,6 +19,11 @@
 - **Price Conversion**: Real-time currency conversion throughout the app
 - **Language Toggle**: User-controlled language switching
 
+### Currency Conversion and Product Management 💰
+- **Currency Conversion**: Enhanced currency handling with new components and services.
+- **Product Management Scripts**: SQL scripts for managing custom name pendants, removing old products, and updating images.
+- **Admin Panel Updates**: Analytics, Dashboard, Settings, and Payments sections updated to reflect new currency and product data.
+
 ### User Experience Enhancements 📱
 - **ScrollToTop**: Automatic scroll to top on page navigation
 - **Authentication**: Supabase-based auth with admin access control
@@ -65,6 +70,7 @@ src/
 │   ├── auth/            # Authentication components
 │   ├── layout/          # Layout and navigation
 │   ├── providers/       # Context providers
+│   ├── product/         # Product-related components
 │   └── ui/              # Base UI components
 ├── hooks/               # Custom React hooks
 ├── i18n/                # Internationalization files
@@ -197,6 +203,7 @@ src/
 - **Image Optimization**: WebP format and lazy loading
 - **Caching**: Redis caching for better performance
 - **PWA**: Progressive Web App features
+- **Automated Testing**: Comprehensive unit and integration tests
 
 ### Business Features
 - **Inventory Management**: Stock tracking and alerts
@@ -218,12 +225,14 @@ src/
 - User authentication and profiles
 - Shopping cart and checkout
 - Payment processing with Razorpay
+- Automated Testing Setup: Implemented Vitest with initial unit tests for currency and product detail pages.
+- **Currency Conversion and Product Management**: Enhanced currency handling and new product management scripts.
 
 ### 🔄 In Progress
 - Product review system
 - Advanced analytics dashboard
 - Mobile responsiveness improvements
-- Performance optimizations
+- Performance optimizations (Code Splitting, Image Lazy Loading)
 
 ### 📋 Planned
 - Email marketing integration
@@ -234,7 +243,7 @@ src/
 
 ---
 
-**Last Updated**: January 25, 2025  
-**Version**: 2.0 (Major Feature Release)  
-**Contributors**: Zak-neurobit, Claude Code Assistant  
+**Last Updated**: July 26, 2025  
+**Version**: 2.2 (Currency & Product Management Release)  
+**Contributors**: Zak-neurobit, Gemini Code Assistant  
 **Repository**: https://github.com/Zak-neurobit/attiry-pendant-craft

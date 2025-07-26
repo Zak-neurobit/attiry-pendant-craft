@@ -1,5 +1,35 @@
-
 # Recent Changes Log - Attiry E-commerce
+
+## 2025-07-26 - Currency Conversion and Product Management Scripts
+
+### 💰 **MAJOR: Currency Conversion and Product Management Scripts**
+
+#### Currency Conversion Enhancements ✅
+- **Added `currency-fix-instructions.md`**: Documentation for currency related fixes.
+- **Modified `src/components/layout/Layout.tsx`**: Likely integrated new currency components or logic.
+- **Modified `src/hooks/useProducts.ts`**: Updated to handle currency conversion for product prices.
+- **Modified `src/lib/products.ts`**: Adjusted product data handling for currency.
+- **Modified `src/pages/Home.tsx`**: Integrated currency display and conversion on the homepage.
+- **Modified `src/pages/Shop.tsx`**: Ensured product prices are displayed with correct currency.
+- **Modified `src/services/currencyService.ts`**: Core logic for currency conversion and handling.
+- **Modified `src/services/geoLocationService.ts`**: Potentially updated for better geo-location based currency detection.
+- **Modified `src/stores/currency.ts`**: State management for currency selection and rates.
+- **New file: `src/components/CurrencyTestComponent.tsx`**: Component for testing currency functionality.
+- **New file: `test-currency.html`**: HTML file for testing currency features.
+
+#### Product Management Scripts ✅
+- **New file: `custom-name-pendants-FINAL.sql`**: SQL script for final custom name pendant data.
+- **New file: `custom-name-pendants-products.sql`**: SQL script for custom name pendant product data.
+- **New file: `remove-old-products.sql`**: SQL script to remove outdated product entries.
+- **New file: `update-pendant-images.sql`**: SQL script to update pendant image paths.
+- **New file: `verify-and-update-products.sql`**: SQL script for verifying and updating product data.
+
+#### Admin Panel Updates ✅
+- **Modified `src/pages/admin/Analytics.tsx`**: May include currency-related analytics.
+- **Modified `src/pages/admin/Dashboard.tsx`**: Dashboard updates to reflect new currency or product data.
+- **Modified `src/pages/admin/Settings.tsx`**: Settings related to currency or product management.
+- **Modified `src/pages/admin/payments/AllPayments.tsx`**: Payments display updated for multi-currency.
+- **Modified `src/pages/admin/payments/PaymentsDashboard.tsx`**: Payments dashboard updated for multi-currency.
 
 ## 2025-01-25 - Product Starring System + Internationalization + ScrollToTop Implementation
 
@@ -276,7 +306,7 @@
 ## Previous Session Changes (Historical)
 
 ### Logo & Branding Updates
-**Files Modified**: 
+**Files Modified**:
 - `src/components/Header.tsx`
 - `index.html` (favicon)
 - `src/index.css` (Great Vibes font)
@@ -302,7 +332,7 @@
 **Files Modified**:
 - `src/components/Header.tsx`
 
-**Feature**: 
+**Feature**:
 - Admin button only visible to specific admin emails
 - Checks for `zak.seid@gmail.com` or `zakseid0@gmail.com`
 - Provides direct access to `/admin` dashboard
@@ -320,6 +350,7 @@
 8. **Real-time Updates**: Featured products appear immediately on homepage
 9. **Price Conversion**: Dynamic currency conversion throughout app
 10. **Enhanced UX**: Loading states, error handling, responsive design
+11. **Currency Conversion and Product Management Scripts**: New features for currency handling and product data management.
 
 ### Database Schema ✅
 1. **products table**: Enhanced with `is_featured` and `featured_order` columns
@@ -342,6 +373,14 @@
 - `src/i18n/locales/en.json` - English translations
 - `src/i18n/locales/ar.json` - Arabic translations
 - `supabase/migrations/20250125000000-add-featured-products.sql` - Database migration
+- `currency-fix-instructions.md` - Documentation for currency fixes.
+- `custom-name-pendants-FINAL.sql` - SQL for custom name pendants.
+- `custom-name-pendants-products.sql` - SQL for custom name pendant products.
+- `remove-old-products.sql` - SQL to remove old products.
+- `src/components/CurrencyTestComponent.tsx` - Component for currency testing.
+- `test-currency.html` - HTML for currency testing.
+- `update-pendant-images.sql` - SQL to update pendant images.
+- `verify-and-update-products.sql` - SQL to verify and update products.
 
 **Updated Files (10+)**:
 - `src/App.tsx` - Added ScrollToTop, CurrencyProvider, i18n
@@ -350,6 +389,15 @@
 - `src/pages/admin/products/ProductForm.tsx` - Featured checkbox and order control
 - `src/components/ProductCard.tsx` - Enhanced price formatting with currency conversion
 - `src/components/auth/LoginForm.tsx` - Fixed authentication messaging
+- `src/components/layout/Layout.tsx` - Integrated new currency components or logic.
+- `src/hooks/useProducts.ts` - Updated for currency conversion.
+- `src/lib/products.ts` - Adjusted for currency handling.
+- `src/pages/Shop.tsx` - Ensured correct currency display.
+- `src/pages/admin/Analytics.tsx` - May include currency analytics.
+- `src/pages/admin/Dashboard.tsx` - Dashboard updates.
+- `src/pages/admin/Settings.tsx` - Settings for currency/product management.
+- `src/pages/admin/payments/AllPayments.tsx` - Payments display for multi-currency.
+- `src/pages/admin/payments/PaymentsDashboard.tsx` - Payments dashboard for multi-currency.
 - And more...
 
 ### Known Issues ⚠️
@@ -377,9 +425,9 @@
 
 ---
 
-**Latest Update**: January 25, 2025 - Product Starring + Internationalization + Currency System  
-**Session Count**: 5+ major development sessions tracked  
-**Total Changes**: 100+ major modifications across all sessions  
-**Major Features Added**: Product starring system, internationalization, currency detection, ScrollToTop, real data integration, admin enhancements  
-**Repository**: https://github.com/Zak-neurobit/attiry-pendant-craft  
+**Latest Update**: July 26, 2025 - Currency Conversion and Product Management Scripts
+**Session Count**: 6+ major development sessions tracked
+**Total Changes**: 120+ major modifications across all sessions
+**Major Features Added**: Product starring system, internationalization, currency detection, ScrollToTop, real data integration, admin enhancements, currency conversion, product management scripts.
+**Repository**: https://github.com/Zak-neurobit/attiry-pendant-craft
 **Status**: Production-ready with comprehensive feature set
