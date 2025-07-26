@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { LazyImage } from '@/components/ui/lazy-image';
 import { Heart, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Product } from '@/lib/products';
@@ -37,10 +38,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     <Link to={`/product/${product.slug}`}>
       <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 h-full">
         <div className="relative overflow-hidden">
-          <img
+          <LazyImage
             src={product.images[0]}
             alt={product.name}
             className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+            loadingClassName="h-64"
           />
           <div className="absolute top-3 left-3 flex flex-col gap-2">
             {product.isNew && (

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, User, Heart, Menu, LogOut } from 'lucide-react';
+import { ShoppingCart, Search, User, Heart, Menu, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -125,7 +125,8 @@ export const Header = () => {
           {/* Admin Button (only for specific admin emails) */}
           {isAdmin && (
             <Button variant="outline" size="sm" asChild>
-              <Link to="/admin">
+              <Link to="/admin" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
                 Admin
               </Link>
             </Button>
@@ -178,6 +179,16 @@ export const Header = () => {
             <SheetContent side="right" className="w-80">
               <div className="flex flex-col space-y-6 mt-6">
                 <Navigation mobile />
+                {user && isAdmin && (
+                  <div className="flex flex-col space-y-2">
+                    <Button variant="outline" asChild>
+                      <Link to="/admin" className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    </Button>
+                  </div>
+                )}
                 {!user && (
                   <div className="flex flex-col space-y-2">
                     <Button asChild>

@@ -1,21 +1,39 @@
 
-import { motion } from 'framer-motion';
+import { useEffect, useRef } from 'react';
 import { ProductCard } from '@/components/ProductCard';
-import { useProducts } from '@/hooks/useProducts';
+import { useInfiniteProducts } from '@/hooks/useInfiniteProducts';
 import { Skeleton } from '@/components/ui/skeleton';
-
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
+import { Button } from '@/components/ui/button';
 
 export const Shop = () => {
-  const { products, loading, error } = useProducts();
+  const { 
+    products, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage, 
+    isLoading: loading, 
+    error 
+  } = useInfiniteProducts();
+  
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Auto-load more when scrolling near bottom
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   if (loading) {
     return (
@@ -76,19 +94,45 @@ export const Shop = () => {
         </div>
 
         {/* Products Grid */}
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-        >
-          {products.map((product) => (
-            <ProductCard
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-in fade-in duration-500">
+          {products.map((product, index) => (
+            <div 
               key={product.id}
-              product={product}
-            />
+              className="animate-in fade-in slide-in-from-bottom-4"
+              style={{ 
+                animationDelay: `${index * 50}ms`,
+                animationFillMode: 'both'
+              }}
+            >
+              <ProductCard product={product} />
+            </div>
           ))}
-        </motion.div>
+        </div>
+
+        {/* Load More Trigger */}
+        <div ref={loadMoreRef} className="py-8 text-center">
+          {isFetchingNextPage && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={`skeleton-${i}`} className="space-y-4">
+                  <Skeleton className="h-64 w-full rounded-lg" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))}
+            </div>
+          )}
+          {hasNextPage && !isFetchingNextPage && (
+            <Button 
+              onClick={() => fetchNextPage()} 
+              variant="outline" 
+              size="lg"
+              className="mb-8"
+            >
+              Load More Products
+            </Button>
+          )}
+        </div>
 
         {/* Call to Action */}
         <div className="text-center mt-16 py-12 bg-gradient-to-r from-background to-secondary rounded-2xl">

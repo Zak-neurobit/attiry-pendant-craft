@@ -66,23 +66,9 @@ export const authService = {
 
     if (error) throw error;
 
-    // Create profile after successful signup
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: data.user.id,
-          email: sanitizedEmail,
-          first_name: sanitizedFirstName,
-          last_name: sanitizedLastName,
-        });
-
-      if (profileError) {
-        console.warn('Profile creation failed:', profileError);
-        // Don't throw here as the user was created successfully
-      }
-    }
-
+    // Profile will be automatically created by database trigger
+    // No need to manually create profile here anymore
+    
     return data;
   },
 

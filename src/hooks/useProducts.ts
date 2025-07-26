@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface DatabaseProduct {
@@ -98,43 +98,44 @@ const convertDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
   };
 };
 
-export const useProducts = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+// Optimized fetch function for React Query
+const fetchProducts = async (): Promise<Product[]> => {
+  try {
+    const { data, error: supabaseError } = await supabase
+      .from('products')
+      .select('id, title, description, price, compare_price, stock, sku, image_urls, color_variants, keywords, is_active, created_at, updated_at')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(50); // Limit initial load
 
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data, error: supabaseError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (supabaseError) {
-        throw supabaseError;
-      }
-
-      const convertedProducts = data?.map(convertDatabaseProduct) || [];
-      setProducts(convertedProducts);
-    } catch (err) {
-      console.error('Error fetching products:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch products');
-      
-      // Fallback to static products if database fails
-      const { shopProducts } = await import('@/lib/products');
-      setProducts(shopProducts);
-    } finally {
-      setLoading(false);
+    if (supabaseError) {
+      throw supabaseError;
     }
-  };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+    return data?.map(convertDatabaseProduct) || [];
+  } catch (err) {
+    console.warn('Database fetch failed, using fallback:', err);
+    // Fallback to static products if database fails
+    const { shopProducts } = await import('@/lib/products');
+    return shopProducts;
+  }
+};
+
+export const useProducts = () => {
+  const {
+    data: products = [],
+    isLoading: loading,
+    error,
+    refetch,
+    isStale
+  } = useQuery({
+    queryKey: ['products'],
+    queryFn: fetchProducts,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
+    retryDelay: 1000,
+  });
 
   const getProductBySlug = (slug: string): Product | undefined => {
     return products.find(product => product.slug === slug);
@@ -144,17 +145,14 @@ export const useProducts = () => {
     return products.find(product => product.id === id);
   };
 
-  const refetch = () => {
-    fetchProducts();
-  };
-
   return {
     products,
     loading,
-    error,
+    error: error as Error | null,
     getProductBySlug,
     getProductById,
-    refetch
+    refetch,
+    isStale
   };
 };
 
