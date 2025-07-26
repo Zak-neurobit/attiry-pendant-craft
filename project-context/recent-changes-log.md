@@ -1,35 +1,18 @@
 # Recent Changes Log - Attiry E-commerce
 
-## 2025-07-26 - Currency Conversion and Product Management Scripts
+## 2025-07-26 - Codebase Cleanup and Documentation Update
 
-### 💰 **MAJOR: Currency Conversion and Product Management Scripts**
+### 🧹 **MAJOR: Codebase Cleanup**
+- Removed temporary and test-related files: `currency-fix-instructions.md`, `test-currency.html`, `src/components/CurrencyTestComponent.tsx`.
+- Consolidated redundant SQL scripts: `custom-name-pendants-products.sql`, `remove-old-products.sql`, `update-pendant-images.sql`, `verify-and-update-products.sql`.
+- Removed `CurrencyTestComponent` usage from `src/pages/Home.tsx`.
 
-#### Currency Conversion Enhancements ✅
-- **Added `currency-fix-instructions.md`**: Documentation for currency related fixes.
-- **Modified `src/components/layout/Layout.tsx`**: Likely integrated new currency components or logic.
-- **Modified `src/hooks/useProducts.ts`**: Updated to handle currency conversion for product prices.
-- **Modified `src/lib/products.ts`**: Adjusted product data handling for currency.
-- **Modified `src/pages/Home.tsx`**: Integrated currency display and conversion on the homepage.
-- **Modified `src/pages/Shop.tsx`**: Ensured product prices are displayed with correct currency.
-- **Modified `src/services/currencyService.ts`**: Core logic for currency conversion and handling.
-- **Modified `src/services/geoLocationService.ts`**: Potentially updated for better geo-location based currency detection.
-- **Modified `src/stores/currency.ts`**: State management for currency selection and rates.
-- **New file: `src/components/CurrencyTestComponent.tsx`**: Component for testing currency functionality.
-- **New file: `test-currency.html`**: HTML file for testing currency features.
+### 📚 **Documentation Update**
+- Updated `project-summary.md` to reflect codebase cleanup.
+- Updated `recent-changes-log.md` to detail the cleanup and documentation changes.
 
-#### Product Management Scripts ✅
-- **New file: `custom-name-pendants-FINAL.sql`**: SQL script for final custom name pendant data.
-- **New file: `custom-name-pendants-products.sql`**: SQL script for custom name pendant product data.
-- **New file: `remove-old-products.sql`**: SQL script to remove outdated product entries.
-- **New file: `update-pendant-images.sql`**: SQL script to update pendant image paths.
-- **New file: `verify-and-update-products.sql`**: SQL script for verifying and updating product data.
-
-#### Admin Panel Updates ✅
-- **Modified `src/pages/admin/Analytics.tsx`**: May include currency-related analytics.
-- **Modified `src/pages/admin/Dashboard.tsx`**: Dashboard updates to reflect new currency or product data.
-- **Modified `src/pages/admin/Settings.tsx`**: Settings related to currency or product management.
-- **Modified `src/pages/admin/payments/AllPayments.tsx`**: Payments display updated for multi-currency.
-- **Modified `src/pages/admin/payments/PaymentsDashboard.tsx`**: Payments dashboard updated for multi-currency.
+### ⚙️ **Configuration Revert**
+- Reverted `package.json` to remove the `test` script and related development dependencies.
 
 
 

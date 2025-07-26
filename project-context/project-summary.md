@@ -19,8 +19,9 @@
 - **Price Conversion**: Real-time currency conversion throughout the app
 - **Language Toggle**: User-controlled language switching
 
-### Currency Conversion and Product Management 💰
-- **Currency Conversion**: Enhanced currency handling with new components and services.
+### Codebase Cleanup & Optimization 🧹
+- **Codebase Cleanup**: Removed temporary files (`currency-fix-instructions.md`, `test-currency.html`, `src/components/CurrencyTestComponent.tsx`) and consolidated redundant SQL scripts.
+- **Currency Conversion and Product Management**: Enhanced currency handling with new components and services.
 - **Product Management Scripts**: SQL scripts for managing custom name pendants, removing old products, and updating images.
 - **Admin Panel Updates**: Analytics, Dashboard, Settings, and Payments sections updated to reflect new currency and product data.
 
