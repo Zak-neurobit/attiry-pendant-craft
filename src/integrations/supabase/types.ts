@@ -380,9 +380,11 @@ export type Database = {
       }
       order_items: {
         Row: {
+          chain_type: string | null
           color_variant: Database["public"]["Enums"]["color_variant"]
           created_at: string
           custom_text: string | null
+          font_choice: string | null
           id: string
           order_id: string
           product_id: string
@@ -390,9 +392,11 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          chain_type?: string | null
           color_variant?: Database["public"]["Enums"]["color_variant"]
           created_at?: string
           custom_text?: string | null
+          font_choice?: string | null
           id?: string
           order_id: string
           product_id: string
@@ -400,9 +404,11 @@ export type Database = {
           unit_price: number
         }
         Update: {
+          chain_type?: string | null
           color_variant?: Database["public"]["Enums"]["color_variant"]
           created_at?: string
           custom_text?: string | null
+          font_choice?: string | null
           id?: string
           order_id?: string
           product_id?: string
@@ -493,10 +499,12 @@ export type Database = {
           compare_price: number | null
           created_at: string
           description: string | null
+          featured_order: number | null
           fonts: string[] | null
           id: string
           image_urls: string[] | null
           is_active: boolean
+          is_featured: boolean | null
           is_new: boolean | null
           keywords: string[] | null
           meta_description: string | null
@@ -519,10 +527,12 @@ export type Database = {
           compare_price?: number | null
           created_at?: string
           description?: string | null
+          featured_order?: number | null
           fonts?: string[] | null
           id?: string
           image_urls?: string[] | null
           is_active?: boolean
+          is_featured?: boolean | null
           is_new?: boolean | null
           keywords?: string[] | null
           meta_description?: string | null
@@ -545,10 +555,12 @@ export type Database = {
           compare_price?: number | null
           created_at?: string
           description?: string | null
+          featured_order?: number | null
           fonts?: string[] | null
           id?: string
           image_urls?: string[] | null
           is_active?: boolean
+          is_featured?: boolean | null
           is_new?: boolean | null
           keywords?: string[] | null
           meta_description?: string | null
@@ -881,9 +893,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_email: {
+        Args: { email_address: string }
+        Returns: boolean
+      }
       refresh_analytics_views: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      test_profile_creation: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      test_profile_trigger: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          trigger_exists: boolean
+          function_exists: boolean
+        }[]
       }
     }
     Enums: {

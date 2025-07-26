@@ -27,6 +27,12 @@ interface RecentOrder {
   created_at: string;
 }
 
+interface Order {
+  id: string;
+  total: number;
+  created_at: string;
+}
+
 export const Dashboard = () => {
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
@@ -34,6 +40,7 @@ export const Dashboard = () => {
   });
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [chartOrders, setChartOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -102,6 +109,9 @@ export const Dashboard = () => {
       
       setRecentOrders(recent || []);
       
+      // Store chart orders for daily revenue calculation
+      setChartOrders(orders || []);
+      
     } catch (error: any) {
       console.error('Dashboard data fetch error:', error);
       toast({
@@ -152,7 +162,7 @@ export const Dashboard = () => {
   };
 
   const calculateDailyRevenue = () => {
-    if (!dateRange.from || !dateRange.to) return [];
+    if (!dateRange.from || !dateRange.to || !chartOrders) return [];
 
     const dailyRevenue = new Map();
     const fromDate = new Date(dateRange.from);
@@ -164,17 +174,21 @@ export const Dashboard = () => {
       dailyRevenue.set(dateKey, { date: dateKey, revenue: 0 });
     }
 
-    // Fetch orders from current period and calculate daily revenue
-    const periodDays = Math.ceil((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Calculate actual daily revenue from real orders in date range
+    chartOrders.forEach(order => {
+      const orderDate = new Date(order.created_at).toISOString().split('T')[0];
+      if (dailyRevenue.has(orderDate)) {
+        const existing = dailyRevenue.get(orderDate);
+        dailyRevenue.set(orderDate, {
+          ...existing,
+          revenue: existing.revenue + Number(order.total)
+        });
+      }
+    });
     
-    // Use recent orders data or fetch from current stats
-    // This is a simplified version - in a full implementation, you'd fetch daily breakdown
-    const avgDailyRevenue = (stats?.totalRevenue || 0) / Math.max(periodDays, 1);
-    
-    return Array.from(dailyRevenue.values()).map((day, index) => ({
+    return Array.from(dailyRevenue.values()).map(day => ({
       ...day,
       date: new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      revenue: avgDailyRevenue + (Math.random() - 0.5) * avgDailyRevenue * 0.5, // Add some variation for demo
     }));
   };
 
@@ -276,7 +290,7 @@ export const Dashboard = () => {
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={recentOrders.length > 0 ? calculateDailyRevenue() : []}>
+                  <LineChart data={chartOrders.length > 0 ? calculateDailyRevenue() : []}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />

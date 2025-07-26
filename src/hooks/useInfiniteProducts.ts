@@ -1,6 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DatabaseProduct, Product } from './useProducts';
+import { Database } from '@/integrations/supabase/types';
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -17,7 +18,7 @@ const fetchProductsPage = async ({ pageParam = 0 }): Promise<ProductsPage> => {
 
     const { data, error: supabaseError, count } = await supabase
       .from('products')
-      .select('id, title, description, price, compare_price, stock, sku, image_urls, color_variants, keywords, is_active, created_at, updated_at', { count: 'exact' })
+      .select('*', { count: 'exact' })
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -25,7 +26,7 @@ const fetchProductsPage = async ({ pageParam = 0 }): Promise<ProductsPage> => {
     if (supabaseError) {
       throw supabaseError;
     }
-
+    
     const products = data?.map(convertDatabaseProduct) || [];
     const hasMore = count ? from + PRODUCTS_PER_PAGE < count : false;
     const nextCursor = hasMore ? pageParam + 1 : null;
@@ -77,7 +78,7 @@ const convertDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
   // Use fallback images if none provided
   const images = dbProduct.image_urls && dbProduct.image_urls.length > 0 
     ? dbProduct.image_urls 
-    : ['/src/assets/product-gold.jpg'];
+    : ['https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=500&auto=format&fit=crop&q=60'];
 
   return {
     id: dbProduct.id,

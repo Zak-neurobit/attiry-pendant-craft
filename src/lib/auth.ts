@@ -42,14 +42,9 @@ export const authService = {
       throw new Error('Password must be between 8-128 characters long');
     }
 
-    // Additional password strength validation
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
-
-    if (!(hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar)) {
-      throw new Error('Password must contain uppercase, lowercase, number, and special character');
+    // Simplified password validation
+    if (password.length < 8) {
+      throw new Error('Password must be at least 8 characters long');
     }
 
     const { data, error } = await supabase.auth.signUp({
@@ -65,9 +60,6 @@ export const authService = {
     });
 
     if (error) throw error;
-
-    // Profile will be automatically created by database trigger
-    // No need to manually create profile here anymore
     
     return data;
   },

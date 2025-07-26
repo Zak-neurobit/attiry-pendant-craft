@@ -12,9 +12,10 @@ import { usePrice, useComparePrice } from '@/hooks/usePrice';
 
 interface ProductCardProps {
   product: Product;
+  priority?: boolean;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = false }) => {
   const { favourites, addToFavourites, removeFromFavourites } = useFavourites();
   const isFavourite = favourites.includes(product.id);
 
@@ -39,10 +40,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 h-full">
         <div className="relative overflow-hidden">
           <LazyImage
-            src={product.images[0]}
+            src={product.images && product.images.length > 0 ? product.images[0] : 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=500&auto=format&fit=crop&q=60'}
             alt={product.name}
             className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
             loadingClassName="h-64"
+            priority={priority}
+            quality="high"
           />
           <div className="absolute top-3 left-3 flex flex-col gap-2">
             {product.isNew && (

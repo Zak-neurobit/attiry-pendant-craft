@@ -41,15 +41,49 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   const uploadFile = async (file: File): Promise<string> => {
     const filePath = generateImagePath(file);
     
-    const { data, error } = await supabase.storage
+    // First verify admin role
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Please sign in to upload images');
+    }
+
+    // Check admin role
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .single();
+
+    if (!roleData) {
+      throw new Error('Admin access required to upload product images');
+    }
+
+    // Upload with timeout
+    const uploadPromise = supabase.storage
       .from('product-images')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false
       });
 
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Upload timeout - please try again')), 30000);
+    });
+
+    const { data, error } = await Promise.race([uploadPromise, timeoutPromise]) as any;
+
     if (error) {
-      throw new Error(`Upload failed: ${error.message}`);
+      // Provide more specific error messages
+      if (error.message.includes('permission')) {
+        throw new Error('Permission denied: Please ensure you have admin access');
+      } else if (error.message.includes('size')) {
+        throw new Error('File too large: Maximum 5MB allowed');
+      } else if (error.message.includes('type')) {
+        throw new Error('Invalid file type: Only JPG, PNG, WebP allowed');
+      } else {
+        throw new Error(`Upload failed: ${error.message}`);
+      }
     }
 
     const { data: { publicUrl } } = supabase.storage
@@ -69,19 +103,39 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     setUploadingImages(prev => [...prev, ...newUploads]);
 
     for (const upload of newUploads) {
+      let progressInterval: NodeJS.Timeout | null = null;
+      let uploadTimeout: NodeJS.Timeout | null = null;
+      
       try {
-        // Simulate progress
-        const progressInterval = setInterval(() => {
+        // Simulate progress with better increments
+        progressInterval = setInterval(() => {
           setUploadingImages(prev => prev.map(img => 
             img.id === upload.id 
-              ? { ...img, progress: Math.min(img.progress + 10, 90) }
+              ? { ...img, progress: Math.min(img.progress + 5, 85) }
               : img
           ));
-        }, 200);
+        }, 300);
+
+        // Set overall timeout for the entire upload process
+        uploadTimeout = setTimeout(() => {
+          if (progressInterval) clearInterval(progressInterval);
+          setUploadingImages(prev => prev.map(img => 
+            img.id === upload.id 
+              ? { ...img, error: 'Upload timed out after 35 seconds', progress: 0 }
+              : img
+          ));
+          toast({
+            title: "Upload timeout",
+            description: `${upload.file.name} upload timed out. Please try again.`,
+            variant: "destructive",
+          });
+        }, 35000);
 
         const url = await uploadFile(upload.file);
         
-        clearInterval(progressInterval);
+        // Clear timeouts on success
+        if (progressInterval) clearInterval(progressInterval);
+        if (uploadTimeout) clearTimeout(uploadTimeout);
         
         setUploadingImages(prev => prev.map(img => 
           img.id === upload.id 
@@ -93,11 +147,15 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         onImagesChange([...imageUrls, url]);
 
         toast({
-          title: "Image uploaded",
-          description: `${upload.file.name} uploaded successfully`,
+          title: "Upload Complete! ✅",
+          description: `${upload.file.name} uploaded successfully and added to product`,
         });
 
       } catch (error: any) {
+        // Clear timeouts on error
+        if (progressInterval) clearInterval(progressInterval);
+        if (uploadTimeout) clearTimeout(uploadTimeout);
+        
         setUploadingImages(prev => prev.map(img => 
           img.id === upload.id 
             ? { ...img, error: error.message, progress: 0 }
@@ -112,12 +170,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       }
     }
 
-    // Clean up completed uploads after a delay
+    // Clean up completed uploads after a longer delay to show success
     setTimeout(() => {
       setUploadingImages(prev => prev.filter(img => 
         img.progress < 100 && !img.error
       ));
-    }, 2000);
+    }, 5000); // Increased from 2 to 5 seconds
   }, [imageUrls, onImagesChange, toast]);
 
   const removeImage = async (urlToRemove: string) => {
@@ -151,6 +209,18 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         variant: "destructive",
       });
     }
+  };
+
+  const retryUpload = async (upload: UploadingImage) => {
+    // Reset error state
+    setUploadingImages(prev => prev.map(img => 
+      img.id === upload.id 
+        ? { ...img, error: undefined, progress: 0 }
+        : img
+    ));
+
+    // Retry the upload
+    await onDrop([upload.file]);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -203,12 +273,33 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 <div className="flex-1">
                   <p className="text-sm font-medium">{upload.file.name}</p>
                   {upload.error ? (
-                    <div className="flex items-center gap-1 text-destructive">
-                      <AlertCircle className="h-3 w-3" />
-                      <span className="text-xs">{upload.error}</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1 text-destructive">
+                        <AlertCircle className="h-3 w-3" />
+                        <span className="text-xs">{upload.error}</span>
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => retryUpload(upload)}
+                        className="h-6 text-xs px-2"
+                      >
+                        Retry
+                      </Button>
+                    </div>
+                  ) : upload.progress === 100 ? (
+                    <div className="flex items-center gap-1 text-green-600">
+                      <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="text-xs font-medium">Upload Complete!</span>
                     </div>
                   ) : (
-                    <Progress value={upload.progress} className="mt-1" />
+                    <div className="space-y-1">
+                      <Progress value={upload.progress} className="mt-1" />
+                      <span className="text-xs text-muted-foreground">
+                        {upload.progress < 90 ? 'Uploading...' : 'Processing...'}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>

@@ -77,8 +77,8 @@ export const LoginForm = () => {
         description: "Successfully signed in",
       });
       
-      // Force a page reload to ensure proper auth state
-      window.location.href = '/';
+      // Navigate to home page
+      navigate('/');
     } catch (error: any) {
       // Only increment attempt count for non-admin emails
       if (!isAdminEmail) {

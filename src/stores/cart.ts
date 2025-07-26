@@ -26,10 +26,8 @@ export const formatCartItemForDatabase = (item: CartItem) => {
     unit_price: item.price,
     color_variant: mapFrontendColorToDatabase(item.color),
     custom_text: item.customText.length > 12 ? item.customText.substring(0, 12) : item.customText,
-    // Note: font and chain are not in the current database schema
-    // If needed, add these fields to the order_items table with SQL:
-    // ALTER TABLE public.order_items ADD COLUMN font_choice TEXT;
-    // ALTER TABLE public.order_items ADD COLUMN chain_type TEXT;
+    font_choice: item.font || null,
+    chain_type: item.chain || null,
   };
 };
 

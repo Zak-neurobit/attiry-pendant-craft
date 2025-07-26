@@ -35,9 +35,9 @@ export const useAuth = create<AuthState>((set, get) => ({
     set({ loading: true });
     try {
       await authService.signUp(email, password, firstName, lastName);
-      const user = await authService.getCurrentUser();
-      const isAdmin = user ? await authService.hasAdminRole() : false;
-      set({ user, isAdmin, loading: false });
+      // Don't try to get user info immediately after signup
+      // The profile might not be created yet by the trigger
+      set({ user: null, isAdmin: false, loading: false });
     } catch (error) {
       set({ loading: false });
       throw error;

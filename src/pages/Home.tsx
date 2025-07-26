@@ -42,11 +42,11 @@ const Home = () => {
             .trim(),
           name: product.title,
           price: product.price,
-          originalPrice: product.compare_price > product.price ? product.compare_price : undefined,
+          originalPrice: product.compare_price && product.compare_price > product.price ? product.compare_price : undefined,
           description: product.description || '',
-          images: product.image_urls || [productGold], // fallback to default image
+          images: product.image_urls && product.image_urls.length > 0 ? product.image_urls : [productGold], // fallback to default image
           rating: 5, // default rating
-          reviewCount: Math.floor(Math.random() * 200) + 50, // random review count
+          reviewCount: 0, // Will be populated from actual reviews when available
           isNew: false, // can be enhanced with actual data
           colors: product.color_variants || ['gold'],
           category: 'featured'
@@ -102,6 +102,9 @@ const Home = () => {
             src={heroImage} 
             alt="Luxury Custom Name Pendant - Personalized Jewelry"
             className="w-full h-full object-cover"
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-background/20" />
         </div>
@@ -191,7 +194,7 @@ const Home = () => {
                   className="fade-in"
                   style={{ animationDelay: `${index * 200}ms` }}
                 >
-                  <ProductCard product={product} />
+                  <ProductCard product={product} priority={index < 2} />
                 </div>
               ))
             ) : (

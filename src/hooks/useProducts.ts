@@ -1,21 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
-export interface DatabaseProduct {
-  id: string;
-  title: string;
-  description: string | null;
-  price: number;
-  compare_price?: number;
-  stock: number;
-  sku: string | null;
-  image_urls: string[] | null;
-  color_variants: string[] | null;
-  keywords: string[] | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+export type DatabaseProduct = Database['public']['Tables']['products']['Row'];
 
 export interface Product {
   id: string;

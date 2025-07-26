@@ -44,7 +44,9 @@ serve(async (req) => {
       quantity: item.quantity,
       unit_price: item.price,
       color_variant: item.color,
-      custom_text: item.customText
+      custom_text: item.customText,
+      font_choice: item.font || null,
+      chain_type: item.chain || null
     }));
 
     const { error: itemsError } = await supabaseClient
