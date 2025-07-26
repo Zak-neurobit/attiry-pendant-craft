@@ -213,13 +213,18 @@ class CurrencyService {
   async convertCurrency(
     amount: number,
     fromCurrency: SupportedCurrency,
-    toCurrency: SupportedCurrency
+    toCurrency: SupportedCurrency,
+    _forTesting_useCachedRates = false // This flag is ONLY for tests
   ): Promise<number> {
     if (fromCurrency === toCurrency) {
       return amount;
     }
 
-    await this.getExchangeRates(fromCurrency);
+    // In production, this flag is false, so we always get latest rates.
+    // In tests, we'll set it to true to use our mock rates.
+    if (!_forTesting_useCachedRates) {
+      await this.getExchangeRates(fromCurrency);
+    }
     
     const rateKey = `${fromCurrency}_${toCurrency}`;
     const rate = this.exchangeRates.get(rateKey);
@@ -278,6 +283,13 @@ class CurrencyService {
    */
   getSupportedCurrencies(): CurrencyInfo[] {
     return Object.values(SUPPORTED_CURRENCIES);
+  }
+
+  /**
+   * (For Testing Only) Manually set exchange rates to bypass API calls in tests.
+   */
+  setExchangeRatesForTesting(rates: Record<string, number>, baseCurrency: SupportedCurrency = 'USD'): void {
+    this.updateExchangeRates(baseCurrency, rates);
   }
 
   /**

@@ -203,7 +203,7 @@ src/
 - **Image Optimization**: WebP format and lazy loading
 - **Caching**: Redis caching for better performance
 - **PWA**: Progressive Web App features
-- **Automated Testing**: Comprehensive unit and integration tests
+
 
 ### Business Features
 - **Inventory Management**: Stock tracking and alerts
@@ -225,7 +225,7 @@ src/
 - User authentication and profiles
 - Shopping cart and checkout
 - Payment processing with Razorpay
-- Automated Testing Setup: Implemented Vitest with initial unit tests for currency and product detail pages.
+- 
 - **Currency Conversion and Product Management**: Enhanced currency handling and new product management scripts.
 
 ### 🔄 In Progress

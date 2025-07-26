@@ -9,7 +9,6 @@ import { LanguageToggle } from '@/components/LanguageToggle';
 import { CurrencyIndicator } from '@/components/CurrencyIndicator';
 import { useTranslation } from 'react-i18next';
 import { getFeaturedProductsWithFallback, FeaturedProduct } from '@/lib/featuredProducts';
-import { CurrencyTestComponent } from '@/components/CurrencyTestComponent';
 import heroImage from '@/assets/hero-pendant.jpg';
 import collectionImage from '@/assets/collection-hero.jpg';
 import productGold from '@/assets/product-gold.jpg';
@@ -208,14 +207,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Currency Debug Section (Temporary) */}
-      <section className="py-12 bg-yellow-50 border-y-2 border-yellow-200">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-center">
-            <CurrencyTestComponent />
-          </div>
-        </div>
-      </section>
+      
 
       {/* Why Choose Personalized Jewelry */}
       <section className="py-20 bg-muted/30">

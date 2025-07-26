@@ -31,7 +31,7 @@
 - **Modified `src/pages/admin/payments/AllPayments.tsx`**: Payments display updated for multi-currency.
 - **Modified `src/pages/admin/payments/PaymentsDashboard.tsx`**: Payments dashboard updated for multi-currency.
 
-## 2025-01-25 - Product Starring System + Internationalization + ScrollToTop Implementation
+
 
 ### 🌟 **MAJOR: Product Starring/Featuring System**
 
