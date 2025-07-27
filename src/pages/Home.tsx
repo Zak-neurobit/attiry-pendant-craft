@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/ProductCard';
 import { CurrencyIndicator } from '@/components/CurrencyIndicator';
 import { useProducts } from '@/hooks/useProducts';
+import { getFeaturedProductsWithFallback, FeaturedProduct } from '@/lib/featuredProducts';
 import heroImage from '@/assets/hero-pendant.jpg';
 import collectionImage from '@/assets/collection-hero.jpg';
 import productGold from '@/assets/product-gold.jpg';
@@ -13,7 +14,8 @@ import productRoseGold from '@/assets/product-rose-gold.jpg';
 
 const Home = () => {
   const [scrollY, setScrollY] = useState(0);
-  const { products, loading: loadingProducts } = useProducts();
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -21,8 +23,51 @@ const Home = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Get featured products (first 4 products for now)
-  const featuredProducts = products.slice(0, 4);
+  // Load featured products
+  useEffect(() => {
+    const loadFeaturedProducts = async () => {
+      setLoadingFeatured(true);
+      try {
+        const featured = await getFeaturedProductsWithFallback(4);
+        // Convert FeaturedProduct to Product format for ProductCard
+        const convertedProducts = featured.map((fp: FeaturedProduct) => ({
+          id: fp.id,
+          slug: fp.title.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-').trim(),
+          name: fp.title,
+          price: Number(fp.price),
+          originalPrice: fp.compare_price && Number(fp.compare_price) > Number(fp.price) ? Number(fp.compare_price) : undefined,
+          description: fp.description || '',
+          images: fp.image_urls && fp.image_urls.length > 0 ? fp.image_urls : ['/src/assets/product-gold.jpg'],
+          rating: 5,
+          reviewCount: Math.floor(Math.random() * 200) + 50,
+          isNew: new Date(fp.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          colors: fp.color_variants?.map(color => {
+            const colorMap: { [key: string]: string } = {
+              'gold': 'gold',
+              'rose_gold': 'rose-gold',
+              'silver': 'silver',
+              'matte_gold': 'matte-gold',
+              'matte_silver': 'matte-silver',
+              'vintage_copper': 'copper',
+              'black': 'black'
+            };
+            return colorMap[color] || color;
+          }) || ['gold'],
+          category: 'custom-pendants',
+          stock: fp.stock,
+          sku: fp.sku || undefined
+        }));
+        setFeaturedProducts(convertedProducts);
+      } catch (error) {
+        console.error('Error loading featured products:', error);
+        setFeaturedProducts([]);
+      } finally {
+        setLoadingFeatured(false);
+      }
+    };
+
+    loadFeaturedProducts();
+  }, []);
 
 
   const testimonials = [
@@ -130,7 +175,7 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {loadingProducts ? (
+            {loadingFeatured ? (
               // Loading state
               [...Array(4)].map((_, index) => (
                 <div 

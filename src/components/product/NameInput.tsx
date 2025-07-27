@@ -7,21 +7,7 @@ const NameInput = () => {
   const [error, setError] = useState('');
 
   const validateName = (name: string) => {
-    if (name.length === 0) {
-      setError('');
-      return true;
-    }
-    
-    if (name.length > 12) {
-      setError('Name must be 12 characters or less');
-      return false;
-    }
-    
-    if (!/^[A-Za-z ]*$/.test(name)) {
-      setError('Only letters and spaces allowed');
-      return false;
-    }
-    
+    // Allow all characters from any language, no length limit
     setError('');
     return true;
   };
@@ -35,15 +21,14 @@ const NameInput = () => {
   return (
     <div className="mb-6">
       <label htmlFor="name-input" className="block text-sm font-medium text-foreground mb-2">
-        Enter Your Name (1-12 characters)
+        Enter Your Name (All languages supported)
       </label>
       <Input
         id="name-input"
         type="text"
         value={customization.nameText}
         onChange={handleChange}
-        placeholder="Your custom name..."
-        maxLength={12}
+        placeholder="Your custom name in any language..."
         className={`${error ? 'border-destructive focus-visible:ring-destructive' : ''}`}
         aria-describedby={error ? 'name-error' : undefined}
       />
@@ -53,7 +38,7 @@ const NameInput = () => {
         </p>
       )}
       <p className="text-xs text-muted-foreground mt-1">
-        {customization.nameText.length}/12 characters
+        {customization.nameText.length} characters
       </p>
     </div>
   );

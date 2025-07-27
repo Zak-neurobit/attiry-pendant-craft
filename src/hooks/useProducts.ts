@@ -51,8 +51,8 @@ export const mapFrontendColorToDatabase = (frontendColor: string): string => {
 
 // Convert database product to frontend format
 const convertDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
-  // Create slug from title
-  const slug = dbProduct.title.toLowerCase()
+  // Use existing slug or create from title as fallback
+  const slug = (dbProduct as any).slug || dbProduct.title.toLowerCase()
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-')
     .trim();
@@ -90,7 +90,7 @@ const fetchProducts = async (): Promise<Product[]> => {
   try {
     const { data, error: supabaseError } = await supabase
       .from('products')
-      .select('id, title, description, price, compare_price, stock, sku, image_urls, color_variants, keywords, is_active, created_at, updated_at')
+      .select('id, title, description, price, compare_price, stock, sku, image_urls, color_variants, chain_types, fonts, meta_title, meta_description, keywords, tags, cogs, category, slug, is_active, is_featured, featured_order, created_at, updated_at')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(50); // Limit initial load
@@ -99,14 +99,18 @@ const fetchProducts = async (): Promise<Product[]> => {
       throw supabaseError;
     }
 
-    return data?.map(convertDatabaseProduct) || [];
+    const products = data?.map(convertDatabaseProduct) || [];
+
+    // If database succeeds but returns no products, use fallback
+    if (products.length === 0) {
+      const { shopProducts } = await import('@/lib/products');
+      return shopProducts;
+    }
+
+    return products;
   } catch (err) {
-    console.warn('Database fetch failed, using fallback products:', err);
     // Fallback to static products if database fails
     const { shopProducts } = await import('@/lib/products');
-    if (shopProducts.length === 0) {
-      console.warn('Both database and fallback products are empty');
-    }
     return shopProducts;
   }
 };
@@ -126,6 +130,8 @@ export const useProducts = () => {
     retry: 2,
     retryDelay: 1000,
   });
+
+  // Products are now loaded from database
 
   const getProductBySlug = (slug: string): Product | undefined => {
     return products.find(product => product.slug === slug);

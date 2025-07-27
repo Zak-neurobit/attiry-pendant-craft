@@ -103,7 +103,7 @@ const App = () => (
               {/* Admin Routes */}
               <Route path="/admin" element={
                 <Suspense fallback={<PageLoader />}>
-                  <ProtectedRoute>
+                  <ProtectedRoute requireAdmin={true}>
                     <AdminLayout />
                   </ProtectedRoute>
                 </Suspense>

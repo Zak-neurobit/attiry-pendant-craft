@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, Star, ShoppingBag, Share2, Truck, Shield, RotateCcw, ZoomIn } from 'lucide-react';
+import { ArrowLeft, Heart, Star, ShoppingBag, Share2, Truck, Shield, RotateCcw, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -94,11 +94,24 @@ const ProductDetail = () => {
 
   const isFavourite = product ? favourites.includes(product.id) : false;
 
+  // Image navigation functions
+  const nextImage = () => {
+    if (product && product.images.length > 1) {
+      setSelectedImage((prev) => (prev + 1) % product.images.length);
+    }
+  };
+
+  const previousImage = () => {
+    if (product && product.images.length > 1) {
+      setSelectedImage((prev) => (prev - 1 + product.images.length) % product.images.length);
+    }
+  };
+
   const handleAddToCart = () => {
     if (!product || !isValid()) {
       toast({
         title: "Name Required",
-        description: "Please enter a valid name for your pendant (1-12 characters, letters only)",
+        description: "Please enter a name for your pendant",
         variant: "destructive",
       });
       return;
@@ -221,59 +234,161 @@ const ProductDetail = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-12">
-          {/* Product Images - Sticky on large screens */}
+          {/* Product Images - Redesigned with left thumbnails and navigation arrows */}
           <div className="lg:w-1/2">
-            <div className={`image-gallery-container space-y-4 ${isSticky ? 'lg:sticky-image-gallery' : ''}`}>
-              <div 
-                className="aspect-square overflow-hidden rounded-lg border shadow-lg hover:shadow-xl transition-shadow duration-300 relative group cursor-pointer"
-                onClick={() => openZoom(selectedImage)}
-              >
-                <img
-                  src={product.images[selectedImage] || '/placeholder.svg'}
-                  alt={product.name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                {/* Zoom overlay */}
-                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <div className="bg-white/90 rounded-full p-3">
-                    <ZoomIn className="h-6 w-6 text-gray-700" />
+            <div className={`image-gallery-container ${isSticky ? 'lg:sticky-image-gallery' : ''}`}>
+              {/* Desktop Layout: Thumbnails Left + Main Image Right */}
+              <div className="hidden md:flex gap-4">
+                {/* Thumbnail Column - Left Side */}
+                {product.images.length > 1 && (
+                  <div className="flex flex-col gap-2 w-20">
+                    {product.images.map((image, index) => (
+                      <div
+                        key={index}
+                        className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 cursor-pointer ${
+                          selectedImage === index ? 'border-accent ring-2 ring-accent/20' : 'border-border hover:border-accent/60'
+                        }`}
+                      >
+                        <button
+                          onClick={() => setSelectedImage(index)}
+                          className="w-full h-full"
+                        >
+                          <img
+                            src={image}
+                            alt={`${product.name} ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Main Image - Right Side */}
+                <div className="flex-1">
+                  <div 
+                    className="aspect-square overflow-hidden rounded-lg border shadow-lg hover:shadow-xl transition-shadow duration-300 relative group cursor-pointer"
+                    onClick={() => openZoom(selectedImage)}
+                  >
+                    <img
+                      src={product.images[selectedImage] || '/placeholder.svg'}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    
+                    {/* Navigation Arrows */}
+                    {product.images.length > 1 && (
+                      <>
+                        {/* Previous Arrow */}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            previousImage();
+                          }}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 relative z-20"
+                        >
+                          <ChevronLeft className="h-5 w-5 text-gray-700" />
+                        </button>
+
+                        {/* Next Arrow */}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            nextImage();
+                          }}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100 relative z-20"
+                        >
+                          <ChevronRight className="h-5 w-5 text-gray-700" />
+                        </button>
+                      </>
+                    )}
+
+                    {/* Zoom overlay */}
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                      <div className="bg-white/90 rounded-full p-3 pointer-events-auto">
+                        <ZoomIn className="h-6 w-6 text-gray-700" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {product.images.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {product.images.map((image, index) => (
-                    <div
-                      key={index}
-                      className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 relative group ${
-                        selectedImage === index ? 'border-accent ring-2 ring-accent/20' : 'border-border hover:border-accent/60'
-                      }`}
-                    >
-                      <button
-                        onClick={() => setSelectedImage(index)}
-                        className="w-full h-full"
-                      >
-                        <img
-                          src={image}
-                          alt={`${product.name} ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </button>
-                      {/* Clickable overlay for zoom */}
+              {/* Mobile Layout: Main Image Top + Thumbnails Bottom */}
+              <div className="md:hidden space-y-4">
+                <div 
+                  className="aspect-square overflow-hidden rounded-lg border shadow-lg hover:shadow-xl transition-shadow duration-300 relative group cursor-pointer"
+                  onClick={() => openZoom(selectedImage)}
+                >
+                  <img
+                    src={product.images[selectedImage] || '/placeholder.svg'}
+                    alt={product.name}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  
+                  {/* Navigation Arrows for Mobile */}
+                  {product.images.length > 1 && (
+                    <>
+                      {/* Previous Arrow */}
                       <button
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
-                          openZoom(index);
+                          previousImage();
                         }}
-                        className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all duration-200 relative z-20"
                       >
-                        <ZoomIn className="h-4 w-4 text-white" />
+                        <ChevronLeft className="h-5 w-5 text-gray-700" />
                       </button>
+
+                      {/* Next Arrow */}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          nextImage();
+                        }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all duration-200 relative z-20"
+                      >
+                        <ChevronRight className="h-5 w-5 text-gray-700" />
+                      </button>
+                    </>
+                  )}
+
+                  {/* Zoom overlay */}
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                    <div className="bg-white/90 rounded-full p-3 pointer-events-auto">
+                      <ZoomIn className="h-6 w-6 text-gray-700" />
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
+
+                {/* Thumbnails for Mobile */}
+                {product.images.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {product.images.map((image, index) => (
+                      <div
+                        key={index}
+                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 cursor-pointer ${
+                          selectedImage === index ? 'border-accent ring-2 ring-accent/20' : 'border-border hover:border-accent/60'
+                        }`}
+                      >
+                        <button
+                          onClick={() => setSelectedImage(index)}
+                          className="w-full h-full"
+                        >
+                          <img
+                            src={image}
+                            alt={`${product.name} ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

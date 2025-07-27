@@ -52,7 +52,7 @@ export const useProductCustomizer = create<ProductCustomizerState>((set, get) =>
   
   isValid: () => {
     const { nameText } = get().customization;
-    const nameRegex = /^[A-Za-z ]{1,12}$/;
-    return nameRegex.test(nameText);
+    // Allow any characters from any language, just require non-empty
+    return nameText.trim().length > 0;
   },
 }));

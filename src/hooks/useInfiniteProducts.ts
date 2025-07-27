@@ -18,7 +18,7 @@ const fetchProductsPage = async ({ pageParam = 0 }): Promise<ProductsPage> => {
 
     const { data, error: supabaseError, count } = await supabase
       .from('products')
-      .select('*', { count: 'exact' })
+      .select('id, title, description, price, compare_price, stock, sku, image_urls, color_variants, chain_types, fonts, meta_title, meta_description, keywords, tags, cogs, category, slug, is_active, is_featured, featured_order, created_at, updated_at', { count: 'exact' })
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -37,17 +37,19 @@ const fetchProductsPage = async ({ pageParam = 0 }): Promise<ProductsPage> => {
       hasMore
     };
   } catch (err) {
-    console.warn('Database fetch failed, using fallback products:', err);
     // Fallback to static products on first page only
     if (pageParam === 0) {
       const { shopProducts } = await import('@/lib/products');
-      if (shopProducts.length === 0) {
-        console.warn('Both database and fallback products are empty');
-      }
+      
+      const from = pageParam * PRODUCTS_PER_PAGE;
+      const pageProducts = shopProducts.slice(from, from + PRODUCTS_PER_PAGE);
+      const hasMore = from + PRODUCTS_PER_PAGE < shopProducts.length;
+      const nextCursor = hasMore ? pageParam + 1 : null;
+      
       return {
-        products: shopProducts.slice(0, PRODUCTS_PER_PAGE),
-        nextCursor: shopProducts.length > PRODUCTS_PER_PAGE ? 1 : null,
-        hasMore: shopProducts.length > PRODUCTS_PER_PAGE
+        products: pageProducts,
+        nextCursor,
+        hasMore
       };
     }
     return { products: [], nextCursor: null, hasMore: false };
@@ -56,8 +58,8 @@ const fetchProductsPage = async ({ pageParam = 0 }): Promise<ProductsPage> => {
 
 // Convert database product to frontend format
 const convertDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
-  // Create slug from title
-  const slug = dbProduct.title.toLowerCase()
+  // Use existing slug or create from title as fallback
+  const slug = (dbProduct as any).slug || dbProduct.title.toLowerCase()
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-')
     .trim();
