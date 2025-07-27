@@ -57,7 +57,7 @@ export const AdminSidebar = () => {
   return (
     <div className="fixed inset-y-0 left-0 z-50 w-64 bg-card border-r shadow-sm">
       <div className="flex h-16 items-center px-6 border-b">
-        <h1 className="text-xl font-bold text-foreground">Attiry Admin</h1>
+        <h1 className="text-xl font-bold font-cormorant text-foreground">Attiry Admin</h1>
       </div>
       <nav className="mt-8 px-4 space-y-2">
         <Link

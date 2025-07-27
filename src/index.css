@@ -2,7 +2,7 @@
 All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
 */
 
-@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -250,6 +250,33 @@ All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
 
   .font-playfair {
     font-family: 'Playfair Display', serif;
+  }
+
+  .font-cormorant {
+    font-family: 'Cormorant Garamond', serif;
+  }
+
+  /* Sticky image gallery for product detail page */
+  .sticky-image-gallery {
+    position: sticky;
+    top: 2rem;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    transition: all 0.3s ease;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .sticky-image-gallery::-webkit-scrollbar {
+    display: none;
+  }
+  .sticky-image-gallery {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Smooth transition when sticky state changes */
+  .image-gallery-container {
+    transition: transform 0.3s ease, opacity 0.3s ease;
   }
 }
 

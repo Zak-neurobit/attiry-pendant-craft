@@ -195,7 +195,7 @@ export const Dashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <h1 className="text-3xl font-bold font-cormorant">Dashboard</h1>
         <p className="text-muted-foreground">
           Welcome to your admin dashboard. Here's what's happening in your selected period.
         </p>

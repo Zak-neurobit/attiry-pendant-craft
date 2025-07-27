@@ -147,7 +147,7 @@ export const Addresses = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Addresses</h1>
+          <h1 className="text-2xl font-bold font-cormorant tracking-tight">Addresses</h1>
           <p className="text-muted-foreground">
             Manage your shipping addresses
           </p>
@@ -171,7 +171,7 @@ export const Addresses = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Addresses</h1>
+          <h1 className="text-2xl font-bold font-cormorant tracking-tight">Addresses</h1>
           <p className="text-muted-foreground">
             Manage your shipping addresses
           </p>

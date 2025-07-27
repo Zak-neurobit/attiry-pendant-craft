@@ -47,29 +47,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
             priority={priority}
             quality="high"
           />
-          <div className="absolute top-3 left-3 flex flex-col gap-2">
-            {product.isNew && (
-              <Badge className="bg-accent text-accent-foreground">New</Badge>
-            )}
-            {product.originalPrice && product.originalPrice > product.price && (
-              <Badge variant="destructive">
-                Save {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
-              </Badge>
-            )}
+            <div className="absolute top-3 left-3 flex flex-col gap-2">
+              {product.isNew && (
+                <Badge className="bg-accent text-accent-foreground">New</Badge>
+              )}
+              {product.originalPrice && product.originalPrice > product.price && (
+                <Badge variant="destructive">
+                  Save {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-3 right-3 bg-white/80 hover:bg-white"
+              onClick={toggleFavourite}
+            >
+              <Heart
+                className={`h-4 w-4 ${
+                  isFavourite ? 'fill-red-500 text-red-500' : 'text-gray-600'
+                }`}
+              />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-3 right-3 bg-white/80 hover:bg-white"
-            onClick={toggleFavourite}
-          >
-            <Heart
-              className={`h-4 w-4 ${
-                isFavourite ? 'fill-red-500 text-red-500' : 'text-gray-600'
-              }`}
-            />
-          </Button>
-        </div>
         <CardContent className="p-4 flex-1 flex flex-col">
           <h3 className="font-medium text-lg mb-2 line-clamp-2">{product.name}</h3>
           <p className="text-sm text-muted-foreground mb-3 line-clamp-2 flex-1">

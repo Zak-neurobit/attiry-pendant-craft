@@ -126,7 +126,7 @@ export const SearchResults = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl md:text-4xl font-serif font-bold mb-6">
+          <h1 className="text-3xl md:text-4xl font-cormorant font-bold mb-6">
             Search Results
           </h1>
           

@@ -8,8 +8,7 @@ import { AuthProvider } from "./components/auth/AuthProvider";
 import { Layout } from "./components/layout/Layout";
 import { ScrollToTop } from "./components/ScrollToTop";
 
-// i18n and currency initialization
-import "./i18n";
+// Currency initialization
 import { CurrencyProvider } from "./components/providers/CurrencyProvider";
 
 // Critical pages (load immediately)

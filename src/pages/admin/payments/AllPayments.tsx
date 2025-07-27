@@ -155,7 +155,7 @@ export const AllPayments = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">All Payments</h1>
+          <h1 className="text-3xl font-bold font-cormorant">All Payments</h1>
           <p className="text-muted-foreground">
             Manage and monitor all payment transactions
           </p>

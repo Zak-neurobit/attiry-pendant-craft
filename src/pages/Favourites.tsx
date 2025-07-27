@@ -99,7 +99,7 @@ export const Favourites = () => {
       >
         <div className="text-center max-w-md mx-auto px-6">
           <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
-          <h1 className="text-2xl font-serif font-bold mb-4">Sign In Required</h1>
+          <h1 className="text-2xl font-cormorant font-bold mb-4">Sign In Required</h1>
           <p className="text-muted-foreground mb-8">
             Please sign in to view your favourites.
           </p>
@@ -134,7 +134,7 @@ export const Favourites = () => {
           >
             <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-6" />
           </motion.div>
-          <h1 className="text-2xl font-serif font-bold mb-4">No Favourites Yet</h1>
+          <h1 className="text-2xl font-cormorant font-bold mb-4">No Favourites Yet</h1>
           <p className="text-muted-foreground mb-8">
             Start building your collection by adding products to your favourites. 
             Look for the heart icon on product cards and detail pages.
@@ -158,7 +158,7 @@ export const Favourites = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-12"
         >
-          <h1 className="text-3xl md:text-4xl font-serif font-bold mb-4">
+          <h1 className="text-3xl md:text-4xl font-cormorant font-bold mb-4">
             Your Favourites
           </h1>
           <p className="text-muted-foreground">

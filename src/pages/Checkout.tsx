@@ -113,7 +113,7 @@ export const Checkout = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto" />
-          <h1 className="text-2xl font-semibold">Your cart is empty</h1>
+          <h1 className="text-2xl font-semibold font-cormorant">Your cart is empty</h1>
           <p className="text-muted-foreground">Add some items to your cart to continue with checkout</p>
           <Button asChild>
             <a href="/shop">Continue Shopping</a>
@@ -131,7 +131,7 @@ export const Checkout = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-center mb-2">Checkout</h1>
+          <h1 className="text-3xl font-bold font-cormorant text-center mb-2">Checkout</h1>
           <p className="text-muted-foreground text-center">Complete your order</p>
         </motion.div>
 

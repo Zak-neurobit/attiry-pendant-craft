@@ -1,0 +1,22 @@
+{
+  "name": "Attiry - Custom Name Pendants",
+  "short_name": "Attiry",
+  "description": "Premium custom name pendant jewelry with personalized engraving",
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png", 
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

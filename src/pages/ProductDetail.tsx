@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, Star, ShoppingBag, Share2, Truck, Shield, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Heart, Star, ShoppingBag, Share2, Truck, Shield, RotateCcw, ZoomIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +13,8 @@ import { useFavourites } from '@/stores/favourites';
 import { useToast } from '@/hooks/use-toast';
 import { SEOHead } from '@/components/SEOHead';
 import { useProductCustomizer } from '@/stores/productCustomizer';
+import { ImageZoomModal } from '@/components/ui/image-zoom-modal';
+import { useImageZoom } from '@/hooks/useImageZoom';
 
 // Components
 import NameInput from '@/components/product/NameInput';
@@ -25,6 +27,29 @@ import { ReviewsSection } from '@/components/reviews/ReviewsSection';
 
 // Import the products hook
 import { useProducts } from '@/hooks/useProducts';
+
+// Custom hook for managing sticky image gallery behavior
+const useStickyImageGallery = () => {
+  const [isSticky, setIsSticky] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const addToCartSection = document.getElementById('add-to-cart-section');
+      if (addToCartSection) {
+        const rect = addToCartSection.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        
+        // Stop being sticky when Add to Cart section is in viewport
+        setIsSticky(rect.top > windowHeight * 0.3);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return isSticky;
+};
 
 interface Product {
   id: string;
@@ -53,9 +78,19 @@ const ProductDetail = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [includeGiftWrap, setIncludeGiftWrap] = useState(false);
   const [quantity] = useState(1);
+  
+  // Use the sticky image gallery hook
+  const isSticky = useStickyImageGallery();
 
+  // Get product data first (before using it in other hooks)
   const product = slug ? getProductBySlug(slug) : null;
   const loading = productsLoading;
+
+  // Image zoom functionality (using product data)
+  const { isOpen: isZoomOpen, openZoom, closeZoom } = useImageZoom({
+    images: product?.images || [],
+    alt: product?.name || 'Product image'
+  });
 
   const isFavourite = product ? favourites.includes(product.id) : false;
 
@@ -134,7 +169,7 @@ const ProductDetail = () => {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center py-12">
-            <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
+            <h1 className="text-2xl font-bold font-cormorant mb-4">Product Not Found</h1>
             <p className="text-muted-foreground mb-8">
               The product you're looking for doesn't exist or has been removed.
             </p>
@@ -185,40 +220,65 @@ const ProductDetail = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Product Images */}
-          <div className="space-y-4">
-            <div className="aspect-square overflow-hidden rounded-lg border">
-              <img
-                src={product.images[selectedImage] || '/placeholder.svg'}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto">
-                {product.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                      selectedImage === index ? 'border-accent' : 'border-border'
-                    }`}
-                  >
-                    <img
-                      src={image}
-                      alt={`${product.name} ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
+        <div className="flex flex-col lg:flex-row gap-12">
+          {/* Product Images - Sticky on large screens */}
+          <div className="lg:w-1/2">
+            <div className={`image-gallery-container space-y-4 ${isSticky ? 'lg:sticky-image-gallery' : ''}`}>
+              <div 
+                className="aspect-square overflow-hidden rounded-lg border shadow-lg hover:shadow-xl transition-shadow duration-300 relative group cursor-pointer"
+                onClick={() => openZoom(selectedImage)}
+              >
+                <img
+                  src={product.images[selectedImage] || '/placeholder.svg'}
+                  alt={product.name}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                {/* Zoom overlay */}
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <div className="bg-white/90 rounded-full p-3">
+                    <ZoomIn className="h-6 w-6 text-gray-700" />
+                  </div>
+                </div>
               </div>
-            )}
+
+              {product.images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {product.images.map((image, index) => (
+                    <div
+                      key={index}
+                      className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all duration-200 hover:scale-105 relative group ${
+                        selectedImage === index ? 'border-accent ring-2 ring-accent/20' : 'border-border hover:border-accent/60'
+                      }`}
+                    >
+                      <button
+                        onClick={() => setSelectedImage(index)}
+                        className="w-full h-full"
+                      >
+                        <img
+                          src={image}
+                          alt={`${product.name} ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                      {/* Clickable overlay for zoom */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openZoom(index);
+                        }}
+                        className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
+                      >
+                        <ZoomIn className="h-4 w-4 text-white" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Product Info */}
-          <div className="space-y-6">
+          <div className="lg:w-1/2 space-y-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Badge className="bg-accent text-accent-foreground">Custom Made</Badge>
@@ -226,7 +286,7 @@ const ProductDetail = () => {
                   <Badge variant="secondary">New</Badge>
                 )}
               </div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">{product.name}</h1>
+              <h1 className="text-3xl font-bold font-cormorant text-foreground mb-2">{product.name}</h1>
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center gap-2">
                   <div className="flex items-center">
@@ -295,12 +355,13 @@ const ProductDetail = () => {
 
             <Separator />
 
-            {/* Add to Cart */}
+            {/* Add to Cart Section - This acts as the sticky stop point */}
             <motion.div 
               className="space-y-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
+              id="add-to-cart-section"
             >
               <Button
                 onClick={handleAddToCart}
@@ -391,6 +452,15 @@ const ProductDetail = () => {
           </Tabs>
         </div>
       </div>
+      
+      {/* Image Zoom Modal */}
+      <ImageZoomModal
+        isOpen={isZoomOpen}
+        onClose={closeZoom}
+        images={product.images || []}
+        initialIndex={selectedImage}
+        alt={product.name}
+      />
     </div>
   );
 };

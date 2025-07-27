@@ -107,7 +107,7 @@ export const Orders = () => {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
+          <h1 className="text-2xl font-bold font-cormorant tracking-tight">Orders</h1>
           <p className="text-muted-foreground">
             Track and manage your orders
           </p>
@@ -132,7 +132,7 @@ export const Orders = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
+        <h1 className="text-2xl font-bold font-cormorant tracking-tight">Orders</h1>
         <p className="text-muted-foreground">
           Track and manage your orders
         </p>

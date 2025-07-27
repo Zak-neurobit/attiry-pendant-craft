@@ -55,7 +55,7 @@ export const AccountLayout = ({ children }: AccountLayoutProps) => {
           <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:border-r lg:pt-20">
             <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto">
               <div className="flex items-center flex-shrink-0 px-4 mb-8">
-                <h1 className="text-xl font-semibold">My Account</h1>
+                <h1 className="text-xl font-semibold font-cormorant">My Account</h1>
               </div>
               <div className="flex-grow flex flex-col">
                 <div className="px-4">
@@ -68,7 +68,7 @@ export const AccountLayout = ({ children }: AccountLayoutProps) => {
           {/* Mobile Header */}
           <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background border-b">
             <div className="flex items-center justify-between h-16 px-4">
-              <h1 className="text-lg font-semibold">My Account</h1>
+              <h1 className="text-lg font-semibold font-cormorant">My Account</h1>
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="sm">

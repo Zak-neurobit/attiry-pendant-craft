@@ -162,7 +162,7 @@ export default function AISettings() {
     <div className="space-y-6" id="ai-settings-page">
       {/* Header */}
       <div id="ai-settings-header">
-        <h1 className="text-3xl font-bold" id="page-title">AI Settings</h1>
+        <h1 className="text-3xl font-bold font-cormorant" id="page-title">AI Settings</h1>
         <p className="text-muted-foreground" id="page-description">
           Configure OpenAI integration for product descriptions, metadata generation, and image analysis
         </p>

@@ -385,7 +385,7 @@ export const ProductForm = () => {
           Back to Products
         </Button>
         <div id="header-content">
-          <h1 className="text-3xl font-bold" id="form-title">
+          <h1 className="text-3xl font-bold font-cormorant" id="form-title">
             {isEditing ? 'Edit Product' : 'Add New Product'}
           </h1>
           <p className="text-muted-foreground" id="form-description">

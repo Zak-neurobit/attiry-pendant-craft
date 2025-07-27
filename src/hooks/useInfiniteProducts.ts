@@ -37,10 +37,13 @@ const fetchProductsPage = async ({ pageParam = 0 }): Promise<ProductsPage> => {
       hasMore
     };
   } catch (err) {
-    console.warn('Database fetch failed, using fallback:', err);
+    console.warn('Database fetch failed, using fallback products:', err);
     // Fallback to static products on first page only
     if (pageParam === 0) {
       const { shopProducts } = await import('@/lib/products');
+      if (shopProducts.length === 0) {
+        console.warn('Both database and fallback products are empty');
+      }
       return {
         products: shopProducts.slice(0, PRODUCTS_PER_PAGE),
         nextCursor: shopProducts.length > PRODUCTS_PER_PAGE ? 1 : null,
@@ -78,7 +81,7 @@ const convertDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
   // Use fallback images if none provided
   const images = dbProduct.image_urls && dbProduct.image_urls.length > 0 
     ? dbProduct.image_urls 
-    : ['https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=500&auto=format&fit=crop&q=60'];
+    : ['/src/assets/product-gold.jpg'];
 
   return {
     id: dbProduct.id,

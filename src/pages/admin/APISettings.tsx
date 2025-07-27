@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, Eye, EyeOff, Key, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Copy, Eye, EyeOff, Key, Plus, Trash2, RefreshCw, Send, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -31,12 +33,41 @@ interface APIUsageLog {
   created_at: string;
 }
 
+interface TestRequest {
+  endpoint: string;
+  method: string;
+  headers: Record<string, string>;
+  body?: string;
+}
+
+interface TestResponse {
+  status: number;
+  statusText: string;
+  headers: Record<string, string>;
+  data: any;
+  responseTime: number;
+  timestamp: string;
+  method: string;
+  endpoint: string;
+}
+
 export const APISettings = () => {
   const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
   const [apiLogs, setApiLogs] = useState<APIUsageLog[]>([]);
   const [newKeyName, setNewKeyName] = useState('');
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // API Testing state
+  const [selectedEndpoint, setSelectedEndpoint] = useState('/products');
+  const [selectedMethod, setSelectedMethod] = useState('GET');
+  const [selectedApiKey, setSelectedApiKey] = useState('');
+  const [requestBody, setRequestBody] = useState('');
+  const [customHeaders, setCustomHeaders] = useState('');
+  const [testResponse, setTestResponse] = useState<TestResponse | null>(null);
+  const [isTestingApi, setIsTestingApi] = useState(false);
+  const [testHistory, setTestHistory] = useState<TestResponse[]>([]);
+  
   const { toast } = useToast();
 
   useEffect(() => {
@@ -177,6 +208,159 @@ export const APISettings = () => {
     });
   };
 
+  const testApiEndpoint = async () => {
+    if (!selectedApiKey || !selectedApiKey.startsWith('ak_live_')) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid API key (should start with 'ak_live_')",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsTestingApi(true);
+    const startTime = Date.now();
+
+    try {
+      const baseUrl = 'https://jpbfprlpbiojfhshlhcp.supabase.co/functions/v1';
+      const url = `${baseUrl}${selectedEndpoint}`;
+      
+      // Parse custom headers
+      let headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${selectedApiKey}`,
+      };
+
+      if (customHeaders.trim()) {
+        try {
+          const parsedHeaders = JSON.parse(customHeaders);
+          headers = { ...headers, ...parsedHeaders };
+        } catch (error) {
+          toast({
+            title: "Error",
+            description: "Invalid JSON format in custom headers",
+            variant: "destructive",
+          });
+          setIsTestingApi(false);
+          return;
+        }
+      }
+
+      // Prepare request options
+      const requestOptions: RequestInit = {
+        method: selectedMethod,
+        headers,
+      };
+
+      // Add body for POST and PUT requests
+      if ((selectedMethod === 'POST' || selectedMethod === 'PUT') && requestBody.trim()) {
+        try {
+          JSON.parse(requestBody); // Validate JSON
+          requestOptions.body = requestBody;
+        } catch (error) {
+          toast({
+            title: "Error", 
+            description: "Invalid JSON format in request body",
+            variant: "destructive",
+          });
+          setIsTestingApi(false);
+          return;
+        }
+      }
+
+      const response = await fetch(url, requestOptions);
+      const responseTime = Date.now() - startTime;
+      
+      let responseData;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        responseData = await response.json();
+      } else {
+        responseData = await response.text();
+      }
+
+      const testResult: TestResponse = {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        data: responseData,
+        responseTime,
+        timestamp: new Date().toISOString(),
+        method: selectedMethod,
+        endpoint: selectedEndpoint,
+      };
+
+      setTestResponse(testResult);
+      setTestHistory(prev => [testResult, ...prev.slice(0, 9)]); // Keep last 10 tests
+
+      toast({
+        title: "Test Completed",
+        description: `Request completed in ${responseTime}ms`,
+      });
+
+    } catch (error) {
+      const errorResponse: TestResponse = {
+        status: 0,
+        statusText: 'Network Error',
+        headers: {},
+        data: { error: error instanceof Error ? error.message : 'Unknown error' },
+        responseTime: Date.now() - startTime,
+        timestamp: new Date().toISOString(),
+        method: selectedMethod,
+        endpoint: selectedEndpoint,
+      };
+
+      setTestResponse(errorResponse);
+      toast({
+        title: "Test Failed",
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingApi(false);
+    }
+  };
+
+  const loadSampleData = () => {
+    const samples: Record<string, Record<string, string>> = {
+      '/products': {
+        'POST': JSON.stringify({
+          title: "Test Product",
+          description: "A test product",
+          price: 29.99,
+          stock: 100
+        }, null, 2),
+        'PUT': JSON.stringify({
+          title: "Updated Product",
+          price: 34.99
+        }, null, 2)
+      },
+      '/orders': {
+        'POST': JSON.stringify({
+          customer_id: "customer-id",
+          items: [
+            {
+              product_id: "product-id",
+              quantity: 1,
+              price: 29.99
+            }
+          ]
+        }, null, 2)
+      },
+      '/customers': {
+        'POST': JSON.stringify({
+          email: "test@example.com",
+          name: "Test Customer"
+        }, null, 2)
+      }
+    };
+
+    const sample = samples[selectedEndpoint]?.[selectedMethod];
+    if (sample) {
+      setRequestBody(sample);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -190,7 +374,7 @@ export const APISettings = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">API Settings</h1>
+        <h1 className="text-3xl font-bold font-cormorant">API Settings</h1>
         <p className="text-muted-foreground">
           Manage API keys and access permissions for your store
         </p>
@@ -371,23 +555,231 @@ export const APISettings = () => {
         </TabsContent>
 
         <TabsContent value="testing">
-          <Card>
-            <CardHeader>
-              <CardTitle>API Testing Interface</CardTitle>
-              <CardDescription>
-                Test your API endpoints directly from the admin dashboard
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <Key className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">API Testing Interface</h3>
-                <p className="text-muted-foreground">
-                  Coming soon - Interactive API testing interface
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>API Testing Interface</CardTitle>
+                <CardDescription>
+                  Test your API endpoints directly from the admin dashboard
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* API Key Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="apiKey">API Key for Testing</Label>
+                  <Input
+                    id="apiKey"
+                    type="password"
+                    placeholder="Enter your API key (ak_live_...)"
+                    value={selectedApiKey}
+                    onChange={(e) => setSelectedApiKey(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter the full API key that was shown when you generated it. Keys are not stored in plaintext for security.
+                  </p>
+                </div>
+
+                {/* Request Configuration */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="endpoint">Endpoint</Label>
+                    <Select value={selectedEndpoint} onValueChange={setSelectedEndpoint}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="/products">Products</SelectItem>
+                        <SelectItem value="/orders">Orders</SelectItem>
+                        <SelectItem value="/customers">Customers</SelectItem>
+                        <SelectItem value="/analytics">Analytics</SelectItem>
+                        <SelectItem value="/inventory">Inventory</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="method">HTTP Method</Label>
+                    <Select value={selectedMethod} onValueChange={setSelectedMethod}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="GET">GET</SelectItem>
+                        <SelectItem value="POST">POST</SelectItem>
+                        <SelectItem value="PUT">PUT</SelectItem>
+                        <SelectItem value="DELETE">DELETE</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Request Body (for POST/PUT) */}
+                {(selectedMethod === 'POST' || selectedMethod === 'PUT') && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="requestBody">Request Body (JSON)</Label>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={loadSampleData}
+                      >
+                        Load Sample
+                      </Button>
+                    </div>
+                    <Textarea
+                      id="requestBody"
+                      placeholder="Enter JSON request body..."
+                      value={requestBody}
+                      onChange={(e) => setRequestBody(e.target.value)}
+                      rows={8}
+                      className="font-mono text-sm"
+                    />
+                  </div>
+                )}
+
+                {/* Custom Headers */}
+                <div className="space-y-2">
+                  <Label htmlFor="customHeaders">Custom Headers (JSON)</Label>
+                  <Textarea
+                    id="customHeaders"
+                    placeholder='{"X-Custom-Header": "value"}'
+                    value={customHeaders}
+                    onChange={(e) => setCustomHeaders(e.target.value)}
+                    rows={3}
+                    className="font-mono text-sm"
+                  />
+                </div>
+
+                {/* Send Request Button */}
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={testApiEndpoint}
+                    disabled={isTestingApi || !selectedApiKey}
+                    className="flex-1"
+                  >
+                    {isTestingApi ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Testing...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Send Request
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setTestResponse(null);
+                      setRequestBody('');
+                      setCustomHeaders('');
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Response Display */}
+            {testResponse && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      Response
+                      {testResponse.status >= 200 && testResponse.status < 300 ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-500" />
+                      )}
+                    </CardTitle>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        {testResponse.responseTime}ms
+                      </div>
+                      <Badge variant={testResponse.status >= 200 && testResponse.status < 300 ? "default" : "destructive"}>
+                        {testResponse.status} {testResponse.statusText}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Response Headers */}
+                  <div>
+                    <Label className="text-sm font-medium">Headers</Label>
+                    <div className="mt-1 p-3 bg-muted rounded-md">
+                      <pre className="text-xs overflow-x-auto">
+                        {JSON.stringify(testResponse.headers, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+
+                  {/* Response Body */}
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Response Body</Label>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => copyToClipboard(JSON.stringify(testResponse.data, null, 2))}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="mt-1 p-3 bg-muted rounded-md max-h-96 overflow-auto">
+                      <pre className="text-xs whitespace-pre-wrap">
+                        {typeof testResponse.data === 'string' 
+                          ? testResponse.data 
+                          : JSON.stringify(testResponse.data, null, 2)
+                        }
+                      </pre>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Test History */}
+            {testHistory.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Tests</CardTitle>
+                  <CardDescription>
+                    Your last {testHistory.length} API tests
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {testHistory.map((test, index) => (
+                      <div 
+                        key={index}
+                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                        onClick={() => setTestResponse(test)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline">
+                            {test.method} {test.endpoint}
+                          </Badge>
+                          <Badge variant={test.status >= 200 && test.status < 300 ? "default" : "destructive"}>
+                            {test.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="h-4 w-4" />
+                          {test.responseTime}ms
+                          <span>{formatDate(test.timestamp)}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="logs">

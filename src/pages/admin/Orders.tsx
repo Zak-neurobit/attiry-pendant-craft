@@ -103,7 +103,7 @@ export const Orders = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Orders</h1>
+          <h1 className="text-3xl font-bold font-cormorant">Orders</h1>
           <p className="text-muted-foreground">
             Manage customer orders and fulfillment
           </p>

@@ -9,7 +9,7 @@ export const Privacy = () => {
     >
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold font-heading text-foreground mb-8">
+          <h1 className="text-4xl font-bold font-cormorant text-foreground mb-8">
             Privacy Policy
           </h1>
           

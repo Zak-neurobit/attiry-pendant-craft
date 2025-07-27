@@ -216,7 +216,7 @@ export const Analytics = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Analytics</h1>
+          <h1 className="text-3xl font-bold font-cormorant">Analytics</h1>
           <p className="text-muted-foreground">
             Track your store's performance and customer behavior
           </p>

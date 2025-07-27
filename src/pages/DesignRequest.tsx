@@ -65,7 +65,7 @@ export default function DesignRequest() {
       
       <div className="container mx-auto px-4 max-w-2xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+          <h1 className="text-3xl font-bold font-cormorant text-gray-900 mb-4">
             Custom Design Request
           </h1>
           <p className="text-lg text-gray-600">

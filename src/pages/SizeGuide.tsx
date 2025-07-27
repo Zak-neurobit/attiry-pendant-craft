@@ -13,7 +13,7 @@ export const SizeGuide = () => {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <Ruler className="h-12 w-12 text-accent mx-auto mb-4" />
-            <h1 className="text-4xl font-bold font-heading text-foreground mb-4">
+            <h1 className="text-4xl font-bold font-cormorant text-foreground mb-4">
               Necklace Size Guide
             </h1>
             <p className="text-lg text-muted-foreground">

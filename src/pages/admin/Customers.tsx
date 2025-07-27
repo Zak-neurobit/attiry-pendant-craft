@@ -179,7 +179,7 @@ export default function Customers() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Customers</h1>
+          <h1 className="text-3xl font-bold font-cormorant">Customers</h1>
           <p className="text-gray-600 mt-1">Total Customers: {customers.length}</p>
         </div>
         <Button onClick={exportCustomers} variant="outline">

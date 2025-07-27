@@ -4,11 +4,8 @@ import { ChevronRight, Star, Quote } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/components/ProductCard';
-import { Product } from '@/lib/products';
-import { LanguageToggle } from '@/components/LanguageToggle';
 import { CurrencyIndicator } from '@/components/CurrencyIndicator';
-import { useTranslation } from 'react-i18next';
-import { getFeaturedProductsWithFallback, FeaturedProduct } from '@/lib/featuredProducts';
+import { useProducts } from '@/hooks/useProducts';
 import heroImage from '@/assets/hero-pendant.jpg';
 import collectionImage from '@/assets/collection-hero.jpg';
 import productGold from '@/assets/product-gold.jpg';
@@ -16,9 +13,7 @@ import productRoseGold from '@/assets/product-rose-gold.jpg';
 
 const Home = () => {
   const [scrollY, setScrollY] = useState(0);
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
-  const { t } = useTranslation();
+  const { products, loading: loadingProducts } = useProducts();
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -26,44 +21,8 @@ const Home = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Load featured products on component mount
-  useEffect(() => {
-    const loadFeaturedProducts = async () => {
-      try {
-        setLoadingProducts(true);
-        const products = await getFeaturedProductsWithFallback(4);
-        
-        // Convert FeaturedProduct to Product format
-        const convertedProducts: Product[] = products.map(product => ({
-          id: product.id,
-          slug: product.title.toLowerCase()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .trim(),
-          name: product.title,
-          price: product.price,
-          originalPrice: product.compare_price && product.compare_price > product.price ? product.compare_price : undefined,
-          description: product.description || '',
-          images: product.image_urls && product.image_urls.length > 0 ? product.image_urls : [productGold], // fallback to default image
-          rating: 5, // default rating
-          reviewCount: 0, // Will be populated from actual reviews when available
-          isNew: false, // can be enhanced with actual data
-          colors: product.color_variants || ['gold'],
-          category: 'featured'
-        }));
-        
-        setFeaturedProducts(convertedProducts);
-      } catch (error) {
-        console.error('Failed to load featured products:', error);
-        // Keep empty array as fallback
-        setFeaturedProducts([]);
-      } finally {
-        setLoadingProducts(false);
-      }
-    };
-
-    loadFeaturedProducts();
-  }, []);
+  // Get featured products (first 4 products for now)
+  const featuredProducts = products.slice(0, 4);
 
 
   const testimonials = [
@@ -109,11 +68,6 @@ const Home = () => {
           <div className="absolute inset-0 bg-background/20" />
         </div>
 
-        {/* Language Toggle */}
-        <div className="absolute top-6 right-6 z-20">
-          <LanguageToggle variant="minimal" />
-        </div>
-
         {/* Currency Indicator */}
         <div className="absolute top-6 left-6 z-20">
           <CurrencyIndicator variant="compact" />
@@ -123,23 +77,23 @@ const Home = () => {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-2xl">
             <div className="fade-in">
-              <h1 className="text-5xl md:text-7xl font-source-serif font-bold text-foreground mb-6 leading-tight">
-                {t('home.hero.title')}
-                <span className="block text-accent">{t('home.hero.subtitle')}</span>
+              <h1 className="text-5xl md:text-7xl font-cormorant font-bold text-foreground mb-6 leading-tight">
+                Custom Name
+                <span className="block text-accent">Pendants</span>
               </h1>
               <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                {t('home.hero.description')}
+                Handcrafted jewelry that tells your story. Personalize your style with our premium custom name pendants.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild className="btn-cta text-lg px-8 py-4">
                   <Link to="/shop">
-                    {t('home.hero.shopNow')}
+                    Shop Now
                     <ChevronRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="btn-outline-luxury text-lg px-8 py-4">
                   <Link to="/about">
-                    {t('home.hero.exploreCollection')}
+                    Explore Collection
                   </Link>
                 </Button>
               </div>

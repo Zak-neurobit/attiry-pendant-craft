@@ -101,9 +101,12 @@ const fetchProducts = async (): Promise<Product[]> => {
 
     return data?.map(convertDatabaseProduct) || [];
   } catch (err) {
-    console.warn('Database fetch failed, using fallback:', err);
+    console.warn('Database fetch failed, using fallback products:', err);
     // Fallback to static products if database fails
     const { shopProducts } = await import('@/lib/products');
+    if (shopProducts.length === 0) {
+      console.warn('Both database and fallback products are empty');
+    }
     return shopProducts;
   }
 };

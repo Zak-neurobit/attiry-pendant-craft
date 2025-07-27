@@ -40,7 +40,7 @@ export const Shop = () => {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold font-heading text-foreground mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold font-cormorant text-foreground mb-4">
               Custom Name Pendants
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -66,7 +66,7 @@ export const Shop = () => {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
-            <h1 className="text-2xl font-heading text-foreground mb-4">
+            <h1 className="text-2xl font-cormorant text-foreground mb-4">
               Unable to load products
             </h1>
             <p className="text-muted-foreground mb-4">{error}</p>
@@ -84,7 +84,7 @@ export const Shop = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold font-heading text-foreground mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold font-cormorant text-foreground mb-4">
             Custom Name Pendants
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
