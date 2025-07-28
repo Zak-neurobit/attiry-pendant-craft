@@ -78,13 +78,20 @@ export const getFeaturedProducts = async (limit: number = 4): Promise<FeaturedPr
  */
 export const getFeaturedProductsWithFallback = async (limit: number = 4): Promise<FeaturedProduct[]> => {
   try {
+    console.log('🚀 getFeaturedProductsWithFallback called with limit:', limit);
+    
     // First try to get featured products
+    console.log('📞 Calling getFeaturedProducts...');
     const featuredProducts = await getFeaturedProducts(limit);
+    console.log('📊 getFeaturedProducts returned:', featuredProducts);
+    console.log('📊 Featured products count:', featuredProducts.length);
     
     if (featuredProducts.length > 0) {
+      console.log('✅ Using featured products');
       return featuredProducts;
     }
 
+    console.log('⚠️ No featured products found, using fallback...');
     // Fallback to newest active products
     const { data, error } = await supabase
       .from('products')
@@ -93,11 +100,21 @@ export const getFeaturedProductsWithFallback = async (limit: number = 4): Promis
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Fallback query error:', error);
+      throw error;
+    }
 
+    console.log('📊 Fallback query returned:', data);
+    console.log('📊 Fallback products count:', data?.length || 0);
     return data || [];
   } catch (error: any) {
-    console.error('Error fetching products with fallback:', error);
+    console.error('❌ Error fetching products with fallback:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details
+    });
     return [];
   }
 };

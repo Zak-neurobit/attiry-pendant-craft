@@ -27,6 +27,7 @@ export default function AISettings() {
   const [apiKey, setApiKey] = useState('');
   const [selectedModel, setSelectedModel] = useState<OpenAIModel>(defaultModel);
   const [keyStatus, setKeyStatus] = useState<'unknown' | 'valid' | 'invalid'>('unknown');
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [usageStats, setUsageStats] = useState({
     totalCalls: 0,
     estimatedCost: 0,
@@ -35,9 +36,33 @@ export default function AISettings() {
   const { toast } = useToast();
 
   useEffect(() => {
+    checkAdminRole();
     loadSettings();
     loadUsageStats();
   }, []);
+
+  const checkAdminRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const { data: roleData, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .single();
+
+      setIsAdmin(!error && roleData?.role === 'admin');
+    } catch (error) {
+      console.error('Error checking admin role:', error);
+      setIsAdmin(false);
+    }
+  };
 
   const loadSettings = async () => {
     try {
@@ -109,7 +134,18 @@ export default function AISettings() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Provide more specific error messages
+        if (error.message?.includes('Admin access required')) {
+          throw new Error('You need admin privileges to save API keys. Please contact an administrator.');
+        } else if (error.message?.includes('unauthorized')) {
+          throw new Error('Authentication failed. Please log out and log back in.');
+        } else if (error.message?.includes('Rate limit')) {
+          throw new Error('Too many requests. Please wait a moment and try again.');
+        } else {
+          throw error;
+        }
+      }
 
       toast({
         title: "Success",
@@ -120,9 +156,10 @@ export default function AISettings() {
       setKeyStatus('valid');
       await loadSettings();
     } catch (error: any) {
+      console.error('Save API key error:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to save API key",
+        description: error.message || "Failed to save API key. Please check your admin privileges.",
         variant: "destructive",
       });
     } finally {
@@ -135,7 +172,18 @@ export default function AISettings() {
     try {
       const { data, error } = await supabase.functions.invoke('ai-ping');
       
-      if (error) throw error;
+      if (error) {
+        // Provide more specific error messages for test failures
+        if (error.message?.includes('Admin access required')) {
+          throw new Error('You need admin privileges to test AI functions. Please contact an administrator.');
+        } else if (error.message?.includes('unauthorized')) {
+          throw new Error('Authentication failed. Please log out and log back in.');
+        } else if (error.message?.includes('OpenAI API key not configured')) {
+          throw new Error('No OpenAI API key found. Please save your API key first.');
+        } else {
+          throw error;
+        }
+      }
 
       if (data?.success) {
         toast({
@@ -144,12 +192,13 @@ export default function AISettings() {
         });
         setKeyStatus('valid');
       } else {
-        throw new Error(data?.error || 'Connection test failed');
+        throw new Error(data?.error || 'Connection test failed - API key may be invalid');
       }
     } catch (error: any) {
+      console.error('Test connection error:', error);
       toast({
         title: "Connection Failed",
-        description: error.message || "Failed to connect to OpenAI API",
+        description: error.message || "Failed to connect to OpenAI API. Please check your API key and admin privileges.",
         variant: "destructive",
       });
       setKeyStatus('invalid');
@@ -157,6 +206,49 @@ export default function AISettings() {
       setTestLoading(false);
     }
   };
+
+  // Show loading state while checking admin role
+  if (isAdmin === null) {
+    return (
+      <div className="space-y-6" id="ai-settings-page">
+        <div id="ai-settings-header">
+          <h1 className="text-3xl font-bold font-cormorant" id="page-title">AI Settings</h1>
+          <p className="text-muted-foreground" id="page-description">
+            Loading...
+          </p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if not admin
+  if (isAdmin === false) {
+    return (
+      <div className="space-y-6" id="ai-settings-page">
+        <div id="ai-settings-header">
+          <h1 className="text-3xl font-bold font-cormorant" id="page-title">AI Settings</h1>
+          <p className="text-muted-foreground" id="page-description">
+            Configure OpenAI integration for product descriptions, metadata generation, and image analysis
+          </p>
+        </div>
+        <Card>
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Admin Access Required</h2>
+            <p className="text-muted-foreground mb-4">
+              You need administrator privileges to access AI settings. Please contact an administrator to assign you admin role.
+            </p>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Refresh Page
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6" id="ai-settings-page">

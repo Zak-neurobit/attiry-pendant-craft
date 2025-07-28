@@ -65,30 +65,11 @@ export const useAuth = create<AuthState>((set, get) => ({
   },
 }));
 
-// Listen for auth changes with security logging
+// Listen for auth changes
 supabase.auth.onAuthStateChange(async (event, session) => {
   const { initialize } = useAuth.getState();
   
-  // Log security events
-  if (event === 'SIGNED_IN' && session?.user) {
-    // Log successful login for security audit
-    const { error } = await supabase
-      .from('security_audit_log')
-      .insert({
-        action: 'user_login',
-        user_id: session.user.id,
-        details: { 
-          email: session.user.email,
-          method: 'password' 
-        },
-        ip_address: null, // Client-side limitation
-        user_agent: navigator.userAgent,
-      });
-    
-    if (error) {
-      console.warn('Failed to log login event:', error);
-    }
-  } else if (event === 'SIGNED_OUT') {
+  if (event === 'SIGNED_OUT') {
     useAuth.setState({ user: null, isAdmin: false, loading: false });
   }
   

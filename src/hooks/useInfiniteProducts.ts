@@ -1,7 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DatabaseProduct, Product } from './useProducts';
-import { Database } from '@/integrations/supabase/types';
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -16,6 +15,9 @@ const fetchProductsPage = async ({ pageParam = 0 }): Promise<ProductsPage> => {
     const from = pageParam * PRODUCTS_PER_PAGE;
     const to = from + PRODUCTS_PER_PAGE - 1;
 
+    console.log(`🛒 SHOP: Fetching products page ${pageParam} (${from}-${to}) using Supabase client`);
+
+    // Use proper Supabase client (production-ready approach)
     const { data, error: supabaseError, count } = await supabase
       .from('products')
       .select('id, title, description, price, compare_price, stock, sku, image_urls, color_variants, chain_types, fonts, meta_title, meta_description, keywords, tags, cogs, category, slug, is_active, is_featured, featured_order, created_at, updated_at', { count: 'exact' })
@@ -24,12 +26,17 @@ const fetchProductsPage = async ({ pageParam = 0 }): Promise<ProductsPage> => {
       .range(from, to);
 
     if (supabaseError) {
+      console.error('❌ SHOP: Supabase client error:', supabaseError);
       throw supabaseError;
     }
+
+    console.log(`✅ SHOP: Supabase client success - Received ${data?.length || 0} products for page ${pageParam}`);
     
     const products = data?.map(convertDatabaseProduct) || [];
     const hasMore = count ? from + PRODUCTS_PER_PAGE < count : false;
     const nextCursor = hasMore ? pageParam + 1 : null;
+
+    console.log(`🛒 SHOP: Page ${pageParam} - Products: ${products.length}, HasMore: ${hasMore}, Total: ${count}`);
 
     return {
       products,
@@ -37,8 +44,16 @@ const fetchProductsPage = async ({ pageParam = 0 }): Promise<ProductsPage> => {
       hasMore
     };
   } catch (err) {
+    console.error('❌ SHOP: Error fetching products page:', err);
+    console.error('❌ SHOP: Error details:', {
+      message: (err as Error).message,
+      code: (err as any).code,
+      details: (err as any).details
+    });
+    
     // Fallback to static products on first page only
     if (pageParam === 0) {
+      console.warn('⚠️ SHOP: Using fallback products for first page');
       const { shopProducts } = await import('@/lib/products');
       
       const from = pageParam * PRODUCTS_PER_PAGE;

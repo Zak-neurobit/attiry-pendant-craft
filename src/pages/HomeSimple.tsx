@@ -1,23 +1,162 @@
 import { useState, useEffect } from 'react';
-import { ChevronRight, Star, Quote } from 'lucide-react';
+import { ChevronRight, Star, Quote, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SimpleProductCard } from '@/components/SimpleProductCard';
 import { CurrencyIndicator } from '@/components/CurrencyIndicator';
-import { getFeaturedProducts } from '@/lib/products';
+import { supabase } from '@/integrations/supabase/client';
 import heroImage from '@/assets/hero-pendant.jpg';
 import collectionImage from '@/assets/collection-hero.jpg';
+import productGold from '@/assets/product-gold.jpg';
+import productRoseGold from '@/assets/product-rose-gold.jpg';
 
-const Home = () => {
+// Static fallback products that ALWAYS work
+const FALLBACK_PRODUCTS = [
+  {
+    id: 'static-1',
+    slug: 'aria-name-pendant',
+    name: 'Aria Name Pendant',
+    price: 299.99,
+    originalPrice: 399.99,
+    description: 'Elegantly crafted Aria name pendant featuring flowing, graceful letterforms.',
+    images: [productGold],
+    rating: 5,
+    reviewCount: 150,
+    isNew: false,
+    colors: ['gold', 'silver', 'rose-gold'],
+    category: 'custom-pendants',
+    stock: 50,
+    sku: 'ARI-001'
+  },
+  {
+    id: 'static-2',
+    slug: 'habibi-arabic-pendant',
+    name: 'Habibi Arabic Name Pendant',
+    price: 349.99,
+    originalPrice: 449.99,
+    description: 'Experience the beauty of Arabic calligraphy with our exquisite Habibi name pendant.',
+    images: [productRoseGold],
+    rating: 5,
+    reviewCount: 125,
+    isNew: true,
+    colors: ['silver', 'rose-gold'],
+    category: 'custom-pendants',
+    stock: 40,
+    sku: 'HAB-003'
+  },
+  {
+    id: 'static-3',
+    slug: 'elena-pendant',
+    name: 'Elena Name Pendant',
+    price: 279.99,
+    description: 'Beautiful Elena name pendant with elegant script styling.',
+    images: [productGold],
+    rating: 5,
+    reviewCount: 200,
+    isNew: false,
+    colors: ['gold', 'silver'],
+    category: 'custom-pendants',
+    stock: 30,
+    sku: 'ELE-001'
+  },
+  {
+    id: 'static-4',
+    slug: 'zara-pendant',
+    name: 'Zara Name Pendant',
+    price: 299.99,
+    description: 'Stylish Zara name pendant perfect for everyday wear.',
+    images: [productRoseGold],
+    rating: 5,
+    reviewCount: 180,
+    isNew: false,
+    colors: ['rose-gold', 'gold'],
+    category: 'custom-pendants',
+    stock: 45,
+    sku: 'ZAR-001'
+  }
+];
+
+const HomeSimple = () => {
   const [scrollY, setScrollY] = useState(0);
-  
-  // Get featured products immediately - no loading, no delays
-  const featuredProducts = getFeaturedProducts();
+  const [products, setProducts] = useState(FALLBACK_PRODUCTS); // Start with fallback products
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('Loading products...');
+  const [dataSource, setDataSource] = useState('static');
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const loadProducts = async () => {
+    console.log('🚀 SIMPLE: Starting product load...');
+    setIsLoading(true);
+    setLoadingMessage('Connecting to database...');
+
+    try {
+      // Try to load from Supabase
+      console.log('📞 SIMPLE: Querying Supabase...');
+      const { data: rawProducts, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_featured', true)
+        .eq('is_active', true)
+        .order('featured_order', { ascending: true })
+        .limit(4);
+
+      if (error) {
+        console.error('❌ SIMPLE: Supabase error:', error);
+        throw error;
+      }
+
+      if (rawProducts && rawProducts.length > 0) {
+        console.log('✅ SIMPLE: Got products from database:', rawProducts.length);
+        
+        // Convert database products
+        const convertedProducts = rawProducts.map(product => ({
+          id: product.id,
+          slug: product.title?.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-') || 'product',
+          name: product.title || 'Unnamed Product',
+          price: Number(product.price) || 0,
+          originalPrice: product.compare_price && Number(product.compare_price) > Number(product.price) 
+            ? Number(product.compare_price) 
+            : undefined,
+          description: product.description || 'Beautiful custom name pendant',
+          images: product.image_urls && product.image_urls.length > 0 
+            ? product.image_urls 
+            : [productGold],
+          rating: 5,
+          reviewCount: 150,
+          isNew: product.created_at ? new Date(product.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : false,
+          colors: product.color_variants || ['gold'],
+          category: 'custom-pendants',
+          stock: product.stock || 10,
+          sku: product.sku
+        }));
+
+        setProducts(convertedProducts);
+        setDataSource('database');
+        setLoadingMessage('Products loaded from database');
+      } else {
+        console.warn('⚠️ SIMPLE: No products returned from database');
+        setLoadingMessage('No products found, using samples');
+        setDataSource('static-no-data');
+      }
+
+    } catch (error) {
+      console.error('❌ SIMPLE: Error loading products:', error);
+      setLoadingMessage('Database unavailable, showing samples');
+      setDataSource('static-error');
+      // Keep fallback products that were set initially
+    }
+
+    setIsLoading(false);
+    console.log('🏁 SIMPLE: Loading complete, products count:', products.length);
+  };
+
+  useEffect(() => {
+    loadProducts();
   }, []);
 
   const testimonials = [
@@ -45,6 +184,7 @@ const Home = () => {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Parallax Background */}
         <div 
           className="absolute inset-0 z-0"
           style={{
@@ -60,10 +200,12 @@ const Home = () => {
           <div className="absolute inset-0 bg-background/20" />
         </div>
 
+        {/* Currency Indicator */}
         <div className="absolute top-6 left-6 z-20">
           <CurrencyIndicator variant="compact" />
         </div>
 
+        {/* Hero Content */}
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-2xl">
             <div className="fade-in">
@@ -91,6 +233,7 @@ const Home = () => {
           </div>
         </div>
 
+        {/* Scroll Indicator */}
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
           <div className="w-6 h-10 border-2 border-accent rounded-full flex justify-center">
             <div className="w-1 h-3 bg-accent rounded-full mt-2 animate-pulse" />
@@ -109,6 +252,10 @@ const Home = () => {
               <p className="text-muted-foreground">
                 Limited time birthday sale - 25% off everything
               </p>
+              {/* Show data source for debugging */}
+              <p className="text-xs text-muted-foreground mt-2">
+                Data source: {dataSource} | Products: {products.length}
+              </p>
             </div>
             <Button asChild variant="outline" className="btn-outline-luxury hidden md:flex">
               <Link to="/shop">
@@ -119,16 +266,51 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product, index) => (
-              <div 
-                key={product.id}
-                className="fade-in"
-                style={{ animationDelay: `${index * 200}ms` }}
-              >
-                <SimpleProductCard product={product} priority={index < 2} />
-              </div>
-            ))}
+            {isLoading ? (
+              // Simple loading state
+              <>
+                <div className="col-span-full text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">{loadingMessage}</p>
+                </div>
+                {/* Loading skeleton */}
+                {[...Array(4)].map((_, index) => (
+                  <div key={index} className="animate-pulse">
+                    <div className="bg-muted rounded-lg h-80"></div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              // Always show products (either from DB or fallback)
+              products.map((product, index) => {
+                console.log(`🎯 SIMPLE: Rendering product ${index + 1}: ${product.name}`);
+                return (
+                  <div 
+                    key={product.id}
+                    className="fade-in"
+                    style={{ animationDelay: `${index * 200}ms` }}
+                  >
+                    <SimpleProductCard product={product} priority={index < 2} />
+                  </div>
+                );
+              })
+            )}
           </div>
+
+          {!isLoading && (
+            <div className="text-center mt-8">
+              <Button 
+                onClick={() => {
+                  setIsLoading(true);
+                  loadProducts();
+                }}
+                variant="outline"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh Products
+              </Button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -262,4 +444,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default HomeSimple;

@@ -490,7 +490,7 @@ export const Products = () => {
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => navigate(`/admin/products/${product.id}/edit`)}
+                            onClick={() => navigate(`/admin/products/edit/${product.id}`)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>

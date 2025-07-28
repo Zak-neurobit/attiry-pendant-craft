@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { ImageUploader } from '@/components/admin/ImageUploader';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useProducts } from '@/hooks/useProducts';
 import { ArrowLeft, Sparkles, Eye, Tag, Save, X, Star } from 'lucide-react';
 import { defaultModel } from '@/services/openai';
 

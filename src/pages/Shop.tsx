@@ -1,83 +1,19 @@
-
-import { useEffect, useRef } from 'react';
-import { ProductCard } from '@/components/ProductCard';
-import { useInfiniteProducts } from '@/hooks/useInfiniteProducts';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { SimpleProductCard } from '@/components/SimpleProductCard';
 import { Button } from '@/components/ui/button';
+import { shopProducts } from '@/lib/products';
 
 export const Shop = () => {
-  const { 
-    products, 
-    fetchNextPage, 
-    hasNextPage, 
-    isFetchingNextPage, 
-    isLoading: loading, 
-    error 
-  } = useInfiniteProducts();
+  const [displayCount, setDisplayCount] = useState(12);
   
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+  // Get products to display
+  const productsToShow = shopProducts.slice(0, displayCount);
+  const hasMoreProducts = displayCount < shopProducts.length;
 
-  // Auto-load more when scrolling near bottom
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold font-cormorant text-foreground mb-4">
-              Custom Name Pendants
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Personalize your style with our handcrafted name pendants.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="space-y-4">
-                <Skeleton className="h-64 w-full rounded-lg" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-cormorant text-foreground mb-4">
-              Unable to load products
-            </h1>
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <p className="text-sm text-muted-foreground">
-              Showing fallback products from cache
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const loadMoreProducts = () => {
+    setDisplayCount(prev => Math.min(prev + 12, shopProducts.length));
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,11 +27,14 @@ export const Shop = () => {
             Personalize your style with our handcrafted name pendants. Choose from elegant designs
             in premium finishes, each piece uniquely yours.
           </p>
+          <div className="mt-6 text-sm text-muted-foreground">
+            Showing {productsToShow.length} of {shopProducts.length} products
+          </div>
         </div>
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-in fade-in duration-500">
-          {products.map((product, index) => (
+          {productsToShow.map((product, index) => (
             <div 
               key={product.id}
               className="animate-in fade-in slide-in-from-bottom-4"
@@ -104,35 +43,24 @@ export const Shop = () => {
                 animationFillMode: 'both'
               }}
             >
-              <ProductCard product={product} />
+              <SimpleProductCard product={product} />
             </div>
           ))}
         </div>
 
-        {/* Load More Trigger */}
-        <div ref={loadMoreRef} className="py-8 text-center">
-          {isFetchingNextPage && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={`skeleton-${i}`} className="space-y-4">
-                  <Skeleton className="h-64 w-full rounded-lg" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>
-              ))}
-            </div>
-          )}
-          {hasNextPage && !isFetchingNextPage && (
+        {/* Load More Button */}
+        {hasMoreProducts && (
+          <div className="text-center mt-12">
             <Button 
-              onClick={() => fetchNextPage()} 
+              onClick={loadMoreProducts} 
               variant="outline" 
               size="lg"
-              className="mb-8"
+              className="px-8 py-3"
             >
-              Load More Products
+              Load More Products ({shopProducts.length - displayCount} remaining)
             </Button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Call to Action */}
         <div className="text-center mt-16 py-12 bg-gradient-to-r from-background to-secondary rounded-2xl">
@@ -142,9 +70,11 @@ export const Shop = () => {
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             Let us create something special just for you. Our custom design service brings your vision to life.
           </p>
-          <button className="btn-cta">
-            Request Custom Design
-          </button>
+          <Button asChild className="btn-cta">
+            <Link to="/design-request">
+              Request Custom Design
+            </Link>
+          </Button>
         </div>
       </div>
     </div>

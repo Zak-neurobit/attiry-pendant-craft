@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
@@ -116,22 +116,81 @@ const fetchProducts = async (): Promise<Product[]> => {
 };
 
 export const useProducts = () => {
-  const {
-    data: products = [],
-    isLoading: loading,
-    error,
-    refetch,
-    isStale
-  } = useQuery({
-    queryKey: ['products'],
-    queryFn: fetchProducts,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
-    retry: 2,
-    retryDelay: 1000,
-  });
+  const [products, setProducts] = React.useState<Product[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<Error | null>(null);
 
-  // Products are now loaded from database
+  // Simple memory cache
+  const cacheRef = React.useRef<{
+    data: Product[] | null;
+    timestamp: number;
+  }>({ data: null, timestamp: 0 });
+
+  const fetchProducts = React.useCallback(async () => {
+    // Check cache first (2 minutes)
+    const now = Date.now();
+    if (cacheRef.current.data && (now - cacheRef.current.timestamp < 2 * 60 * 1000)) {
+      setProducts(cacheRef.current.data);
+      setLoading(false);
+      return cacheRef.current.data;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Direct Supabase query with timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database timeout')), 2000)
+      );
+
+      const queryPromise = supabase
+        .from('products')
+        .select('id, title, description, price, compare_price, stock, sku, image_urls, color_variants, chain_types, fonts, meta_title, meta_description, keywords, tags, cogs, category, slug, is_active, is_featured, featured_order, created_at, updated_at')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      const { data, error: supabaseError } = await Promise.race([
+        queryPromise,
+        timeoutPromise
+      ]) as any;
+
+      if (supabaseError) {
+        throw supabaseError;
+      }
+
+      const convertedProducts = data?.map(convertDatabaseProduct) || [];
+      
+      // Update cache
+      cacheRef.current = {
+        data: convertedProducts,
+        timestamp: now
+      };
+
+      setProducts(convertedProducts);
+      setLoading(false);
+      return convertedProducts;
+
+    } catch (err) {
+      console.warn('Database query failed, using static fallback:', err);
+      // Fallback to static products only on genuine failure
+      const { shopProducts } = await import('@/lib/products');
+      
+      cacheRef.current = {
+        data: shopProducts,
+        timestamp: now
+      };
+
+      setProducts(shopProducts);
+      setError(err instanceof Error ? err : new Error('Failed to fetch products'));
+      setLoading(false);
+      return shopProducts;
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const getProductBySlug = (slug: string): Product | undefined => {
     return products.find(product => product.slug === slug);
@@ -141,14 +200,20 @@ export const useProducts = () => {
     return products.find(product => product.id === id);
   };
 
+  const refetch = React.useCallback(() => {
+    // Clear cache and refetch
+    cacheRef.current = { data: null, timestamp: 0 };
+    return fetchProducts();
+  }, [fetchProducts]);
+
   return {
     products,
     loading,
-    error: error as Error | null,
+    error,
     getProductBySlug,
     getProductById,
     refetch,
-    isStale
+    isStale: false
   };
 };
 

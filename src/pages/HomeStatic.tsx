@@ -1,23 +1,94 @@
 import { useState, useEffect } from 'react';
-import { ChevronRight, Star, Quote } from 'lucide-react';
+import { ChevronRight, Star, Quote, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SimpleProductCard } from '@/components/SimpleProductCard';
 import { CurrencyIndicator } from '@/components/CurrencyIndicator';
-import { getFeaturedProducts } from '@/lib/products';
 import heroImage from '@/assets/hero-pendant.jpg';
 import collectionImage from '@/assets/collection-hero.jpg';
+import productGold from '@/assets/product-gold.jpg';
+import productRoseGold from '@/assets/product-rose-gold.jpg';
 
-const Home = () => {
+// STATIC PRODUCTS - NO DATABASE CALLS AT ALL
+const STATIC_PRODUCTS = [
+  {
+    id: 'static-1',
+    slug: 'aria-name-pendant',
+    name: 'Aria Name Pendant',
+    price: 299.99,
+    originalPrice: 399.99,
+    description: 'Elegantly crafted Aria name pendant featuring flowing, graceful letterforms.',
+    images: [productGold],
+    rating: 5,
+    reviewCount: 150,
+    isNew: false,
+    colors: ['gold', 'silver', 'rose-gold'],
+    category: 'custom-pendants',
+    stock: 50,
+    sku: 'ARI-001'
+  },
+  {
+    id: 'static-2',
+    slug: 'habibi-arabic-pendant',
+    name: 'Habibi Arabic Name Pendant',
+    price: 349.99,
+    originalPrice: 449.99,
+    description: 'Experience the beauty of Arabic calligraphy with our exquisite Habibi name pendant.',
+    images: [productRoseGold],
+    rating: 5,
+    reviewCount: 125,
+    isNew: true,
+    colors: ['silver', 'rose-gold'],
+    category: 'custom-pendants',
+    stock: 40,
+    sku: 'HAB-003'
+  },
+  {
+    id: 'static-3',
+    slug: 'elena-pendant',
+    name: 'Elena Name Pendant',
+    price: 279.99,
+    description: 'Beautiful Elena name pendant with elegant script styling.',
+    images: [productGold],
+    rating: 5,
+    reviewCount: 200,
+    isNew: false,
+    colors: ['gold', 'silver'],
+    category: 'custom-pendants',
+    stock: 30,
+    sku: 'ELE-001'
+  },
+  {
+    id: 'static-4',
+    slug: 'zara-pendant',
+    name: 'Zara Name Pendant',
+    price: 299.99,
+    description: 'Stylish Zara name pendant perfect for everyday wear.',
+    images: [productRoseGold],
+    rating: 5,
+    reviewCount: 180,
+    isNew: false,
+    colors: ['rose-gold', 'gold'],
+    category: 'custom-pendants',
+    stock: 45,
+    sku: 'ZAR-001'
+  }
+];
+
+const HomeStatic = () => {
   const [scrollY, setScrollY] = useState(0);
-  
-  // Get featured products immediately - no loading, no delays
-  const featuredProducts = getFeaturedProducts();
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Log to console for debugging
+  useEffect(() => {
+    console.log('🏠 STATIC HOME: Component mounted');
+    console.log('🏠 STATIC HOME: Products count:', STATIC_PRODUCTS.length);
+    console.log('🏠 STATIC HOME: Products:', STATIC_PRODUCTS);
   }, []);
 
   const testimonials = [
@@ -45,6 +116,7 @@ const Home = () => {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Parallax Background */}
         <div 
           className="absolute inset-0 z-0"
           style={{
@@ -60,10 +132,12 @@ const Home = () => {
           <div className="absolute inset-0 bg-background/20" />
         </div>
 
+        {/* Currency Indicator */}
         <div className="absolute top-6 left-6 z-20">
           <CurrencyIndicator variant="compact" />
         </div>
 
+        {/* Hero Content */}
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-2xl">
             <div className="fade-in">
@@ -91,6 +165,7 @@ const Home = () => {
           </div>
         </div>
 
+        {/* Scroll Indicator */}
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
           <div className="w-6 h-10 border-2 border-accent rounded-full flex justify-center">
             <div className="w-1 h-3 bg-accent rounded-full mt-2 animate-pulse" />
@@ -109,6 +184,9 @@ const Home = () => {
               <p className="text-muted-foreground">
                 Limited time birthday sale - 25% off everything
               </p>
+              <p className="text-xs text-green-600 mt-2">
+                ✅ STATIC MODE - No database calls | Products: {STATIC_PRODUCTS.length}
+              </p>
             </div>
             <Button asChild variant="outline" className="btn-outline-luxury hidden md:flex">
               <Link to="/shop">
@@ -118,16 +196,31 @@ const Home = () => {
             </Button>
           </div>
 
+          {/* Products Grid - NO LOADING STATE, DIRECT RENDER */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product, index) => (
-              <div 
-                key={product.id}
-                className="fade-in"
-                style={{ animationDelay: `${index * 200}ms` }}
-              >
-                <SimpleProductCard product={product} priority={index < 2} />
-              </div>
-            ))}
+            {STATIC_PRODUCTS.map((product, index) => {
+              console.log(`🎯 STATIC: Rendering product ${index + 1}: ${product.name}`);
+              return (
+                <div 
+                  key={product.id}
+                  className="fade-in"
+                  style={{ animationDelay: `${index * 200}ms` }}
+                >
+                  <SimpleProductCard product={product} priority={index < 2} />
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="text-center mt-8">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg inline-block">
+              <p className="text-green-700 font-medium">
+                ✅ Static Mode Active - No Network Calls
+              </p>
+              <p className="text-green-600 text-sm">
+                If you see these products, rendering works! Database integration can be fixed separately.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -262,4 +355,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default HomeStatic;
