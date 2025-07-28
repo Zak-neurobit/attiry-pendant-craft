@@ -17,6 +17,7 @@ import {
   Upload,
   FileText,
   ArrowLeft,
+  MessageSquare,
 } from 'lucide-react';
 
 const navigation = [
@@ -31,6 +32,7 @@ const navigation = [
     ]
   },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
+  { name: 'Contact Requests', href: '/admin/contact-requests', icon: MessageSquare },
   { 
     name: 'Payments', 
     href: '/admin/payments', 

@@ -46,6 +46,11 @@ All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
     --rose-gold: 14 45% 68%;
     --silver: 0 0% 75%;
     --copper: 22 55% 55%;
+    
+    /* Cream colors for embossed floral backgrounds */
+    --cream-50: 32 40% 98%; /* Very light cream */
+    --cream-100: 32 30% 95%; /* Light cream */
+    --cream-200: 32 25% 92%; /* Medium cream */
 
     /* CTA and interactive elements */
     --cta: 0 0% 0%; /* Pure black for CTA buttons */
@@ -319,6 +324,31 @@ All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
 
   .font-cormorant {
     font-family: 'Cormorant Garamond', serif;
+  }
+
+  /* Cream color utilities */
+  .bg-cream-50 {
+    background-color: hsl(var(--cream-50));
+  }
+  
+  .bg-cream-100 {
+    background-color: hsl(var(--cream-100));
+  }
+  
+  .bg-cream-200 {
+    background-color: hsl(var(--cream-200));
+  }
+  
+  .text-cream-50 {
+    color: hsl(var(--cream-50));
+  }
+  
+  .text-cream-100 {
+    color: hsl(var(--cream-100));
+  }
+  
+  .text-cream-200 {
+    color: hsl(var(--cream-200));
   }
 
   /* Sticky image gallery for product detail page */

@@ -25,6 +25,7 @@ const Shipping = lazy(() => import("./pages/Shipping").then(module => ({ default
 const Returns = lazy(() => import("./pages/Returns").then(module => ({ default: module.Returns })));
 const Terms = lazy(() => import("./pages/Terms").then(module => ({ default: module.Terms })));
 const Privacy = lazy(() => import("./pages/Privacy").then(module => ({ default: module.Privacy })));
+const Contact = lazy(() => import("./pages/Contact"));
 const Cart = lazy(() => import("./pages/Cart").then(module => ({ default: module.Cart })));
 const Checkout = lazy(() => import("./pages/Checkout").then(module => ({ default: module.Checkout })));
 const SearchResults = lazy(() => import("./pages/SearchResults").then(module => ({ default: module.SearchResults })));
@@ -47,6 +48,7 @@ const APISettings = lazy(() => import("./pages/admin/APISettings").then(module =
 const PaymentsDashboard = lazy(() => import("./pages/admin/payments/PaymentsDashboard").then(module => ({ default: module.PaymentsDashboard })));
 const AllPayments = lazy(() => import("./pages/admin/payments/AllPayments").then(module => ({ default: module.AllPayments })));
 const ProductForm = lazy(() => import("./pages/admin/products/ProductForm").then(module => ({ default: module.ProductForm })));
+const ContactRequests = lazy(() => import("./pages/admin/ContactRequests"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -89,6 +91,7 @@ const App = () => (
                 <Route path="returns" element={<Suspense fallback={<PageLoader />}><Returns /></Suspense>} />
                 <Route path="terms" element={<Suspense fallback={<PageLoader />}><Terms /></Suspense>} />
                 <Route path="privacy" element={<Suspense fallback={<PageLoader />}><Privacy /></Suspense>} />
+                <Route path="contact" element={<Suspense fallback={<PageLoader />}><Contact /></Suspense>} />
                 <Route path="cart" element={<Suspense fallback={<PageLoader />}><Cart /></Suspense>} />
                 <Route path="checkout" element={<Suspense fallback={<PageLoader />}><Checkout /></Suspense>} />
                 <Route path="search" element={<Suspense fallback={<PageLoader />}><SearchResults /></Suspense>} />
@@ -116,6 +119,7 @@ const App = () => (
                 <Route path="orders" element={<Suspense fallback={<PageLoader />}><Orders /></Suspense>} />
                 <Route path="customers" element={<Suspense fallback={<PageLoader />}><Customers /></Suspense>} />
                 <Route path="analytics" element={<Suspense fallback={<PageLoader />}><Analytics /></Suspense>} />
+                <Route path="contact-requests" element={<Suspense fallback={<PageLoader />}><ContactRequests /></Suspense>} />
                 <Route path="payments" element={<Suspense fallback={<PageLoader />}><PaymentsDashboard /></Suspense>} />
                 <Route path="payments/all" element={<Suspense fallback={<PageLoader />}><AllPayments /></Suspense>} />
                 <Route path="settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
