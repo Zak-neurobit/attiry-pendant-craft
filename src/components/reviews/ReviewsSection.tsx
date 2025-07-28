@@ -5,10 +5,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/stores/auth';
+import { productReviews, Review as StaticReview } from '@/lib/reviews';
 
 interface Review {
   id: string;
   user_id: string;
+  userName?: string;
+  userImage?: string;
   rating: number;
   comment: string;
   images: string[];
@@ -16,6 +19,8 @@ interface Review {
   helpful: number;
   not_helpful: number;
   created_at: string;
+  customText?: string;
+  color?: string;
 }
 
 interface ReviewsSectionProps {
@@ -43,9 +48,19 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({ productId }) => 
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setReviews(data || []);
+      
+      // If no database reviews, use static reviews as fallback
+      if (!data || data.length === 0) {
+        const staticReviews = productReviews[productId] || [];
+        setReviews(staticReviews);
+      } else {
+        setReviews(data);
+      }
     } catch (error) {
       console.error('Error loading reviews:', error);
+      // On error, fallback to static reviews
+      const staticReviews = productReviews[productId] || [];
+      setReviews(staticReviews);
     } finally {
       setLoading(false);
     }
@@ -179,25 +194,62 @@ export const ReviewsSection: React.FC<ReviewsSectionProps> = ({ productId }) => 
         {reviews.map((review) => (
           <div key={review.id} className="border-b pb-6">
             <div className="flex items-start justify-between mb-3">
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    className={`h-4 w-4 ${
-                      star <= review.rating
-                        ? 'text-yellow-400 fill-current'
-                        : 'text-gray-300'
-                    }`}
-                  />
-                ))}
+              <div className="flex items-center gap-3">
+                {review.userImage && (
+                  <div className="relative">
+                    <img 
+                      src={review.userImage} 
+                      alt={review.userName || 'User'} 
+                      className={`w-10 h-10 rounded-full ${
+                        review.userImage.startsWith('data:image/svg+xml') 
+                          ? '' 
+                          : 'object-cover ring-2 ring-gray-100'
+                      }`}
+                    />
+                    {review.verified && (
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div>
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`h-4 w-4 ${
+                          star <= review.rating
+                            ? 'text-yellow-400 fill-current'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  {review.userName && (
+                    <p className="text-sm font-medium text-gray-900 mt-1">{review.userName}</p>
+                  )}
+                </div>
               </div>
-              {review.verified && (
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                  Verified Purchase
-                </span>
-              )}
+              <div className="text-xs text-gray-500">
+                {new Date(review.created_at).toLocaleDateString()}
+              </div>
             </div>
             <p className="text-gray-700 mb-3">{review.comment}</p>
+            {(review.customText || review.color) && (
+              <div className="flex gap-4 mb-3 text-sm text-gray-600">
+                {review.customText && (
+                  <span className="bg-gray-100 px-2 py-1 rounded text-xs">
+                    Personalized: "{review.customText}"
+                  </span>
+                )}
+                {review.color && (
+                  <span className="bg-gray-100 px-2 py-1 rounded text-xs capitalize">
+                    Color: {review.color.replace('-', ' ')}
+                  </span>
+                )}
+              </div>
+            )}
             <div className="flex items-center justify-between text-sm text-gray-500">
               <span>{new Date(review.created_at).toLocaleDateString()}</span>
               <div className="flex items-center gap-4">

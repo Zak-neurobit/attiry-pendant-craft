@@ -1,18 +1,42 @@
-import { useState, useEffect } from 'react';
-import { ChevronRight, Star, Quote } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { ChevronRight, Star, Quote, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SimpleProductCard } from '@/components/SimpleProductCard';
 import { CurrencyIndicator } from '@/components/CurrencyIndicator';
-import { getFeaturedProducts } from '@/lib/products';
+import { useProducts } from '@/hooks/useProducts';
+import { getHomepageReviews } from '@/lib/reviews';
 import heroImage from '@/assets/hero-pendant.jpg';
 import collectionImage from '@/assets/collection-hero.jpg';
+import precisionCraftsmanshipImage from '@/assets/precision-craftsmanship.webp';
 
 const Home = () => {
   const [scrollY, setScrollY] = useState(0);
+  const reviewsScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
   
-  // Get featured products immediately - no loading, no delays
-  const featuredProducts = getFeaturedProducts();
+  // Get products from database with current prices
+  const { products, loading } = useProducts();
+  
+  // Get featured products with current database prices
+  const featuredProducts = useMemo(() => {
+    // Featured products based on your database: Aria, Habibi, Yasmeen, Zara
+    const featuredIds = [
+      'd3484f2c-4bea-49f8-9b59-c8cd38131042', // Aria
+      '04567b3e-e294-4763-9e9a-a40e414bf361', // Habibi
+      '3c3f0913-6944-4841-b078-d70d7c097f97', // Yasmeen
+      'c06ce985-be8d-4470-a286-8049bc2b9387'  // Zara
+    ];
+    
+    return featuredIds
+      .map(id => products.find(product => product.id === id))
+      .filter(Boolean)
+      .slice(0, 4); // Limit to 4 featured products
+  }, [products]);
+  
+  // Get random reviews for the homepage showcase
+  const homepageReviews = getHomepageReviews(16);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -20,26 +44,36 @@ const Home = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const testimonials = [
-    {
-      name: 'Sarah Johnson',
-      text: 'Absolutely stunning quality! My custom pendant exceeded all expectations.',
-      rating: 5,
-      image: 'https://images.unsplash.com/photo-1494790108755-2616b612b647?w=64&h=64&fit=crop&crop=face'
-    },
-    {
-      name: 'Emily Chen',
-      text: 'Perfect gift for my daughter. The craftsmanship is incredible.',
-      rating: 5,
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=64&h=64&fit=crop&crop=face'
-    },
-    {
-      name: 'Maria Rodriguez',
-      text: 'Fast shipping and beautiful packaging. Highly recommend!',
-      rating: 5,
-      image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=64&h=64&fit=crop&crop=face'
+  const checkScrollButtons = () => {
+    if (reviewsScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = reviewsScrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
     }
-  ];
+  };
+
+  const scrollReviews = (direction: 'left' | 'right') => {
+    if (reviewsScrollRef.current) {
+      const scrollAmount = 350; // Width of one review card plus gap
+      const newScrollLeft = direction === 'left' 
+        ? reviewsScrollRef.current.scrollLeft - scrollAmount
+        : reviewsScrollRef.current.scrollLeft + scrollAmount;
+      
+      reviewsScrollRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  useEffect(() => {
+    const scrollContainer = reviewsScrollRef.current;
+    if (scrollContainer) {
+      checkScrollButtons();
+      scrollContainer.addEventListener('scroll', checkScrollButtons);
+      return () => scrollContainer.removeEventListener('scroll', checkScrollButtons);
+    }
+  }, [homepageReviews]);
 
   return (
     <div className="min-h-screen">
@@ -119,15 +153,25 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product, index) => (
-              <div 
-                key={product.id}
-                className="fade-in"
-                style={{ animationDelay: `${index * 200}ms` }}
-              >
-                <SimpleProductCard product={product} priority={index < 2} />
-              </div>
-            ))}
+            {loading ? (
+              // Loading skeleton
+              Array.from({ length: 4 }).map((_, index) => (
+                <div 
+                  key={index}
+                  className="bg-gray-200 animate-pulse rounded-lg h-96"
+                />
+              ))
+            ) : (
+              featuredProducts.map((product, index) => (
+                <div 
+                  key={product.id}
+                  className="fade-in"
+                  style={{ animationDelay: `${index * 200}ms` }}
+                >
+                  <SimpleProductCard product={product} priority={index < 2} />
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -206,8 +250,8 @@ const Home = () => {
             </div>
             <div className="slide-up">
               <img 
-                src={collectionImage} 
-                alt="Luxury pendant collection - Custom jewelry craftsmanship"
+                src={precisionCraftsmanshipImage} 
+                alt="Ultra-realistic jewelry stud showing precision craftsmanship and attention to detail"
                 className="w-full rounded-2xl shadow-luxury"
               />
             </div>
@@ -215,7 +259,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* Customer Reviews */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -227,34 +271,130 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div 
-                key={index}
-                className="card-luxury p-6 text-center fade-in"
-                style={{ animationDelay: `${index * 200}ms` }}
+          {/* Interactive side-scrolling reviews showcase */}
+          <div className="relative">
+            {/* Navigation buttons */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => scrollReviews('left')}
+                disabled={!canScrollLeft}
+                className={`rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white/95 transition-all duration-200 ${
+                  canScrollLeft ? 'opacity-100' : 'opacity-40'
+                }`}
               >
-                <Quote className="h-8 w-8 text-accent mx-auto mb-4" />
-                <p className="text-muted-foreground mb-4 italic">
-                  "{testimonial.text}"
-                </p>
-                <div className="flex items-center justify-center gap-1 mb-3">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-accent text-accent" />
-                  ))}
-                </div>
-                <div className="flex items-center justify-center gap-3">
-                  <img 
-                    src={testimonial.image} 
-                    alt={testimonial.name}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <span className="font-medium text-foreground">
-                    {testimonial.name}
-                  </span>
-                </div>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => scrollReviews('right')}
+                disabled={!canScrollRight}
+                className={`rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white/95 transition-all duration-200 ${
+                  canScrollRight ? 'opacity-100' : 'opacity-40'
+                }`}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Scrollable reviews container */}
+            <div 
+              ref={reviewsScrollRef}
+              className="overflow-x-auto pb-4 scrollbar-hide"
+              style={{ 
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                WebkitScrollbar: { display: 'none' }
+              }}
+            >
+              <style jsx>{`
+                .scrollbar-hide::-webkit-scrollbar {
+                  display: none;
+                }
+              `}</style>
+              <div className="flex gap-6 px-12" style={{ width: 'max-content' }}>
+                {homepageReviews.map((review) => (
+                  <div 
+                    key={review.id}
+                    className="card-luxury p-6 min-w-[320px] max-w-[320px] text-left hover:shadow-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1 mb-3">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star 
+                          key={star} 
+                          className={`h-4 w-4 transition-colors ${
+                            star <= review.rating
+                              ? 'fill-accent text-accent' 
+                              : 'text-gray-300'
+                          }`} 
+                        />
+                      ))}
+                    </div>
+                    <Quote className="h-6 w-6 text-accent mb-3 opacity-75" />
+                    <p className="text-muted-foreground mb-4 italic line-clamp-3 text-sm leading-relaxed">
+                      "{review.comment}"
+                    </p>
+                    {(review.customText || review.color) && (
+                      <div className="flex gap-2 mb-4 flex-wrap">
+                        {review.customText && (
+                          <span className="bg-accent/10 text-accent px-2 py-1 rounded-full text-xs font-medium">
+                            "{review.customText}"
+                          </span>
+                        )}
+                        {review.color && (
+                          <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs capitalize">
+                            {review.color.replace('-', ' ')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <img 
+                          src={review.userImage} 
+                          alt={review.userName}
+                          className={`w-10 h-10 rounded-full ${
+                            review.userImage.startsWith('data:image/svg+xml') 
+                              ? '' 
+                              : 'object-cover ring-2 ring-gray-100'
+                          }`}
+                        />
+                        {review.verified && (
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <span className="font-medium text-foreground block text-sm">
+                          {review.userName}
+                        </span>
+                        {review.verified && (
+                          <span className="text-xs text-green-600 font-medium">
+                            Verified Purchase
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+          </div>
+          
+          {/* View all reviews button */}
+          <div className="text-center mt-8">
+            <Button asChild variant="outline" className="btn-outline-luxury">
+              <Link to="/shop">
+                View All Products & Reviews
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>

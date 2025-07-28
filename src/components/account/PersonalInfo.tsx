@@ -97,14 +97,40 @@ export const PersonalInfo = () => {
 
     setSaving(true);
     try {
-      const { error } = await supabase
+      // First check if profile exists
+      const { data: existingProfile, error: selectError } = await supabase
         .from('profiles')
-        .upsert({
-          user_id: user.id,
-          first_name: profileData.first_name,
-          last_name: profileData.last_name,
-          email: profileData.email,
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (selectError && selectError.code !== 'PGRST116') {
+        throw selectError;
+      }
+
+      const profilePayload = {
+        user_id: user.id,
+        first_name: profileData.first_name,
+        last_name: profileData.last_name,
+        email: profileData.email,
+      };
+
+      let error;
+      
+      if (existingProfile) {
+        // Profile exists, update it
+        const result = await supabase
+          .from('profiles')
+          .update(profilePayload)
+          .eq('user_id', user.id);
+        error = result.error;
+      } else {
+        // Profile doesn't exist, create it
+        const result = await supabase
+          .from('profiles')
+          .insert(profilePayload);
+        error = result.error;
+      }
 
       if (error) throw error;
 
@@ -112,10 +138,11 @@ export const PersonalInfo = () => {
         title: 'Success',
         description: 'Profile updated successfully.',
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Profile save error:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update profile. Please try again.',
+        description: error.message || 'Failed to update profile. Please try again.',
         variant: 'destructive',
       });
     } finally {

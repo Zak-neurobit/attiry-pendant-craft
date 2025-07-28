@@ -22,9 +22,8 @@ export const useAuth = create<AuthState>((set, get) => ({
     set({ loading: true });
     try {
       await authService.signIn(email, password);
-      const user = await authService.getCurrentUser();
-      const isAdmin = user ? await authService.hasAdminRole() : false;
-      set({ user, isAdmin, loading: false });
+      // Don't fetch user data here - let auth state change handle it
+      // This eliminates duplicate queries and speeds up sign-in
     } catch (error) {
       set({ loading: false });
       throw error;
@@ -55,8 +54,8 @@ export const useAuth = create<AuthState>((set, get) => ({
 
   initialize: async () => {
     try {
-      const user = await authService.getCurrentUser();
-      const isAdmin = user ? await authService.hasAdminRole() : false;
+      // Use optimized method that gets both user and admin status in one call
+      const { user, isAdmin } = await authService.getUserWithAdminStatus();
       set({ user, isAdmin, loading: false });
     } catch (error) {
       console.error('Auth initialization error:', error);

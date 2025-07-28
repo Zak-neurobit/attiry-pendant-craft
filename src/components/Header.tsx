@@ -108,18 +108,24 @@ export const Header = () => {
           </Button>
 
           {/* Cart */}
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/cart" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {totalItems > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {totalItems}
-                </Badge>
-              )}
-            </Link>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative"
+            onClick={() => {
+              const { openCart } = useCart.getState();
+              openCart();
+            }}
+          >
+            <ShoppingCart className="h-5 w-5" />
+            {totalItems > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+              >
+                {totalItems}
+              </Badge>
+            )}
           </Button>
 
           {/* Admin Button (only for specific admin emails) */}

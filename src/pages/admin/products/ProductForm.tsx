@@ -67,6 +67,7 @@ export const ProductForm = () => {
   const [formData, setFormData] = useState<ProductFormData>(defaultFormData);
   const [aiLoading, setAiLoading] = useState({ description: false, metadata: false, image: false, generateAll: false });
   const { toast } = useToast();
+  const { refetch } = useProducts();
 
   useEffect(() => {
     if (isEditing && id) {
@@ -152,6 +153,9 @@ export const ProductForm = () => {
           title: "Success",
           description: "Product updated successfully",
         });
+        
+        // Clear cache to show updated data immediately
+        refetch();
       } else {
         // Create new product
         const { error } = await supabase
@@ -164,6 +168,9 @@ export const ProductForm = () => {
           title: "Success",
           description: "Product created successfully",
         });
+        
+        // Clear cache to show new product immediately
+        refetch();
       }
 
       navigate('/admin/products');

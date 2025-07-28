@@ -95,7 +95,7 @@ export const authService = {
     
     if (!user) return null;
 
-    // Get user role from database
+    // Get user role from database with timeout for performance
     const { data: roleData } = await supabase
       .from('user_roles')
       .select('role')
@@ -110,17 +110,17 @@ export const authService = {
   },
 
   async hasAdminRole(): Promise<boolean> {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) return false;
+    // Use getCurrentUser to avoid duplicate query
+    const user = await this.getCurrentUser();
+    return user?.role === 'admin';
+  },
 
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .single();
-
-    return !!data;
+  // New optimized method that gets both user and admin status in one call
+  async getUserWithAdminStatus(): Promise<{ user: AuthUser | null, isAdmin: boolean }> {
+    const user = await this.getCurrentUser();
+    return {
+      user,
+      isAdmin: user?.role === 'admin'
+    };
   },
 };

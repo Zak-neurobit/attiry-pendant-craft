@@ -1,5 +1,6 @@
 import productGold from '@/assets/product-gold.jpg';
 import productRoseGold from '@/assets/product-rose-gold.jpg';
+import { calculateAverageRating, getReviewCount } from '@/lib/reviews';
 
 // Re-export types and utilities from the new useProducts hook
 export type { Product, DatabaseProduct } from '@/hooks/useProducts';
@@ -20,8 +21,8 @@ export const shopProducts: Product[] = [
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/aria-rose-gold.jpeg',
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/aria-black.jpeg'
     ],
-    rating: 5,
-    reviewCount: 152,
+    rating: calculateAverageRating('d3484f2c-4bea-49f8-9b59-c8cd38131042'),
+    reviewCount: getReviewCount('d3484f2c-4bea-49f8-9b59-c8cd38131042'),
     isNew: false,
     colors: ['gold', 'silver', 'rose-gold', 'black', 'vintage-copper'],
     category: 'custom-pendants',
@@ -39,8 +40,8 @@ export const shopProducts: Product[] = [
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/habibi-arabic-silver.png',
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/habibi-arabic-rose-gold.png'
     ],
-    rating: 5,
-    reviewCount: 89,
+    rating: calculateAverageRating('04567b3e-e294-4763-9e9a-a40e414bf361'),
+    reviewCount: getReviewCount('04567b3e-e294-4763-9e9a-a40e414bf361'),
     isNew: false,
     colors: ['silver', 'rose-gold', 'vintage-copper'],
     category: 'custom-pendants',
@@ -59,8 +60,8 @@ export const shopProducts: Product[] = [
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/yasmeen-arabic-silver.png',
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/yasmeen-arabic-rose-gold.png'
     ],
-    rating: 5,
-    reviewCount: 167,
+    rating: calculateAverageRating('3c3f0913-6944-4841-b078-d70d7c097f97'),
+    reviewCount: getReviewCount('3c3f0913-6944-4841-b078-d70d7c097f97'),
     isNew: false,
     colors: ['gold', 'silver', 'rose-gold', 'black', 'vintage-copper'],
     category: 'custom-pendants',
@@ -79,8 +80,8 @@ export const shopProducts: Product[] = [
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/zara-silver.jpeg',
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/zara-rose-gold.jpeg'
     ],
-    rating: 5,
-    reviewCount: 198,
+    rating: calculateAverageRating('c06ce985-be8d-4470-a286-8049bc2b9387'),
+    reviewCount: getReviewCount('c06ce985-be8d-4470-a286-8049bc2b9387'),
     isNew: false,
     colors: ['gold', 'silver', 'rose-gold', 'black', 'vintage-copper'],
     category: 'custom-pendants',
@@ -99,8 +100,8 @@ export const shopProducts: Product[] = [
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/ariana-silver.jpeg',
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/ariana-rose-gold.jpeg'
     ],
-    rating: 5,
-    reviewCount: 134,
+    rating: calculateAverageRating('f5d9e406-8a82-4dd7-a533-6397d596f3eb'),
+    reviewCount: getReviewCount('f5d9e406-8a82-4dd7-a533-6397d596f3eb'),
     isNew: false,
     colors: ['gold', 'silver', 'rose-gold', 'black', 'vintage-copper'],
     category: 'custom-pendants',
@@ -119,8 +120,8 @@ export const shopProducts: Product[] = [
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/layla-silver.jpeg',
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/layla-black.jpeg'
     ],
-    rating: 5,
-    reviewCount: 176,
+    rating: calculateAverageRating('ab2ab166-1e73-49bf-808b-87895d97061d'),
+    reviewCount: getReviewCount('ab2ab166-1e73-49bf-808b-87895d97061d'),
     isNew: false,
     colors: ['gold', 'silver', 'black', 'vintage-copper'],
     category: 'custom-pendants',
@@ -139,8 +140,8 @@ export const shopProducts: Product[] = [
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/milaa-silver.jpeg',
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/milaa-rose-gold.jpeg'
     ],
-    rating: 5,
-    reviewCount: 98,
+    rating: calculateAverageRating('fc10fa58-efde-43b2-9cb7-21a5ba65a568'),
+    reviewCount: getReviewCount('fc10fa58-efde-43b2-9cb7-21a5ba65a568'),
     isNew: false,
     colors: ['gold', 'silver', 'rose-gold', 'black'],
     category: 'custom-pendants',
@@ -159,8 +160,8 @@ export const shopProducts: Product[] = [
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/olivia-silver.jpeg',
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/olivia-rose-gold.jpeg'
     ],
-    rating: 5,
-    reviewCount: 221,
+    rating: calculateAverageRating('7a4c9737-ea73-49a1-aa57-81eadc986c7e'),
+    reviewCount: getReviewCount('7a4c9737-ea73-49a1-aa57-81eadc986c7e'),
     isNew: false,
     colors: ['gold', 'silver', 'rose-gold', 'black', 'vintage-copper'],
     category: 'custom-pendants',
@@ -179,8 +180,8 @@ export const shopProducts: Product[] = [
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/isabella-silver.jpeg',
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/isabella-rose-gold.jpeg'
     ],
-    rating: 5,
-    reviewCount: 189,
+    rating: calculateAverageRating('ca18cf82-aac7-48e8-972e-a127741d59af'),
+    reviewCount: getReviewCount('ca18cf82-aac7-48e8-972e-a127741d59af'),
     isNew: false,
     colors: ['gold', 'silver', 'rose-gold', 'black', 'vintage-copper'],
     category: 'custom-pendants',
@@ -199,8 +200,8 @@ export const shopProducts: Product[] = [
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/sophia-silver.jpeg',
       'https://jpbfprlpbiojfhshlhcp.supabase.co/storage/v1/object/public/product-images/sophia-rose-gold.jpeg'
     ],
-    rating: 5,
-    reviewCount: 267,
+    rating: calculateAverageRating('2d3d08ad-9532-4fe7-82e8-89159dfd41f1'),
+    reviewCount: getReviewCount('2d3d08ad-9532-4fe7-82e8-89159dfd41f1'),
     isNew: false,
     colors: ['gold', 'silver', 'rose-gold', 'black', 'vintage-copper'],
     category: 'custom-pendants',

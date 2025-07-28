@@ -1,29 +1,17 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useFavourites } from '@/stores/favourites';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/stores/auth';
-
-interface Product {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  compare_price: number;
-  image_urls: string[];
-  color_variants: string[];
-  slug: string;
-}
+import { useProducts } from '@/hooks/useProducts';
 
 export const Favourites = () => {
   const { user } = useAuth();
   const { favourites, loadFavourites, isLoading, removeFromFavourites } = useFavourites();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { products } = useProducts();
 
   useEffect(() => {
     if (user) {
@@ -31,33 +19,10 @@ export const Favourites = () => {
     }
   }, [user, loadFavourites]);
 
-  useEffect(() => {
-    const fetchFavouriteProducts = async () => {
-      if (favourites.length === 0) {
-        setProducts([]);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .in('id', favourites)
-          .eq('is_active', true);
-
-        if (data && !error) {
-          setProducts(data);
-        }
-      } catch (error) {
-        console.error('Error fetching favourite products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFavouriteProducts();
-  }, [favourites]);
+  // Use database products with current prices
+  const favouriteProducts = useMemo(() => {
+    return products.filter(product => favourites.includes(product.id));
+  }, [favourites, products]);
 
   const handleRemoveFromFavourites = (productId: string) => {
     removeFromFavourites(productId);
@@ -71,8 +36,8 @@ export const Favourites = () => {
     }).format(price);
   };
 
-  const getSalePrice = (originalPrice: number, comparePrice: number) => {
-    return comparePrice > originalPrice ? originalPrice : originalPrice;
+  const getSalePrice = (price: number, originalPrice?: number) => {
+    return originalPrice && originalPrice > price ? price : price;
   };
 
   const containerVariants = {
@@ -111,22 +76,50 @@ export const Favourites = () => {
     );
   }
 
-  if (loading || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading your favourites...</div>
-      </div>
-    );
-  }
-
-  if (products.length === 0) {
+  if (favouriteProducts.length === 0 && !isLoading) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="min-h-screen flex items-center justify-center"
+        className="min-h-screen flex items-center justify-center relative overflow-hidden"
       >
-        <div className="text-center max-w-md mx-auto px-6">
+        {/* Subtle floral embossing background */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+          <div className="absolute inset-0 bg-gradient-to-br from-white via-gray-50 to-white"></div>
+          <div 
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `
+                radial-gradient(circle at 25% 25%, rgba(229, 231, 235, 0.4) 2px, transparent 2px),
+                radial-gradient(circle at 75% 25%, rgba(229, 231, 235, 0.3) 1px, transparent 1px),
+                radial-gradient(circle at 25% 75%, rgba(229, 231, 235, 0.3) 1px, transparent 1px),
+                radial-gradient(circle at 75% 75%, rgba(229, 231, 235, 0.4) 2px, transparent 2px),
+                radial-gradient(circle at 50% 50%, rgba(229, 231, 235, 0.2) 1.5px, transparent 1.5px)
+              `,
+              backgroundSize: '60px 60px, 80px 80px, 70px 70px, 90px 90px, 50px 50px',
+              backgroundPosition: '0 0, 30px 30px, 15px 45px, 45px 15px, 25px 25px',
+            }}
+          />
+          <div 
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `
+                repeating-conic-gradient(
+                  from 0deg at 50% 50%,
+                  rgba(229, 231, 235, 0.15) 0deg 30deg,
+                  transparent 30deg 60deg,
+                  rgba(229, 231, 235, 0.1) 60deg 90deg,
+                  transparent 90deg 120deg
+                )
+              `,
+              backgroundSize: '120px 120px',
+              transform: 'rotate(15deg) scale(1.2)',
+              transformOrigin: 'center',
+            }}
+          />
+        </div>
+
+        <div className="text-center max-w-md mx-auto px-6 relative z-10">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -151,8 +144,44 @@ export const Favourites = () => {
   }
 
   return (
-    <div className="min-h-screen py-12">
-      <div className="max-w-6xl mx-auto px-6">
+    <div className="min-h-screen py-12 relative overflow-hidden">
+      {/* Subtle floral embossing background */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-white via-gray-50 to-white"></div>
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle at 25% 25%, rgba(229, 231, 235, 0.4) 2px, transparent 2px),
+              radial-gradient(circle at 75% 25%, rgba(229, 231, 235, 0.3) 1px, transparent 1px),
+              radial-gradient(circle at 25% 75%, rgba(229, 231, 235, 0.3) 1px, transparent 1px),
+              radial-gradient(circle at 75% 75%, rgba(229, 231, 235, 0.4) 2px, transparent 2px),
+              radial-gradient(circle at 50% 50%, rgba(229, 231, 235, 0.2) 1.5px, transparent 1.5px)
+            `,
+            backgroundSize: '60px 60px, 80px 80px, 70px 70px, 90px 90px, 50px 50px',
+            backgroundPosition: '0 0, 30px 30px, 15px 45px, 45px 15px, 25px 25px',
+          }}
+        />
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              repeating-conic-gradient(
+                from 0deg at 50% 50%,
+                rgba(229, 231, 235, 0.15) 0deg 30deg,
+                transparent 30deg 60deg,
+                rgba(229, 231, 235, 0.1) 60deg 90deg,
+                transparent 90deg 120deg
+              )
+            `,
+            backgroundSize: '120px 120px',
+            transform: 'rotate(15deg) scale(1.2)',
+            transformOrigin: 'center',
+          }}
+        />
+      </div>
+
+      <div className="max-w-6xl mx-auto px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -162,7 +191,7 @@ export const Favourites = () => {
             Your Favourites
           </h1>
           <p className="text-muted-foreground">
-            {products.length} {products.length === 1 ? 'item' : 'items'} you've saved for later
+            {favouriteProducts.length} {favouriteProducts.length === 1 ? 'item' : 'items'} you've saved for later
           </p>
         </motion.div>
 
@@ -172,7 +201,7 @@ export const Favourites = () => {
           animate="visible"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
-          {products.map((product) => (
+          {favouriteProducts.map((product) => (
             <motion.div
               key={product.id}
               variants={itemVariants}
@@ -185,8 +214,8 @@ export const Favourites = () => {
                 <div className="bg-card rounded-lg shadow-soft overflow-hidden border transition-transform duration-300 group-hover:scale-105">
                   <div className="relative aspect-square">
                     <img
-                      src={product.image_urls?.[0] || '/placeholder.svg'}
-                      alt={product.title}
+                      src={product.images?.[0] || '/placeholder.svg'}
+                      alt={product.name}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute top-3 right-3">
@@ -206,7 +235,7 @@ export const Favourites = () => {
                   
                   <div className="p-4">
                     <h3 className="font-medium text-lg mb-2 line-clamp-2">
-                      {product.title}
+                      {product.name}
                     </h3>
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                       {product.description}
@@ -214,37 +243,39 @@ export const Favourites = () => {
                     
                     <div className="flex items-center space-x-2">
                       <span className="text-lg font-bold text-primary">
-                        {formatPrice(getSalePrice(product.price, product.compare_price))}
+                        {formatPrice(getSalePrice(product.price, product.originalPrice))}
                       </span>
-                      {product.compare_price > product.price && (
+                      {product.originalPrice && product.originalPrice > product.price && (
                         <>
                           <span className="text-sm text-muted-foreground line-through">
-                            {formatPrice(product.compare_price)}
+                            {formatPrice(product.originalPrice)}
                           </span>
                           <span className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded">
-                            {Math.round(((product.compare_price - product.price) / product.compare_price) * 100)}% OFF
+                            {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
                           </span>
                         </>
                       )}
                     </div>
 
-                    {product.color_variants && product.color_variants.length > 0 && (
+                    {product.colors && product.colors.length > 0 && (
                       <div className="flex items-center space-x-2 mt-3">
                         <span className="text-xs text-muted-foreground">Colors:</span>
                         <div className="flex space-x-1">
-                          {product.color_variants.slice(0, 3).map((color) => (
+                          {product.colors.slice(0, 3).map((color) => (
                             <div
                               key={color}
                               className={`w-4 h-4 rounded-full border border-border ${
                                 color === 'gold' ? 'bg-yellow-400' : 
-                                color === 'rose_gold' ? 'bg-rose-400' : 
+                                color === 'rose-gold' ? 'bg-rose-400' : 
+                                color === 'silver' ? 'bg-gray-300' :
+                                color === 'black' ? 'bg-gray-800' :
                                 'bg-gray-400'
                               }`}
                             />
                           ))}
-                          {product.color_variants.length > 3 && (
+                          {product.colors.length > 3 && (
                             <span className="text-xs text-muted-foreground">
-                              +{product.color_variants.length - 3}
+                              +{product.colors.length - 3}
                             </span>
                           )}
                         </div>

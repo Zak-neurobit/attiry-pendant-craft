@@ -17,11 +17,10 @@ import { ImageZoomModal } from '@/components/ui/image-zoom-modal';
 import { useImageZoom } from '@/hooks/useImageZoom';
 
 // Components
-import NameInput from '@/components/product/NameInput';
+import EditablePreviewName from '@/components/product/EditablePreviewName';
 import FontPicker from '@/components/product/FontPicker';
 import { ColorPicker } from '@/components/product/ColorPicker';
 import ChainPicker from '@/components/product/ChainPicker';
-import PreviewName from '@/components/product/PreviewName';
 import { GiftWrapOption } from '@/components/product/GiftWrapOption';
 import { ReviewsSection } from '@/components/reviews/ReviewsSection';
 
@@ -452,9 +451,7 @@ const ProductDetail = () => {
 
             {/* Customization Options */}
             <div className="space-y-6">
-              <NameInput />
-              
-              <PreviewName />
+              <EditablePreviewName />
               
               <FontPicker />
               
