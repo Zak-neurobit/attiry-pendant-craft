@@ -40,7 +40,11 @@ export default defineConfig(({ mode }) => ({
         drop_console: mode === 'production',
         drop_debugger: mode === 'production'
       }
-    }
+    },
+    // Ensure proper SPA build output
+    outDir: 'dist',
+    emptyOutDir: true,
+    sourcemap: mode === 'development'
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query']

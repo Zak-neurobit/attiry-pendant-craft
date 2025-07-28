@@ -119,7 +119,6 @@ const JAPANESE_HIRAGANA_MAPPING: TransliterationMapping = {
   'rei': 'れい',
   'ken': 'けん',
   'jun': 'じゅん',
-  'ryo': 'りょう',
   'sato': 'さとう',
   'tanaka': 'たなか',
   'yamada': 'やまだ',
