@@ -96,14 +96,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
             <div className="flex items-center gap-2">
               {hasOriginalPrice ? (
                 <>
-                  <span className="font-bold text-lg">{priceData.salePrice}</span>
+                  <span className="font-bold text-lg">
+                    {priceData.isLoading ? `$${product.price.toFixed(2)}` : priceData.salePrice}
+                  </span>
                   <span className="text-sm text-muted-foreground line-through">
-                    {priceData.originalPrice}
+                    {priceData.isLoading ? `$${product.originalPrice!.toFixed(2)}` : priceData.originalPrice}
                   </span>
                 </>
               ) : (
                 <span className="font-bold text-lg">
-                  {priceData.isLoading ? 'Loading...' : priceData.formattedPrice}
+                  {priceData.isLoading ? `$${product.price.toFixed(2)}` : priceData.formattedPrice}
                 </span>
               )}
             </div>

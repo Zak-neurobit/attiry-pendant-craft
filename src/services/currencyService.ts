@@ -1,3 +1,5 @@
+import { supabase } from '@/integrations/supabase/client';
+
 export type SupportedCurrency = 'USD' | 'SAR' | 'AED' | 'INR' | 'QAR' | 'KWD' | 'CAD' | 'AUD' | 'OMR' | 'MYR' | 'MXN' | 'EGP' | 'TRY' | 'JPY';
 
 export interface CurrencyInfo {
@@ -649,3 +651,83 @@ class CurrencyService {
 
 // Export singleton instance
 export const currencyService = new CurrencyService();
+
+/**
+ * Service to fetch admin's default store currency setting
+ */
+class AdminCurrencyService {
+  private cachedAdminCurrency: SupportedCurrency | null = null;
+  private lastFetch: Date | null = null;
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  /**
+   * Get admin's default store currency setting
+   */
+  async getAdminDefaultCurrency(): Promise<SupportedCurrency> {
+    // Return cached result if still valid
+    if (this.cachedAdminCurrency && this.isCacheValid()) {
+      return this.cachedAdminCurrency;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'store_settings')
+        .single();
+
+      if (error) {
+        console.warn('Failed to fetch admin currency setting:', error);
+        return this.getFallbackCurrency();
+      }
+
+      // Extract currency from store settings
+      const storeSettings = data?.value;
+      const adminCurrency = storeSettings?.currency;
+
+      if (adminCurrency && this.isValidCurrency(adminCurrency)) {
+        this.cachedAdminCurrency = adminCurrency as SupportedCurrency;
+        this.lastFetch = new Date();
+        return this.cachedAdminCurrency;
+      }
+
+      return this.getFallbackCurrency();
+    } catch (error) {
+      console.error('Error fetching admin currency setting:', error);
+      return this.getFallbackCurrency();
+    }
+  }
+
+  /**
+   * Clear the cache to force refresh on next call
+   */
+  clearCache(): void {
+    this.cachedAdminCurrency = null;
+    this.lastFetch = null;
+  }
+
+  /**
+   * Check if the cached currency is still valid
+   */
+  private isCacheValid(): boolean {
+    if (!this.lastFetch) return false;
+    return Date.now() - this.lastFetch.getTime() < this.CACHE_DURATION;
+  }
+
+  /**
+   * Check if currency code is valid and supported
+   */
+  private isValidCurrency(currency: string): boolean {
+    return currency in SUPPORTED_CURRENCIES;
+  }
+
+  /**
+   * Get fallback currency when admin setting is not available
+   */
+  private getFallbackCurrency(): SupportedCurrency {
+    return 'USD';
+  }
+}
+
+// Export singleton instance
+export const adminCurrencyService = new AdminCurrencyService();

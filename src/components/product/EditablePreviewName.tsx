@@ -26,14 +26,16 @@ const EditablePreviewName = () => {
     switch (font) {
       case 'Great Vibes':
         return 'font-greatvibes';
-      case 'Allura':
-        return 'font-allura';
-      case 'Alex Brush':
-        return 'font-alexbrush';
-      case 'Dancing Script':
-        return 'font-dancingscript';
-      case 'Playfair Display Italic':
-        return 'font-playfair-italic';
+      case 'Cookie':
+        return 'font-cookie';
+      case 'Ephesis':
+        return 'font-ephesis';
+      case 'Pacifico':
+        return 'font-pacifico';
+      case 'Lily Script One':
+        return 'font-lilyscript';
+      case 'Gwendolyn':
+        return 'font-gwendolyn';
       default:
         return 'font-greatvibes';
     }

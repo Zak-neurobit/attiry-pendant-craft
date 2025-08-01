@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { adminCurrencyService } from '@/services/currencyService';
 
 interface StoreSettings {
   store_name: string;
@@ -162,6 +163,10 @@ export const Settings = () => {
     try {
       setSaving(true);
 
+      // Check if this is a store settings update with currency change
+      const isStoreCurrencyUpdate = category === 'store_settings' && settings.currency;
+      const previousCurrency = storeSettings.currency;
+
       const { error } = await supabase
         .from('site_settings')
         .upsert({
@@ -172,10 +177,27 @@ export const Settings = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Settings saved successfully",
-      });
+      // If currency was changed, clear the admin currency cache to force refresh globally
+      if (isStoreCurrencyUpdate && settings.currency !== previousCurrency) {
+        console.log('💱 Admin currency changed from', previousCurrency, 'to', settings.currency);
+        adminCurrencyService.clearCache();
+        
+        // Force a page reload to reinitialize the currency system for all users
+        // This ensures immediate global effect
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+        
+        toast({
+          title: "Currency Updated",
+          description: `Store currency changed to ${settings.currency}. Page will refresh to apply changes globally.`,
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Settings saved successfully",
+        });
+      }
 
     } catch (error: any) {
       console.error('Settings save error:', error);

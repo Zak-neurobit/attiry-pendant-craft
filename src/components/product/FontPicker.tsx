@@ -3,10 +3,11 @@ import { useProductCustomizer } from '@/stores/productCustomizer';
 
 const fonts = [
   { name: 'Great Vibes', className: 'font-greatvibes' },
-  { name: 'Allura', className: 'font-allura' },
-  { name: 'Alex Brush', className: 'font-alexbrush' },
-  { name: 'Dancing Script', className: 'font-dancingscript' },
-  { name: 'Playfair Display Italic', className: 'font-playfair-italic' },
+  { name: 'Cookie', className: 'font-cookie' },
+  { name: 'Ephesis', className: 'font-ephesis' },
+  { name: 'Pacifico', className: 'font-pacifico' },
+  { name: 'Lily Script One', className: 'font-lilyscript' },
+  { name: 'Gwendolyn', className: 'font-gwendolyn' },
 ];
 
 const FontPicker = () => {

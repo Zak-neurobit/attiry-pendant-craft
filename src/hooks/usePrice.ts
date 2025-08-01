@@ -36,7 +36,7 @@ export const usePrice = (amount: number, options: UsePriceOptions = {}) => {
   } = useCurrency();
 
   const [priceResult, setPriceResult] = useState<PriceResult>({
-    formattedPrice: '',
+    formattedPrice: `$${amount.toFixed(2)}`, // Show fallback price immediately
     convertedAmount: amount,
     originalAmount: amount,
     currency: currentCurrency,
@@ -91,6 +91,11 @@ export const usePrice = (amount: number, options: UsePriceOptions = {}) => {
       calculatePrice();
     }
   }, [calculatePrice, isDetectionInProgress]);
+
+  // Also recalculate when currency changes, regardless of detection state
+  useEffect(() => {
+    calculatePrice();
+  }, [currentCurrency, calculatePrice]);
 
   return priceResult;
 };

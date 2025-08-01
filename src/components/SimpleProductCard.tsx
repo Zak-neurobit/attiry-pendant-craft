@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Heart, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useFavourites } from '@/stores/favourites';
+import { usePrice } from '@/hooks/usePrice';
 
 interface SimpleProductCardProps {
   product: {
@@ -40,8 +41,10 @@ export const SimpleProductCard: React.FC<SimpleProductCardProps> = ({ product, p
     }
   };
 
-  // Simple price formatting without hooks
-  const formatPrice = (price: number) => `$${price.toFixed(2)}`;
+  // Use currency-aware price formatting with conversion
+  const currentPrice = usePrice(product.price);
+  const originalPrice = product.originalPrice ? usePrice(product.originalPrice) : null;
+  
   const hasOriginalPrice = product.originalPrice && product.originalPrice > product.price;
   const savingsPercentage = hasOriginalPrice 
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -106,14 +109,16 @@ export const SimpleProductCard: React.FC<SimpleProductCardProps> = ({ product, p
             <div className="flex items-center gap-2">
               {hasOriginalPrice ? (
                 <>
-                  <span className="font-bold text-lg">{formatPrice(product.price)}</span>
+                  <span className="font-bold text-lg">
+                    {currentPrice.isLoading ? `$${product.price.toFixed(2)}` : currentPrice.formattedPrice}
+                  </span>
                   <span className="text-sm text-muted-foreground line-through">
-                    {formatPrice(product.originalPrice!)}
+                    {originalPrice?.isLoading ? `$${product.originalPrice!.toFixed(2)}` : originalPrice?.formattedPrice}
                   </span>
                 </>
               ) : (
                 <span className="font-bold text-lg">
-                  {formatPrice(product.price)}
+                  {currentPrice.isLoading ? `$${product.price.toFixed(2)}` : currentPrice.formattedPrice}
                 </span>
               )}
             </div>

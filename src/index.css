@@ -2,7 +2,7 @@
 All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
 */
 
-@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cookie&family=Ephesis&family=Pacifico&family=Lily+Script+One&family=Gwendolyn:wght@700&family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
 
 /* International fonts for multi-language support */
 @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap');
@@ -297,21 +297,26 @@ All colors MUST be HSL. Design: Luxury, airy, muted pastel aesthetic.
     font-family: 'Great Vibes', cursive;
   }
   
-  .font-allura {
-    font-family: 'Allura', cursive;
+  .font-cookie {
+    font-family: 'Cookie', cursive;
+    font-size: 55px;
   }
   
-  .font-alexbrush {
-    font-family: 'Alex Brush', cursive;
+  .font-ephesis {
+    font-family: 'Ephesis', cursive;
   }
   
-  .font-dancingscript {
-    font-family: 'Dancing Script', cursive;
+  .font-pacifico {
+    font-family: 'Pacifico', cursive;
   }
   
-  .font-playfair-italic {
-    font-family: 'Playfair Display', serif;
-    font-style: italic;
+  .font-lilyscript {
+    font-family: 'Lily Script One', cursive;
+  }
+  
+  .font-gwendolyn {
+    font-family: 'Gwendolyn', cursive;
+    font-weight: 700;
   }
 
   .font-inter {

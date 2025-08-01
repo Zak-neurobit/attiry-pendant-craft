@@ -18,7 +18,7 @@ export const FAQ = () => {
     },
     {
       question: "What font options are available?",
-      answer: "We offer 5 beautiful font styles: Great Vibes, Allura, Alex Brush, Dancing Script, and Playfair Display. You can preview your name in each font before ordering."
+      answer: "We offer 6 beautiful font styles: Great Vibes, Cookie, Ephesis, Pacifico, Lily Script One, and Gwendolyn. You can preview your name in each font before ordering."
     },
     {
       question: "How do I care for my name pendant?",

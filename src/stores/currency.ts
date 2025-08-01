@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { SupportedCurrency, currencyService, CurrencyInfo } from '@/services/currencyService';
+import { SupportedCurrency, currencyService, CurrencyInfo, adminCurrencyService } from '@/services/currencyService';
 import { geoLocationService, LocationInfo } from '@/services/geoLocationService';
 
 interface CurrencyState {
@@ -11,17 +11,20 @@ interface CurrencyState {
   lastRateUpdate: Date | null;
   isLoading: boolean;
   error: string | null;
+  adminDefaultCurrency: SupportedCurrency | null;
 
-  // Actions (automatic only - no manual currency setting for UI)
+  // Public actions
+  setCurrency: (currency: SupportedCurrency) => void;
   detectUserLocation: () => Promise<void>;
   convertPrice: (amount: number, fromCurrency?: SupportedCurrency) => Promise<number>;
   formatPrice: (amount: number, currency?: SupportedCurrency) => string;
   refreshExchangeRates: () => Promise<void>;
   initialize: () => Promise<void>;
   
-  // Internal actions (not for UI use)
+  // Internal actions
   _setCurrency: (currency: SupportedCurrency) => void;
   _setUserLocation: (location: LocationInfo) => void;
+  _setAdminDefaultCurrency: (currency: SupportedCurrency) => void;
   
   // Getters
   getCurrencyInfo: () => CurrencyInfo;
@@ -39,6 +42,21 @@ export const useCurrency = create<CurrencyState>()(
       lastRateUpdate: null,
       isLoading: false,
       error: null,
+      adminDefaultCurrency: null,
+
+      // Public manual currency setter for UI
+      setCurrency: (currency: SupportedCurrency) => {
+        set({
+          currentCurrency: currency,
+          error: null
+        });
+        
+        // Store user preference in localStorage
+        localStorage.setItem('attiry_user_currency_preference', currency);
+        
+        // Refresh exchange rates for new currency
+        get().refreshExchangeRates();
+      },
 
       // Internal currency setter (automatic only)
       _setCurrency: (currency: SupportedCurrency) => {
@@ -57,6 +75,13 @@ export const useCurrency = create<CurrencyState>()(
           userLocation: location,
           currentCurrency: location.currency,
           error: null
+        });
+      },
+
+      // Internal admin currency setter
+      _setAdminDefaultCurrency: (currency: SupportedCurrency) => {
+        set({
+          adminDefaultCurrency: currency
         });
       },
 
@@ -146,28 +171,66 @@ export const useCurrency = create<CurrencyState>()(
         }
       },
 
-      // Initialize currency system
+      // Initialize currency system with proper priority order
       initialize: async () => {
+        console.log('💰 Initializing currency system...');
         set({ isLoading: true });
         
         try {
-          // Check if user has a saved location preference
-          const state = get();
-          if (!state.userLocation) {
-            // Detect user location if not set
-            await get().detectUserLocation();
+          let finalCurrency: SupportedCurrency = 'USD';
+          let source = 'default';
+
+          // Priority 1: Check for user manual preference
+          const userPreference = localStorage.getItem('attiry_user_currency_preference') as SupportedCurrency;
+          if (userPreference && userPreference in currencyService.getSupportedCurrencies().reduce((acc, curr) => ({ ...acc, [curr.code]: true }), {})) {
+            finalCurrency = userPreference;
+            source = 'user_preference';
+            console.log('✅ Using user preference:', finalCurrency);
           } else {
-            // Use saved location but refresh rates
-            await get().refreshExchangeRates();
+            // Priority 2: Get admin's default store currency
+            try {
+              const adminCurrency = await adminCurrencyService.getAdminDefaultCurrency();
+              get()._setAdminDefaultCurrency(adminCurrency);
+              finalCurrency = adminCurrency;
+              source = 'admin_setting';
+              console.log('✅ Using admin default currency:', finalCurrency);
+            } catch (adminError) {
+              console.warn('❌ Failed to fetch admin currency, falling back to geo-detection');
+              
+              // Priority 3: Geo-location detection
+              try {
+                const location = await geoLocationService.getUserLocation();
+                get()._setUserLocation(location);
+                finalCurrency = location.currency;
+                source = 'geo_detection';
+                console.log('✅ Using geo-detected currency:', finalCurrency);
+              } catch (geoError) {
+                console.warn('❌ Geo-detection failed, using USD default');
+                // Priority 4: USD fallback (already set above)
+                source = 'fallback';
+              }
+            }
           }
+
+          // Set the determined currency
+          get()._setCurrency(finalCurrency);
+          
+          // Refresh exchange rates
+          await get().refreshExchangeRates();
+          
+          console.log(`💱 Currency initialization complete: ${finalCurrency} (${source})`);
+          
+          set({
+            isLoading: false,
+            error: null
+          });
         } catch (error) {
-          console.error('Currency initialization failed:', error);
+          console.error('❌ Currency initialization failed:', error);
           set({
             error: 'Failed to initialize currency system.',
-            isLoading: false
+            isLoading: false,
+            currentCurrency: 'USD' // Final fallback
           });
-        } finally {
-          set({ isLoading: false });
         }
       },
 
@@ -189,11 +252,12 @@ export const useCurrency = create<CurrencyState>()(
     }),
     {
       name: 'attiry-currency-storage',
-      // Only persist essential user preferences
+      // Only persist essential user preferences and admin settings
       partialize: (state) => ({
         currentCurrency: state.currentCurrency,
         userLocation: state.userLocation,
-        lastRateUpdate: state.lastRateUpdate
+        lastRateUpdate: state.lastRateUpdate,
+        adminDefaultCurrency: state.adminDefaultCurrency
       }),
       // Handle rehydration
       onRehydrateStorage: () => (state) => {
