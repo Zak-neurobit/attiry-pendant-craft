@@ -7,6 +7,7 @@ import { Suspense, lazy } from "react";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { Layout } from "./components/layout/Layout";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { PageLoadingFallback } from "./components/ui/loading-fallback";
 
 // Currency initialization
 import { CurrencyProvider } from "./components/providers/CurrencyProvider";
@@ -60,12 +61,8 @@ const queryClient = new QueryClient({
   },
 });
 
-// Loading component for Suspense fallbacks
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-  </div>
-);
+// Use optimized loading fallback
+const PageLoader = PageLoadingFallback;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

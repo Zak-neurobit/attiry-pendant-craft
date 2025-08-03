@@ -34,28 +34,28 @@ export const About = () => {
 
   const galleryImages = [
     { 
-      src: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&h=400&fit=crop&crop=center&auto=format&q=80', 
-      alt: 'Artisan carefully engraving a custom pendant' 
+      src: '/src/assets/jeweler-workshop.jpg', 
+      alt: 'Jeweler working in his workshop cutting gold ring with saw' 
     },
     { 
-      src: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=600&h=400&fit=crop&crop=center&auto=format&q=80', 
-      alt: 'Precision tools and custom jewelry workspace' 
+      src: '/src/assets/tima-6263056.jpg', 
+      alt: 'Professional jewelry crafting workspace' 
     },
     { 
-      src: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=600&h=400&fit=crop&crop=center&auto=format&q=80', 
-      alt: 'Beautiful custom gold pendant being crafted' 
+      src: '/src/assets/tima-6263103.jpg', 
+      alt: 'Skilled craftsman working on intricate jewelry details' 
     },
     { 
-      src: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&h=400&fit=crop&crop=faces&auto=format&q=80', 
-      alt: 'Happy customer wearing personalized name pendant' 
+      src: '/src/assets/tima-6263108.jpg', 
+      alt: 'Precision jewelry making process' 
     },
     { 
-      src: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=600&h=400&fit=crop&crop=faces&auto=format&q=80', 
-      alt: 'Skilled craftsman working on jewelry details' 
+      src: '/src/assets/tima-6263149.jpg', 
+      alt: 'Master craftsman at work in jewelry atelier' 
     },
     { 
-      src: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=600&h=400&fit=crop&crop=faces&auto=format&q=80', 
-      alt: 'Final quality inspection of custom jewelry' 
+      src: '/src/assets/moha-sour-11041197.jpg', 
+      alt: 'Final quality inspection and finishing touches' 
     },
   ];
 
@@ -93,7 +93,7 @@ export const About = () => {
       <motion.section variants={itemVariants} className="relative h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
         <div className="absolute inset-0 z-0">
           <img
-            src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1920&h=1080&fit=crop&crop=center&auto=format&q=80"
+            src="/src/assets/jeweler-workshop.jpg"
             alt="Master craftsman creating custom jewelry in workshop"
             className="w-full h-full object-cover opacity-20"
           />
@@ -165,7 +165,7 @@ export const About = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <motion.div variants={itemVariants}>
               <img
-                src="https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=800&h=600&fit=crop&crop=center&auto=format&q=80"
+                src="/src/assets/tima-6263056.jpg"
                 alt="Precision tools and detailed jewelry crafting process"
                 className="w-full h-96 object-cover rounded-lg shadow-soft"
               />

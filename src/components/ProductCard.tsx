@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,17 +15,18 @@ interface ProductCardProps {
   priority?: boolean;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = false }) => {
+export const ProductCard: React.FC<ProductCardProps> = memo(({ product, priority = false }) => {
   const { favourites, addToFavourites, removeFromFavourites } = useFavourites();
-  const isFavourite = favourites.includes(product.id);
+  
+  const isFavourite = useMemo(() => favourites.includes(product.id), [favourites, product.id]);
 
   // Use our new price formatting hooks
-  const hasOriginalPrice = product.originalPrice && product.originalPrice > product.price;
+  const hasOriginalPrice = useMemo(() => product.originalPrice && product.originalPrice > product.price, [product.originalPrice, product.price]);
   const priceData = hasOriginalPrice 
     ? useComparePrice(product.originalPrice!, product.price)
     : usePrice(product.price);
 
-  const toggleFavourite = (e: React.MouseEvent) => {
+  const toggleFavourite = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (isFavourite) {
@@ -33,7 +34,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
     } else {
       addToFavourites(product.id);
     }
-  };
+  }, [isFavourite, product.id, addToFavourites, removeFromFavourites]);
 
   return (
     <Link to={`/product/${product.slug}`}>
@@ -136,6 +137,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
       </Card>
     </Link>
   );
-};
+});
+
+ProductCard.displayName = 'ProductCard';
 
 export default ProductCard;

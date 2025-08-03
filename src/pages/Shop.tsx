@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { SimpleProductCard } from '@/components/SimpleProductCard';
 import { Button } from '@/components/ui/button';
@@ -8,13 +8,13 @@ export const Shop = () => {
   const [displayCount, setDisplayCount] = useState(12);
   const { products, loading } = useProducts();
   
-  // Get products to display with current database prices
-  const productsToShow = products.slice(0, displayCount);
-  const hasMoreProducts = displayCount < products.length;
+  // Get products to display with current database prices (memoized)
+  const productsToShow = useMemo(() => products.slice(0, displayCount), [products, displayCount]);
+  const hasMoreProducts = useMemo(() => displayCount < products.length, [displayCount, products.length]);
 
-  const loadMoreProducts = () => {
+  const loadMoreProducts = useCallback(() => {
     setDisplayCount(prev => Math.min(prev + 12, products.length));
-  };
+  }, [products.length]);
 
   return (
     <div className="min-h-screen bg-background">

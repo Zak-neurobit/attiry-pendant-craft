@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, ShoppingCart, TrendingUp, Users } from 'lucide-react';
+import { Package, Users, Activity, Settings, Cog, Bot, CreditCard } from 'lucide-react';
 import { DashboardDateFilter } from '@/components/admin/DashboardDateFilter';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 
 interface DateRange {
   from: Date | undefined;
@@ -12,25 +14,24 @@ interface DateRange {
 }
 
 interface DashboardStats {
-  totalRevenue: number;
-  orderCount: number;
-  avgOrderValue: number;
-  previousRevenue: number;
-  previousOrderCount: number;
+  totalProducts: number;
+  totalCustomers: number;
+  activeProducts: number;
+  recentActivities: number;
+  previousProducts: number;
+  previousCustomers: number;
 }
 
-interface RecentOrder {
+interface RecentActivity {
   id: string;
-  customer_name: string;
-  total: number;
-  status: string;
+  type: 'product' | 'customer' | 'order' | 'contact';
+  description: string;
   created_at: string;
 }
 
-interface Order {
-  id: string;
-  total: number;
-  created_at: string;
+interface ProductMetric {
+  date: string;
+  count: number;
 }
 
 export const Dashboard = () => {
@@ -39,8 +40,8 @@ export const Dashboard = () => {
     to: new Date(),
   });
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
-  const [chartOrders, setChartOrders] = useState<Order[]>([]);
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  const [chartData, setChartData] = useState<ProductMetric[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -48,69 +49,73 @@ export const Dashboard = () => {
     try {
       setLoading(true);
       
-      // Get date range for filtering
-      const fromDate = dateRange.from ? dateRange.from.toISOString().split('T')[0] : null;
-      const toDate = dateRange.to ? new Date(dateRange.to.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null;
-      
-      // Fetch orders for the selected date range
-      let query = supabase
-        .from('orders')
+      // Fetch products data
+      const { data: products, error: productsError } = await supabase
+        .from('products')
         .select('*');
       
-      if (fromDate) {
-        query = query.gte('created_at', fromDate);
-      }
-      if (toDate) {
-        query = query.lt('created_at', toDate);
-      }
+      if (productsError) throw productsError;
       
-      const { data: orders, error: ordersError } = await query;
+      // Fetch customers data
+      const { data: customers, error: customersError } = await supabase
+        .from('customers')
+        .select('*');
       
-      if (ordersError) throw ordersError;
+      if (customersError) throw customersError;
       
-      // Calculate current period stats
-      const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
-      const orderCount = orders?.length || 0;
-      const avgOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0;
+      // Calculate current stats
+      const totalProducts = products?.length || 0;
+      const totalCustomers = customers?.length || 0;
+      const activeProducts = products?.filter(p => p.status === 'active').length || 0;
       
       // Calculate previous period stats for comparison
-      const periodDays = dateRange.from && dateRange.to 
-        ? Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24))
-        : 30;
-      
-      const previousFromDate = new Date(dateRange.from?.getTime() - periodDays * 24 * 60 * 60 * 1000);
-      const previousToDate = dateRange.from;
-      
-      const { data: previousOrders } = await supabase
-        .from('orders')
-        .select('*')
-        .gte('created_at', previousFromDate.toISOString().split('T')[0])
-        .lt('created_at', previousToDate?.toISOString().split('T')[0]);
-      
-      const previousRevenue = previousOrders?.reduce((sum, order) => sum + Number(order.total), 0) || 0;
-      const previousOrderCount = previousOrders?.length || 0;
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const previousProducts = products?.filter(p => new Date(p.created_at) < thirtyDaysAgo).length || 0;
+      const previousCustomers = customers?.filter(c => new Date(c.created_at) < thirtyDaysAgo).length || 0;
       
       setStats({
-        totalRevenue,
-        orderCount,
-        avgOrderValue,
-        previousRevenue,
-        previousOrderCount,
+        totalProducts,
+        totalCustomers,
+        activeProducts,
+        recentActivities: 0,
+        previousProducts,
+        previousCustomers,
       });
       
-      // Fetch recent orders (last 10)
-      const { data: recent, error: recentError } = await supabase
-        .from('orders')
-        .select('id, customer_name, total, status, created_at')
-        .order('created_at', { ascending: false })
-        .limit(10);
+      // Fetch recent activities
+      const recentActivitiesData: RecentActivity[] = [];
       
-      if (recentError) throw recentError;
+      // Add recent products
+      const recentProducts = products?.slice(0, 3).map(p => ({
+        id: p.id,
+        type: 'product' as const,
+        description: `New product: ${p.name}`,
+        created_at: p.created_at
+      })) || [];
       
-      setRecentOrders(recent || []);
+      // Add recent customers
+      const recentCustomers = customers?.slice(0, 3).map(c => ({
+        id: c.id,
+        type: 'customer' as const,
+        description: `New customer: ${c.email}`,
+        created_at: c.created_at
+      })) || [];
       
-      // Store chart orders for daily revenue calculation
-      setChartOrders(orders || []);
+      recentActivitiesData.push(...recentProducts, ...recentCustomers);
+      recentActivitiesData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      setRecentActivities(recentActivitiesData.slice(0, 10));
+      
+      // Create chart data for product growth
+      const chartMetrics: ProductMetric[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+        const dateStr = date.toISOString().split('T')[0];
+        const count = products?.filter(p => new Date(p.created_at).toDateString() === date.toDateString()).length || 0;
+        chartMetrics.push({ date: dateStr, count });
+      }
+      
+      setChartData(chartMetrics);
       
     } catch (error: any) {
       console.error('Dashboard data fetch error:', error);
@@ -134,22 +139,9 @@ export const Dashboard = () => {
     return `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-500';
-      case 'processing': return 'bg-blue-500';
-      case 'shipped': return 'bg-purple-500';
-      case 'delivered': return 'bg-green-500';
-      case 'cancelled': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price);
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('en-US').format(num);
   };
 
   const formatDate = (dateString: string) => {
@@ -161,34 +153,10 @@ export const Dashboard = () => {
     });
   };
 
-  const calculateDailyRevenue = () => {
-    if (!dateRange.from || !dateRange.to || !chartOrders) return [];
-
-    const dailyRevenue = new Map();
-    const fromDate = new Date(dateRange.from);
-    const toDate = new Date(dateRange.to);
-    
-    // Initialize all dates with 0 revenue
-    for (let d = new Date(fromDate); d <= toDate; d.setDate(d.getDate() + 1)) {
-      const dateKey = d.toISOString().split('T')[0];
-      dailyRevenue.set(dateKey, { date: dateKey, revenue: 0 });
-    }
-
-    // Calculate actual daily revenue from real orders in date range
-    chartOrders.forEach(order => {
-      const orderDate = new Date(order.created_at).toISOString().split('T')[0];
-      if (dailyRevenue.has(orderDate)) {
-        const existing = dailyRevenue.get(orderDate);
-        dailyRevenue.set(orderDate, {
-          ...existing,
-          revenue: existing.revenue + Number(order.total)
-        });
-      }
-    });
-    
-    return Array.from(dailyRevenue.values()).map(day => ({
-      ...day,
-      date: new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+  const formatChartData = () => {
+    return chartData.map(item => ({
+      ...item,
+      date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     }));
   };
 
@@ -212,64 +180,64 @@ export const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loading ? "Loading..." : formatPrice(stats?.totalRevenue || 0)}
+              {loading ? "Loading..." : formatNumber(stats?.totalProducts || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
-              <span className={stats && stats.totalRevenue >= stats.previousRevenue ? "text-green-600" : "text-red-600"}>
-                {loading ? "..." : calculateChange(stats?.totalRevenue || 0, stats?.previousRevenue || 0)}
-              </span> from previous period
+              <span className={stats && stats.totalProducts >= stats.previousProducts ? "text-green-600" : "text-red-600"}>
+                {loading ? "..." : calculateChange(stats?.totalProducts || 0, stats?.previousProducts || 0)}
+              </span> from last month
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Orders</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? "Loading..." : stats?.orderCount || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              <span className={stats && stats.orderCount >= stats.previousOrderCount ? "text-green-600" : "text-red-600"}>
-                {loading ? "..." : calculateChange(stats?.orderCount || 0, stats?.previousOrderCount || 0)}
-              </span> from previous period
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {loading ? "Loading..." : formatPrice(stats?.avgOrderValue || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Per order average
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Order Status</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loading ? "Loading..." : `${stats?.orderCount || 0} Total`}
+              {loading ? "Loading..." : formatNumber(stats?.totalCustomers || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Orders in selected period
+              <span className={stats && stats.totalCustomers >= stats.previousCustomers ? "text-green-600" : "text-red-600"}>
+                {loading ? "..." : calculateChange(stats?.totalCustomers || 0, stats?.previousCustomers || 0)}
+              </span> from last month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Products</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loading ? "Loading..." : formatNumber(stats?.activeProducts || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Currently available
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">System Status</CardTitle>
+            <Settings className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {loading ? "Loading..." : "Online"}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              All systems operational
             </p>
           </CardContent>
         </Card>
@@ -279,8 +247,8 @@ export const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>Revenue Overview</CardTitle>
-            <CardDescription>Revenue over the last 30 days</CardDescription>
+            <CardTitle>Product Growth</CardTitle>
+            <CardDescription>Product additions over the last 7 days</CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
             <div className="h-[200px]">
@@ -290,12 +258,12 @@ export const Dashboard = () => {
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartOrders.length > 0 ? calculateDailyRevenue() : []}>
+                  <LineChart data={formatChartData()}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
-                    <Tooltip formatter={(value) => [formatPrice(value as number), 'Revenue']} />
-                    <Line type="monotone" dataKey="revenue" stroke="#8884d8" strokeWidth={2} />
+                    <Tooltip formatter={(value) => [value, 'Products Added']} />
+                    <Line type="monotone" dataKey="count" stroke="#8884d8" strokeWidth={2} />
                   </LineChart>
                 </ResponsiveContainer>
               )}
@@ -304,32 +272,38 @@ export const Dashboard = () => {
         </Card>
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>Recent Orders</CardTitle>
-            <CardDescription>Latest order activity</CardDescription>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Latest system activity</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {loading ? (
                 <div className="flex items-center justify-center py-4">
-                  <div className="text-sm text-muted-foreground">Loading orders...</div>
+                  <div className="text-sm text-muted-foreground">Loading activity...</div>
                 </div>
-              ) : recentOrders.length === 0 ? (
+              ) : recentActivities.length === 0 ? (
                 <div className="flex items-center justify-center py-4">
-                  <div className="text-sm text-muted-foreground">No recent orders</div>
+                  <div className="text-sm text-muted-foreground">No recent activity</div>
                 </div>
               ) : (
-                recentOrders.map((order) => (
-                  <div key={order.id} className="flex items-center space-x-4">
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(order.status)}`}></div>
+                recentActivities.map((activity) => (
+                  <div key={activity.id} className="flex items-center space-x-4">
+                    <div className={`w-2 h-2 rounded-full ${
+                      activity.type === 'product' ? 'bg-blue-500' : 
+                      activity.type === 'customer' ? 'bg-green-500' : 
+                      activity.type === 'order' ? 'bg-purple-500' : 'bg-gray-500'
+                    }`}></div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
-                        {order.customer_name} - #{order.id.slice(0, 8)}
+                        {activity.description}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {formatDate(order.created_at)}
+                        {formatDate(activity.created_at)}
                       </p>
                     </div>
-                    <div className="text-sm font-medium">{formatPrice(order.total)}</div>
+                    <div className="text-xs text-muted-foreground capitalize">
+                      {activity.type}
+                    </div>
                   </div>
                 ))
               )}
@@ -337,6 +311,41 @@ export const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Settings Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Cog className="h-5 w-5" />
+            Quick Settings
+          </CardTitle>
+          <CardDescription>
+            Access important configuration options
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Link to="/admin/settings">
+              <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2">
+                <Settings className="h-6 w-6" />
+                <span>Store Settings</span>
+              </Button>
+            </Link>
+            <Link to="/admin/ai-settings">
+              <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2">
+                <Bot className="h-6 w-6" />
+                <span>AI Settings</span>
+              </Button>
+            </Link>
+            <Link to="/admin/api-settings">
+              <Button variant="outline" className="w-full h-20 flex flex-col items-center gap-2">
+                <CreditCard className="h-6 w-6" />
+                <span>Payment Settings</span>
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
